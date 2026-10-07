@@ -5,4 +5,11 @@
 -->
 <resources>
     <string name="app_name" translatable="false">Gambit</string>
+
+    <!-- Gambit UI strings (English only). -->
+    <string name="gambit_epg_no_information" translatable="false">No information</string>
+    <!-- "21:00 — 22:00" -->
+    <string name="gambit_time_range" translatable="false">%1$s — %2$s</string>
+    <!-- "Tue, 6 Oct, 21:58" -->
+    <string name="gambit_date_time" translatable="false">%1$s, %2$s</string>
 </resources>

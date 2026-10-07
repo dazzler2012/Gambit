@@ -64,7 +64,7 @@
 1	empty	app/src/main/java/tv/own/owntv/features/downloads/DownloadsViewModel.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/features/epg/EpgScreen.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/features/epg/EpgScreen.kt	$p
-2	technical	app/src/main/java/tv/own/owntv/features/epg/EpgScreen.kt	·
+1	technical	app/src/main/java/tv/own/owntv/features/epg/EpgScreen.kt	·
 1	technical	app/src/main/java/tv/own/owntv/features/epg/EpgScreen.kt	▲ ▼
 1	technical	app/src/main/java/tv/own/owntv/features/epg/EpgScreen.kt	◀
 1	technical	app/src/main/java/tv/own/owntv/features/epg/EpgScreen.kt	◀ ▶
@@ -848,6 +848,8 @@
 2	technical	app/src/main/java/tv/own/owntv/features/update/UpdateDialog.kt	**
 2	technical	app/src/main/java/tv/own/owntv/features/update/UpdateDialog.kt	-
 2	technical	app/src/main/java/tv/own/owntv/features/update/UpdateDialog.kt	•
+1	locale	app/src/main/java/tv/own/owntv/gambit/ui/guide/GambitGuide.kt	EEEdMMM
+1	technical	app/src/main/java/tv/own/owntv/gambit/ui/guide/GambitGuide.kt	tnum
 2	empty	app/src/main/java/tv/own/owntv/player/AudioNowPlayingBar.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/player/AudioNowPlayingBar.kt	eq
 1	technical	app/src/main/java/tv/own/owntv/player/AudioNowPlayingBar.kt	eqBar$i

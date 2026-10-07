@@ -63,6 +63,12 @@ import tv.own.owntv.core.live.LiveKey
 import tv.own.owntv.core.model.RecordingStatus
 import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.features.live.LiveCategories
+import tv.own.owntv.gambit.ui.guide.GambitChannelLabel
+import tv.own.owntv.gambit.ui.guide.GambitGuideRuler
+import tv.own.owntv.gambit.ui.guide.GambitGuideVideo
+import tv.own.owntv.gambit.ui.guide.GambitProgrammeBlock
+import tv.own.owntv.gambit.ui.guide.GambitProgrammeStrip
+import tv.own.owntv.gambit.ui.guide.gambitNowLine
 import tv.own.owntv.features.live.LiveViewModel
 import tv.own.owntv.features.live.ProviderTags
 import tv.own.owntv.features.live.edgeScrollSpec
@@ -428,10 +434,8 @@ fun EpgScreen(
         // Top (44 → 404): the video, and beside it the programme under the cursor.
         Row(Modifier.padding(start = fx(64), end = fx(64), top = 44.mpx).fillMaxWidth().height(360.mpx)) {
         val videoChannel = if (effectivePreview) previewChannel ?: topChannel else topChannel
-        GuideVideo(
+        GambitGuideVideo( // Gambit: was GuideVideo
             channel = videoChannel,
-            channelLine = videoChannel?.let { listOfNotNull(it.number?.toString(), ProviderTags.parse(it.name).name).joinToString(" · ") },
-            nowTitle = videoChannel?.let { ch -> programmeAt(vm.cachedProgrammes(ch), liveNow)?.takeIf { liveNow < it.stopMs }?.title },
             previewEngine = liveVm.previewEngine,
             showVideo = effectivePreview && previewArmed,
             modifier = Modifier.width(640.mpx),
@@ -440,12 +444,11 @@ fun EpgScreen(
         Box(Modifier.weight(1f).fillMaxHeight()) {
             if (topChannel != null) {
                 val chName = ProviderTags.parse(topChannel.name).name
-                GuideProgrammeBlock(
-                    eyebrow = shown?.let { programmeEyebrow(it, chName, liveNow) },
-                    title = shown?.title ?: chName,
-                    details = if (shown == null) stringResource(R.string.content_epg_no_programme) else programmeDetailsLine(shown),
-                    synopsis = shown?.description,
-                    modifier = Modifier.padding(start = 46.mpx, top = 76.mpx).widthIn(max = 1080.mpx),
+                GambitProgrammeBlock( // Gambit: was GuideProgrammeBlock
+                    programme = shown,
+                    fallbackTitle = chName,
+                    now = liveNow,
+                    modifier = Modifier.padding(start = 46.mpx, top = 8.mpx).widthIn(max = 1080.mpx),
                 )
             }
             // The key hints at the bottom right of the top area, level with the video's bottom edge (owner, 2026-10-01).
@@ -530,9 +533,10 @@ fun EpgScreen(
                     val gx = fx(48) + labelW
                     // The number column fits the longest channel number (38 = the mockup's three digits).
                     val numberWidth = maxOf(38f, (state.channels.maxOfOrNull { it.number?.toString()?.length ?: 0 } ?: 0) * 11f).mpx
-                    GuideRuler(
+                    GambitGuideRuler( // Gambit: was GuideRuler
                         windowStart = state.windowStart, windowEnd = state.windowEnd, now = liveNow, scrollPx = scrollPx,
-                        modifier = Modifier.padding(start = gx).width(timelineW).height(40.mpx),
+                        labelWidth = labelW, timelineWidth = timelineW,
+                        modifier = Modifier.padding(start = fx(48)).height(40.mpx),
                     )
                     CompositionLocalProvider(androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides edgeScrollSpec) {
                         LazyColumn(
@@ -595,7 +599,7 @@ fun EpgScreen(
                                 .padding(start = gx + nowX - 1.5.mpx, top = 38.mpx, bottom = 24.mpx)
                                 .width(3.mpx)
                                 .fillMaxHeight()
-                                .guideNowLine(stageAccent.accent),
+                                .gambitNowLine(), // Gambit: was guideNowLine(stageAccent.accent)
                         )
                     }
                 }
@@ -781,7 +785,7 @@ private fun GuideRow(
     LaunchedEffect(focused, cursorTime, programmes) { if (focused) onShow(programmeAt(programmes, cursorTime)) }
     val rowSelected = focused && !cellMode
     Row(Modifier.fillMaxWidth().height(GuideGridDefaults.RowHeight), verticalAlignment = Alignment.CenterVertically) {
-        GuideChannelLabel(channel, name, dot, selected = selectedRow, numberWidth = numberWidth, modifier = Modifier.width(labelWidth))
+        GambitChannelLabel(channel, name, dot, numberWidth = numberWidth, modifier = Modifier.width(labelWidth)) // Gambit: was GuideChannelLabel
         Box(
             Modifier
                 .weight(1f)
@@ -816,17 +820,17 @@ private fun GuideRow(
                         else -> false
                     }
                 }
-                .focusable()
-                .then(if (rowSelected) Modifier.stageFocusLook(tv.own.owntv.ui.stage.StageFocus.FX, 14.mpx) else Modifier),
+                .focusable(), // Gambit: the selected row is drawn by the strip's cursor cell, not stageFocusLook(FX)
         ) {
             programmes?.let { progs ->
                 val catchupIds = remember(progs, channel, now) { progs.filter { vm.canCatchup(channel, it, now) }.mapTo(HashSet()) { it.id } }
-                ProgrammeStripCanvas(
+                GambitProgrammeStrip( // Gambit: was ProgrammeStripCanvas
                     programmes = progs,
                     windowStart = windowStart,
                     windowEnd = windowEnd,
                     now = now,
                     focusTime = if (focused && cellMode) cursorTime else null,
+                    rowCursor = if (rowSelected) cursorTime else null,
                     catchupIds = catchupIds,
                     recordingStarts = recordingStarts,
                     reminderStarts = reminderStarts,
