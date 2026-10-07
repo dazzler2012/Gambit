@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Gambit (family build of OwnTV). Overrides the launcher/app name only.
+  Kept in its own file so upstream merges of strings.xml stay conflict-free.
+-->
+<resources>
+    <string name="app_name" translatable="false">Gambit</string>
+</resources>
