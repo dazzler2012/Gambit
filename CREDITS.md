@@ -22,10 +22,10 @@ Gambit too; they are listed in the [README](README.md#-credits).
 | Source | Licence | Where |
 |---|---|---|
 | OwnTV icon set (`ui/components/OwnTVIcon.kt`, drawn in code) | GPL-3.0 (part of OwnTV) | All in-app icons, including Gambit's screens |
-| OwnTV brand artwork (app icon, banner, wordmark by [@m3th0d93](https://github.com/m3th0d93)) | GPL-3.0 (part of OwnTV) | Launcher icon, banner, About screen |
+| OwnTV brand artwork (app icon, banner, wordmark by [@m3th0d93](https://github.com/m3th0d93)) | GPL-3.0 (part of OwnTV) | Still inside the core library; replaced on screen by Gambit's logo |
 | [Material Icons](https://fonts.google.com/icons) (`androidx.compose.material:material-icons-core`) | Apache-2.0 | Available through OwnTV's existing dependency; not yet used by Gambit's own code |
-| Gambit logo, launcher icon and TV banner (pawn and play triangle), by dazzler2012 | GPL-3.0 (part of Gambit) | `res/drawable/gambit_icon_*.xml`, `gambit_banner.xml`, and the `owntv_icon_*` / `owntv_banner_*` overrides |
-| Banner wordmark: letter outlines of [Poppins](https://fonts.google.com/specimen/Poppins) Bold, by Indian Type Foundry | SIL Open Font License 1.1 | `res/drawable/gambit_banner.xml`, from OwnTV's bundled `res/font/poppins_bold.ttf` |
+| Gambit logo, launcher icon, TV banner, launch screen and in-app mark (pawn and play triangle), by dazzler2012 | GPL-3.0 (part of Gambit) | `res/drawable/gambit_*.xml`, and the `owntv_icon_*`, `owntv_banner_*` and `owntv_splash_*` overrides |
+| "Gambit" wordmark: letter outlines of [Poppins](https://fonts.google.com/specimen/Poppins) Bold, by Indian Type Foundry | SIL Open Font License 1.1 | `gambit_banner.xml`, `gambit_wordmark.xml`, `gambit_splash_name.xml`, from OwnTV's bundled `res/font/poppins_bold.ttf` |
 
 Any icon or image added later is listed here with its source and licence.
 
