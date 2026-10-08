@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gambit pawn as a single-colour silhouette, for themed (monochrome) icons. Same placement as
+     gambit_icon_foreground. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:translateX="23.985" android:translateY="23.985" android:scaleX="0.58" android:scaleY="0.58">
+        <path android:fillColor="#FFFFFF" android:pathData="M35,20 A13,13 0 1,0 61,20 A13,13 0 1,0 35,20 Z" />
+        <path android:fillColor="#FFFFFF" android:pathData="M34.25,31.5 H61.75 A3.25,3.25 0 0,1 61.75,38 H34.25 A3.25,3.25 0 0,1 34.25,31.5 Z" />
+        <path android:fillColor="#FFFFFF" android:pathData="M42,38 C41.5,56 37,68 30,74.5 C26.5,78 25,81.5 25,85.5 H71 C71,81.5 69.5,78 66,74.5 C59,68 54.5,56 54,38 Z" />
+        <path android:fillColor="#FFFFFF" android:pathData="M24,88.5 H72 L75,91.5 V96.5 H21 V91.5 Z" />
+    </group>
+</vector>
