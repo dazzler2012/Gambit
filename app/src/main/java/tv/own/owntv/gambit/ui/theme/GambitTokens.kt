@@ -13,8 +13,9 @@ import tv.own.owntv.ui.theme.mpx
 
 /**
  * Gambit's look: flat, dark and quiet. Focus is a plain fill (no glow, no sweep, no ring), surfaces are
- * near-black greys, and the one colour is the user's accent (Settings → Appearance → Accent color; a
- * dark green such as #2E5A2E gives the intended look with white text on it).
+ * near-black greys, and the one colour is the user's accent (Settings → Appearance → Accent color) in
+ * two tones: as chosen for text and markers (a light green by default, see GambitDefaults), and
+ * darkened for focus fills, which always carry white text ([gambitStageAccent]).
  *
  * Values are in mockup pixels ([mpx]) like the rest of Stage, so UI zoom and font size still apply.
  */
@@ -47,18 +48,28 @@ object GambitRadii {
     val Video = 20.mpx
 }
 
+/** The accent darkened for focus fills, so white text reads on it whatever accent is chosen. */
+fun gambitFocusFill(accent: Color): Color = lerp(accent, Color.Black, 0.55f)
+
+/**
+ * Stage's accent triple as Gambit uses it: text on a focus fill is always white, because the fill is
+ * the darkened accent ([gambitFocusFill]). Called from `StageTokens.stageAccent` when
+ * [GambitLook.FlatFocus] is on.
+ */
+fun gambitStageAccent(a: StageAccent): StageAccent = a.copy(onAccent = Color.White)
+
 /** The accent lifted towards white: date labels, the now dot, switches that are on. */
 fun gambitAccentLight(accent: Color): Color = lerp(accent, Color.White, 0.45f)
 
 /**
- * Gambit's replacement for Stage's focus decoration: FX, FILLED and PRIMARY become a flat accent fill
- * with the element's own radius; POSTER keeps only a 3 px accent ring. Called from
- * `StageComponents.stageFocusDecor` when [GambitLook.FlatFocus] is on.
+ * Gambit's replacement for Stage's focus decoration: FX, FILLED and PRIMARY become a flat fill of the
+ * darkened accent ([gambitFocusFill]) with the element's own radius; POSTER keeps only a 3 px accent
+ * ring. Called from `StageComponents.stageFocusDecor` when [GambitLook.FlatFocus] is on.
  */
 fun Modifier.gambitFocusDecor(style: StageFocus, radius: Dp, a: StageAccent): Modifier = drawBehind {
     val r = radius.toPx()
     when (style) {
-        StageFocus.FX, StageFocus.FILLED, StageFocus.PRIMARY -> drawRoundRect(a.accent, cornerRadius = CornerRadius(r))
+        StageFocus.FX, StageFocus.FILLED, StageFocus.PRIMARY -> drawRoundRect(gambitFocusFill(a.accent), cornerRadius = CornerRadius(r))
         StageFocus.POSTER -> drawOuterRing(a.accent, 3 * 1.mpx.toPx(), r)
     }
 }

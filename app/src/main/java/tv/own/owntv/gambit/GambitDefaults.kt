@@ -10,9 +10,9 @@ import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.core.theme.BackgroundStyle
 
 /**
- * Gambit's look out of the box, applied once per install right after core's Stage defaults: a dark
- * green accent (white text reads on it), Glass off, the plain background, and a wider channel column
- * in the TV Guide. Each value is written only while it is still OwnTV's default, so a choice the user
+ * Gambit's look out of the box, applied once per install right after core's Stage defaults: a light
+ * green accent (readable as text; focus fills use a darker shade of it), Glass off, the plain
+ * background, and a wider channel column in the TV Guide. Each value is written only while it is still OwnTV's default, so a choice the user
  * has made is kept. Everything stays changeable in Settings afterwards.
  *
  * Whether it has run is kept in Gambit's own preferences file, never in core's settings.
@@ -21,8 +21,12 @@ object GambitDefaults {
     private const val TAG = "Gambit"
     private const val PREFS = "gambit"
     private const val KEY_APPLIED = "defaults_v1"
+    private const val KEY_ACCENT_V2 = "accent_v2"
 
-    const val ACCENT_HEX = "#2E5A2E"
+    /** Light green: readable as text on black. Focus fills darken it (see GambitTokens). */
+    const val ACCENT_HEX = "#66BB6A"
+    /** The dark green the first Gambit builds set; moved to [ACCENT_HEX] once, by [apply]. */
+    private const val OLD_ACCENT_HEX = "#2E5A2E"
     /** Channel column share of the guide, in percent of the two columns. */
     const val GUIDE_CHANNEL_SHARE = 26
 
@@ -39,6 +43,10 @@ object GambitDefaults {
 
     private suspend fun apply(context: Context, settings: SettingsRepository) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (!prefs.getBoolean(KEY_ACCENT_V2, false)) {
+            if (settings.customAccent.first().equals(OLD_ACCENT_HEX, ignoreCase = true)) settings.setCustomAccent(ACCENT_HEX)
+            prefs.edit().putBoolean(KEY_ACCENT_V2, true).apply()
+        }
         if (prefs.getBoolean(KEY_APPLIED, false)) return
         if (settings.customAccent.first().isBlank()) settings.setCustomAccent(ACCENT_HEX)
         if (settings.glassConfig.first().enabled) settings.setGlassScopeBitmask(0)
