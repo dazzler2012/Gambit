@@ -22,6 +22,7 @@ object GambitDefaults {
     private const val PREFS = "gambit"
     private const val KEY_APPLIED = "defaults_v1"
     private const val KEY_ACCENT_V2 = "accent_v2"
+    private const val KEY_UPDATE_CHECK_OFF = "update_check_off_v1"
 
     /** Light green: readable as text on black. Focus fills darken it (see GambitTokens). */
     const val ACCENT_HEX = "#66BB6A"
@@ -46,6 +47,12 @@ object GambitDefaults {
         if (!prefs.getBoolean(KEY_ACCENT_V2, false)) {
             if (settings.customAccent.first().equals(OLD_ACCENT_HEX, ignoreCase = true)) settings.setCustomAccent(ACCENT_HEX)
             prefs.edit().putBoolean(KEY_ACCENT_V2, true).apply()
+        }
+        // OwnTV's updater asks about OwnTV's releases, not Gambit's: stop it running at every start.
+        // Once, so turning it back on in Settings sticks.
+        if (!prefs.getBoolean(KEY_UPDATE_CHECK_OFF, false)) {
+            settings.setUpdateCheckOnStart(false)
+            prefs.edit().putBoolean(KEY_UPDATE_CHECK_OFF, true).apply()
         }
         if (prefs.getBoolean(KEY_APPLIED, false)) return
         if (settings.customAccent.first().isBlank()) settings.setCustomAccent(ACCENT_HEX)
