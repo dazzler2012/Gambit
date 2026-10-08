@@ -14,6 +14,5 @@
     <string name="gambit_date_time" translatable="false">%1$s, %2$s</string>
 
     <!-- More → About -->
-    <string name="gambit_about_title" translatable="false">Gambit — a private family build of OwnTV</string>
-    <string name="gambit_about_credits" translatable="false">Built on OwnTV by ahXN00 (GPL-3.0), with features from TuvoraTV by paradox-kush, built on NuvioTV by NuvioMedia (both GPL-3.0). Not affiliated with TiviMate. Full credits and icon licences: CREDITS.md in the source.</string>
+    <string name="gambit_about_credits" translatable="false">Built on OwnTV by ahXN00, with features from TuvoraTV by paradox-kush and NuvioTV by NuvioMedia — all GPL-3.0.</string>
 </resources>
