@@ -227,18 +227,18 @@ internal fun Modifier.gambitNowLine(): Modifier = drawBehind {
 /** A channel's label: the playlist dot (several playlists only), the number, the logo as it is, the name in bold. */
 @Composable
 internal fun GambitChannelLabel(channel: ChannelEntity, name: String, dot: Color?, numberWidth: Dp, modifier: Modifier = Modifier) {
-    Row(modifier.padding(start = 8.mpx), horizontalArrangement = Arrangement.spacedBy(14.mpx), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier.padding(start = 8.mpx), horizontalArrangement = Arrangement.spacedBy(10.mpx), verticalAlignment = Alignment.CenterVertically) {
         if (dot != null) Box(Modifier.size(7.mpx).background(dot, RoundedCornerShape(50)))
         Text(
             channel.number?.toString().orEmpty(),
-            style = stageText(24, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Text,
-            // EpgScreen sizes [numberWidth] for its 17 px digits; these are 24.
-            maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(numberWidth * 1.45f),
+            style = stageText(20, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Text,
+            // EpgScreen sizes [numberWidth] for its 17 px digits; these are 20.
+            maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(numberWidth * 1.2f),
         )
-        ChannelLogoTile(logoUrl = channel.displayLogoUrl, modifier = Modifier.size(84.mpx, 52.mpx), fill = Color.Transparent) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { OwnTVIcon(OwnTVIcon.LIVE_TV, tint = GambitColors.Dim, modifier = Modifier.size(26.mpx)) }
+        ChannelLogoTile(logoUrl = channel.displayLogoUrl, modifier = Modifier.size(64.mpx, 40.mpx), fill = Color.Transparent) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { OwnTVIcon(OwnTVIcon.LIVE_TV, tint = GambitColors.Dim, modifier = Modifier.size(22.mpx)) }
         }
-        Text(name, style = stageText(24, 700), color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Text(name, style = stageText(22, 700), color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
     }
 }
 

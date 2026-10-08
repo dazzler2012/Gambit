@@ -448,7 +448,7 @@ fun EpgScreen(
                     programme = shown,
                     fallbackTitle = chName,
                     now = liveNow,
-                    modifier = Modifier.padding(start = 46.mpx, top = 8.mpx).widthIn(max = 1080.mpx),
+                    modifier = Modifier.padding(start = 46.mpx, top = 76.mpx).widthIn(max = 1080.mpx),
                 )
             }
             // The key hints at the bottom right of the top area, level with the video's bottom edge (owner, 2026-10-01).
