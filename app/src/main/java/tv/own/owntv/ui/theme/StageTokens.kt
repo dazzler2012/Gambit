@@ -9,6 +9,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import tv.own.owntv.gambit.ui.theme.GambitLook
+import tv.own.owntv.gambit.ui.theme.gambitStageAccent
 
 /**
  * Design tokens of the Stage redesign, copied from the frozen mockup (`future-plan/ui-audit-227`,
@@ -71,6 +73,7 @@ val stageAccent: StageAccent
     @Composable
     @ReadOnlyComposable
     get() = OwnTVTheme.colors.let { StageAccent(it.primary, it.onPrimary, it.focusBorder) }
+        .let { if (GambitLook.FlatFocus) gambitStageAccent(it) else it } // Gambit: white text on focus fills
 
 /**
  * Stage type: a mockup size and weight in the user's main font (Plus Jakarta Sans by default).
