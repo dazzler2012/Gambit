@@ -22,6 +22,8 @@ import tv.own.owntv.ui.theme.mpx
 object GambitLook {
     /** Every Stage focus treatment becomes a flat fill (see [gambitFocusDecor]). */
     const val FlatFocus = true
+    /** OwnTV's in-app logo and wordmark are drawn as Gambit's (see gambit/ui/brand). */
+    const val Brand = true
 }
 
 object GambitColors {
