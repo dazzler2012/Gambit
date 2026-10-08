@@ -235,6 +235,15 @@ If your language is already available, contribute interface translations across 
 
 ## 🙏 Credits
 
+### 🍴 Gambit
+
+This repository is **Gambit**, a private family build of OwnTV (GPL-3.0). It is built on
+[OwnTV](https://github.com/ahXN00/OwnTV) by ahXN00, and ports features from
+[TuvoraTV](https://github.com/paradox-kush/TuvoraTV) by paradox-kush, itself built on
+[NuvioTV](https://github.com/tapframe/NuvioTV) by NuvioMedia — all GPL-3.0. Gambit is not affiliated
+with TiviMate and contains none of its code or assets. Full list, including icon sources and licences:
+[CREDITS.md](CREDITS.md).
+
 <img src="extras/partner-logos/Weblate_logo.svg" alt="Weblate" width="200">
 
 OwnTV speaks 26 languages because people translate it on
