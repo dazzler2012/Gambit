@@ -849,6 +849,8 @@
 2	technical	app/src/main/java/tv/own/owntv/features/update/UpdateDialog.kt	-
 2	technical	app/src/main/java/tv/own/owntv/features/update/UpdateDialog.kt	•
 1	technical	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	#2E5A2E
+1	log	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	Gambit
+1	log	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	Gambit defaults not applied; will retry on next start
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	defaults_v1
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	gambit
 1	locale	app/src/main/java/tv/own/owntv/gambit/ui/guide/GambitGuide.kt	EEEdMMM

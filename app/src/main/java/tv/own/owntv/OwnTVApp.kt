@@ -132,6 +132,7 @@ class OwnTVApp : Application(), SingletonImageLoader.Factory, androidx.work.Conf
                     tv.own.owntv.core.theme.GlassConfig(tv.own.owntv.ui.theme.ALL_GLASS_SURFACES).toBitmask(),
                 )
             }
+            runCatching { tv.own.owntv.gambit.GambitDefaults.applyOnce(this@OwnTVApp, GlobalContext.get().get()) } // Gambit
         }
         // NOTE: cold start does ZERO heavy DB work. Index + ANALYZE maintenance is piggy-backed onto the
         // operation that actually changes the data — ImportFinalizer.finalize() for normal re-syncs, the
