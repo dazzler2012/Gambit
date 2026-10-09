@@ -205,6 +205,7 @@ fun EpgScreen(
     val playlistMarks by liveVm.playlistMarks.collectAsStateWithLifecycle()
     val livePreviewSetting by liveVm.livePreviewEnabled.collectAsStateWithLifecycle()
     val previewChannel by liveVm.previewChannel.collectAsStateWithLifecycle()
+    val gambitTunedId by liveVm.gambitTunedId.collectAsStateWithLifecycle() // Gambit: the ▶ on the playing channel
     val previewArmed by liveVm.previewArmed.collectAsStateWithLifecycle()
 
     // Live TV's Guide view shows Live TV's own category; the TV Guide keeps its own choice.
@@ -556,6 +557,7 @@ fun EpgScreen(
                                     channel = channel,
                                     name = rowName(channel),
                                     dot = playlistMarks[channel.sourceId]?.color,
+                                    playing = channel.id == gambitTunedId, // Gambit
                                     labelWidth = labelW,
                                     numberWidth = numberWidth,
                                     windowStart = state.windowStart,
@@ -749,6 +751,7 @@ private fun GuideRow(
     channel: ChannelEntity,
     name: String,
     dot: Color?,
+    playing: Boolean, // Gambit: the ▶ on the playing channel
     labelWidth: androidx.compose.ui.unit.Dp,
     numberWidth: androidx.compose.ui.unit.Dp,
     windowStart: Long,
@@ -785,7 +788,7 @@ private fun GuideRow(
     LaunchedEffect(focused, cursorTime, programmes) { if (focused) onShow(programmeAt(programmes, cursorTime)) }
     val rowSelected = focused && !cellMode
     Row(Modifier.fillMaxWidth().height(GuideGridDefaults.RowHeight), verticalAlignment = Alignment.CenterVertically) {
-        GambitChannelLabel(channel, name, dot, numberWidth = numberWidth, modifier = Modifier.width(labelWidth)) // Gambit: was GuideChannelLabel
+        GambitChannelLabel(channel, name, dot, numberWidth = numberWidth, playing = playing, modifier = Modifier.width(labelWidth)) // Gambit: was GuideChannelLabel
         Box(
             Modifier
                 .weight(1f)

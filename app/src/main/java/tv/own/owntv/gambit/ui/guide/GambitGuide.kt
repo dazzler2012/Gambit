@@ -226,9 +226,12 @@ internal fun Modifier.gambitNowLine(): Modifier = drawBehind {
     drawRect(GambitColors.NowLine, Offset((size.width - w) / 2f, 0f), Size(w, size.height))
 }
 
-/** A channel's label: the playlist dot (several playlists only), the number, the logo as it is, the name in bold. */
+/**
+ * A channel's label: the playlist dot (several playlists only), the number, the logo as it is, the name in
+ * bold, and a ▶ in the accent at the end when it is the channel playing.
+ */
 @Composable
-internal fun GambitChannelLabel(channel: ChannelEntity, name: String, dot: Color?, numberWidth: Dp, modifier: Modifier = Modifier) {
+internal fun GambitChannelLabel(channel: ChannelEntity, name: String, dot: Color?, numberWidth: Dp, modifier: Modifier = Modifier, playing: Boolean = false) {
     Row(modifier.padding(start = 8.mpx), horizontalArrangement = Arrangement.spacedBy(10.mpx), verticalAlignment = Alignment.CenterVertically) {
         if (dot != null) Box(Modifier.size(7.mpx).background(dot, RoundedCornerShape(50)))
         Text(
@@ -241,6 +244,7 @@ internal fun GambitChannelLabel(channel: ChannelEntity, name: String, dot: Color
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { OwnTVIcon(OwnTVIcon.LIVE_TV, tint = GambitColors.Dim, modifier = Modifier.size(22.mpx)) }
         }
         Text(name, style = stageText(22, 700), color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        if (playing) OwnTVIcon(OwnTVIcon.PLAY, tint = stageAccent.accent, modifier = Modifier.padding(end = 12.mpx).size(22.mpx), filled = true)
     }
 }
 
