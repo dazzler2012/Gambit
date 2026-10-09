@@ -297,6 +297,11 @@ class LiveViewModel(
         .map { c -> c.sourceNames.takeIf { it.size > 1 } ?: emptyMap() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
+    /** Gambit: every active Live source's name, even with one playlist — the in-player list header. */
+    val sourceNames: StateFlow<Map<Long, String>> = ctx
+        .map { it.sourceNames }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
     /**
      * The Stage playlist mark per source (decision D4), coloured by the playlist's position in the
      * profile's list — the order the playlist switcher uses. Empty with one playlist, like [providerNames].

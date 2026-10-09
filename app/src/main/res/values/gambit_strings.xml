@@ -17,6 +17,9 @@
     <string name="gambit_channel_list_header" translatable="false">%1$s  •  %2$s</string>
     <string name="gambit_channel_number_name" translatable="false">%1$s  %2$s</string>
 
+    <!-- Exit pop-up and Settings exit row: overrides the core library's "Exit OwnTV?" -->
+    <string name="content_exit_owntv" translatable="false">Exit Gambit?</string>
+
     <!-- More → About -->
     <string name="gambit_about_credits" translatable="false">Built on OwnTV by ahXN00, with features from TuvoraTV by paradox-kush and NuvioTV by NuvioMedia — all GPL-3.0.</string>
 </resources>
