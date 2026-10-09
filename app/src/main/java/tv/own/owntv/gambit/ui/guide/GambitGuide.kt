@@ -109,11 +109,13 @@ internal fun GambitProgrammeBlock(
     fallbackTitle: String,
     now: Long,
     modifier: Modifier = Modifier,
+    titleSize: Int = 44,
+    descriptionLines: Int = 2,
 ) {
     val formatTime = rememberSystemTimeFormatter()
     Column(modifier) {
         Text(
-            programme?.title ?: fallbackTitle, style = stageText(44, 700), color = GambitColors.Text,
+            programme?.title ?: fallbackTitle, style = stageText(titleSize, 700), color = GambitColors.Text,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
         if (programme == null) {
@@ -154,7 +156,7 @@ internal fun GambitProgrammeBlock(
         programme.description?.takeIf { it.isNotBlank() }?.let {
             Text(
                 it, style = stageText(24, 400).copy(lineHeight = (24 * 1.35f).mpxSp),
-                color = GambitColors.Muted, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                color = GambitColors.Muted, maxLines = descriptionLines, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 14.mpx).widthIn(max = 1100.mpx),
             )
         }

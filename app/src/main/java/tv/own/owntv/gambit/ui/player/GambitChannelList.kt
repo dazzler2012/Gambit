@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -112,10 +113,16 @@ internal fun GambitChannelListPanel(
     onOpenCategories: (() -> Unit)?,
     active: Boolean,
     modifier: Modifier = Modifier,
+    onFocusChannel: ((ChannelEntity) -> Unit)? = null,
+    onOpenSchedule: (() -> Unit)? = null,
+    focusId: Long? = null,
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val dismissDirection = if (alignEnd) HorizontalDirection.END else HorizontalDirection.START
     val currentIndex = remember(channels, currentId) { channels.indexOfFirst { it.id == currentId }.coerceAtLeast(0) }
+    // Where focus lands when the list takes it: [focusId] (the channel the schedule was opened from)
+    // while it is still in the list, otherwise the playing channel.
+    val focusTarget = focusId?.takeIf { id -> channels.any { it.id == id } } ?: channels.getOrNull(currentIndex)?.id
     val listState = rememberLazyListState()
     val focusCurrent = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { listState.scrollToItem(currentIndex) } }
@@ -123,9 +130,7 @@ internal fun GambitChannelListPanel(
     BackHandler(enabled = active) { onDismiss() }
     // Progress moves on the minute; nothing here needs to be finer than that.
     val now by produceState(System.currentTimeMillis()) { while (true) { delay(30_000); value = System.currentTimeMillis() } }
-    val listTitle = title ?: stringResource(R.string.content_channel_overlay_title)
-    val header = channels.firstOrNull()?.let { providerNames[it.sourceId] }
-        ?.let { stringResource(R.string.gambit_channel_list_header, it, listTitle) } ?: listTitle
+    val header = gambitListHeader(channels.firstOrNull(), title, providerNames)
 
     Column(
         modifier
@@ -134,8 +139,13 @@ internal fun GambitChannelListPanel(
             .background(GambitPanelFill)
             .focusProperties { canFocus = active }
             .onPreviewKeyEvent { e ->
-                if (active && e.type == KeyEventType.KeyDown && e.key.horizontalDirection(layoutDirection) == dismissDirection) {
+                if (!active || e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                val direction = e.key.horizontalDirection(layoutDirection)
+                if (direction == dismissDirection) {
                     if (!alignEnd && onOpenCategories != null) onOpenCategories() else onDismiss()
+                    true
+                } else if (!alignEnd && direction == HorizontalDirection.END && onOpenSchedule != null) {
+                    onOpenSchedule()
                     true
                 } else false
             },
@@ -157,11 +167,20 @@ internal fun GambitChannelListPanel(
                     now = now,
                     showNumber = showNumbers,
                     onClick = { onSelect(ch) },
-                    modifier = if (ch.id == channels.getOrNull(currentIndex)?.id) Modifier.focusRequester(focusCurrent) else Modifier,
+                    modifier = (if (ch.id == focusTarget) Modifier.focusRequester(focusCurrent) else Modifier)
+                        .onFocusChanged { if (it.isFocused) onFocusChannel?.invoke(ch) },
                 )
             }
         }
     }
+}
+
+/** "vocotv  •  ENTERTAINMENT | UK" — the playlist's name only when there is one to show. */
+@Composable
+internal fun gambitListHeader(channel: ChannelEntity?, title: String?, providerNames: Map<Long, String>): String {
+    val listTitle = title ?: stringResource(R.string.content_channel_overlay_title)
+    return channel?.let { providerNames[it.sourceId] }
+        ?.let { stringResource(R.string.gambit_channel_list_header, it, listTitle) } ?: listTitle
 }
 
 @Composable

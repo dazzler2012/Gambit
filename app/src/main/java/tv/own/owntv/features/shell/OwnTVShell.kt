@@ -1806,6 +1806,8 @@ fun OwnTVShell(
                         showNumbers = directTuneEnabled,
                         providerNames = gambitSourceNames,
                         modifier = Modifier.fillMaxSize(),
+                        loadSchedule = liveVm::gambitSchedule, // Gambit: the schedule column
+                        loadDescription = liveVm::programmeDescription,
                     )
                 }
                 // Right — recently watched, to hop straight back to the previous channel.

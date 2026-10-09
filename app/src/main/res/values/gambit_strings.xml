@@ -17,6 +17,10 @@
     <string name="gambit_channel_list_header" translatable="false">%1$s  •  %2$s</string>
     <string name="gambit_channel_number_name" translatable="false">%1$s  %2$s</string>
 
+    <!-- In-player schedule column: day headings -->
+    <string name="gambit_schedule_yesterday" translatable="false">Yesterday</string>
+    <string name="gambit_schedule_tomorrow" translatable="false">Tomorrow</string>
+
     <!-- Exit pop-up and Settings exit row: overrides the core library's "Exit OwnTV?" -->
     <string name="content_exit_owntv" translatable="false">Exit Gambit?</string>
 

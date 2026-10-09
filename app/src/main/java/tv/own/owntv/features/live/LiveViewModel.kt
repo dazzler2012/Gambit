@@ -297,11 +297,6 @@ class LiveViewModel(
         .map { c -> c.sourceNames.takeIf { it.size > 1 } ?: emptyMap() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
-    /** Gambit: every active Live source's name, even with one playlist — the in-player list header. */
-    val sourceNames: StateFlow<Map<Long, String>> = ctx
-        .map { it.sourceNames }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
-
     /**
      * The Stage playlist mark per source (decision D4), coloured by the playlist's position in the
      * profile's list — the order the playlist switcher uses. Empty with one playlist, like [providerNames].
@@ -468,6 +463,26 @@ class LiveViewModel(
         .onEach { if (it.index > 0) { epgReader.clearCache(); epgRefresh.value++; clearNowPlaying() } }
         .map { it.value }
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    // ---- Gambit ---------------------------------------------------------------------------------
+
+    /** Gambit: every active Live source's name, even with one playlist — the in-player list header. */
+    val sourceNames: StateFlow<Map<Long, String>> = ctx
+        .map { it.sourceNames }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /** Gambit: the guide's own per-channel read, for the in-player schedule column. */
+    private val gambitGuideReader by lazy {
+        tv.own.owntv.core.live.GuideReader(
+            epgDao, org.koin.core.context.GlobalContext.get().get<tv.own.owntv.core.epg.EpgSourceStore>(), sourceDao, epgReader,
+        )
+    }
+
+    /** Gambit: one channel's programmes between [fromMs] and [toMs] (descriptions are fetched on demand). */
+    suspend fun gambitSchedule(ch: ChannelEntity, fromMs: Long, toMs: Long): List<tv.own.owntv.core.database.entity.EpgProgrammeEntity> =
+        gambitGuideReader.row(ch, custom.value, epgOffset.value, fromMs, toMs)
+
+    // ---- end Gambit -----------------------------------------------------------------------------
 
     /** The user's custom combined categories with live member counts — the "Move to…" dialog's list. */
     val moveTargets: StateFlow<List<MoveTarget>> = combine(ctx, custom) { c, cust -> c to cust }
