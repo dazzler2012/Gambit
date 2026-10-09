@@ -21,6 +21,9 @@
     <string name="gambit_schedule_yesterday" translatable="false">Yesterday</string>
     <string name="gambit_schedule_tomorrow" translatable="false">Tomorrow</string>
 
+    <!-- Live info bar: how far behind live a rewound channel is, "−12:05" -->
+    <string name="gambit_behind_live" translatable="false">−%1$d:%2$02d</string>
+
     <!-- Exit pop-up and Settings exit row: overrides the core library's "Exit OwnTV?" -->
     <string name="content_exit_owntv" translatable="false">Exit Gambit?</string>
 

@@ -433,6 +433,12 @@ fun OwnTVShell(
         value = runCatching { liveVm.historyChannels() }.getOrDefault(emptyList())
     }
     val historyNowPlaying = overlayNowPlaying // one shared map; the history rail adds to it below
+    // Gambit: recently watched channels for the info bar's tiles (not the one playing), re-read after a tune.
+    val gambitRecent by produceState(emptyList<ChannelEntity>(), previewChannel?.id) {
+        val playing = previewChannel?.id
+        value = runCatching { liveVm.historyChannels() }.getOrDefault(emptyList()).filter { it.id != playing }.take(12)
+    }
+    LaunchedEffect(gambitRecent) { if (gambitRecent.isNotEmpty()) liveVm.ensureNowPlaying(gambitRecent) }
     LaunchedEffect(historyChannels) { liveVm.ensureNowPlaying(historyChannels) }
     // Batch 7 — the single most-recent resumable item, surfaced as a shared top-bar "Continue" chip.
     val continueTarget by homeVm.continueTarget.collectAsStateWithLifecycle()
@@ -1645,6 +1651,20 @@ fun OwnTVShell(
                     // "End of programme" only at the live edge: rewound, the programme on air is not the one being watched.
                     sleepProgrammeEndMs = if (isTunedLive && !timeshifted) { { liveVm.nowNext.value?.now?.stopMs } } else null,
                     liveLeftRightRewinds = liveLeftRightRewinds,
+                    // Gambit: the info bar for live channels.
+                    gambitLiveInfo = if (isTunedLive) {
+                        tv.own.owntv.gambit.ui.player.GambitLiveInfo(
+                            channel = previewChannel,
+                            header = tv.own.owntv.gambit.ui.player.gambitListHeader(previewChannel, zapOverlayTitle, gambitSourceNames),
+                            showNumber = directTuneEnabled,
+                            nowNext = liveVm.nowNext,
+                            recent = gambitRecent,
+                            recentProgrammes = overlayProgrammes,
+                            onOpenGuide = { exitPlayer(); onSelectSection(MainSection.EPG) },
+                            onOpenHistory = { showHistoryList = true },
+                            onTune = { liveVm.ensurePlaying(it) },
+                        )
+                    } else null,
                     timeshiftOffsetSec = if (isTunedLive) { { timeshiftOffsetState.value } } else null,
                     onTuneToNumber = if (directTuneEnabled && isTunedLive && isLiveStream && !timeshifted && previewChannel != null) liveVm::tuneByNumber else null,
                     directTuneContextKey = previewChannel?.id ?: 0L,

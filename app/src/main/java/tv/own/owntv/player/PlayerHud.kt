@@ -216,6 +216,9 @@ fun PlayerHud(
     // N6 — Settings → "Left and right rewind live TV": with the controls hidden, Left/Right on a
     // catch-up channel scrub instead of opening the lists. Films always seek.
     liveLeftRightRewinds: Boolean = false,
+    // Gambit: the playing live channel for the info bar; non-null draws it in place of the top strip,
+    // centre controls and dock on live channels.
+    gambitLiveInfo: tv.own.owntv.gambit.ui.player.GambitLiveInfo? = null,
     modifier: Modifier = Modifier,
 ) {
     // T14 — nothing that ticks is read in this root scope: with the controls hidden it used to recompose
@@ -631,7 +634,20 @@ fun PlayerHud(
         // stop button one stray D-pad press from the middle of a programme is not a kindness.
         RecordingBadge(modifier = Modifier.align(Alignment.TopEnd))
 
-        if (controlsVisible) {
+        // Gambit: live channels get the info bar in TiviMate's layout; an error keeps OwnTV's chrome.
+        val gambitBar = gambitLiveInfo?.takeIf { isLive && error == null }
+        if (controlsVisible && gambitBar != null) {
+            tv.own.owntv.gambit.ui.player.GambitInfoBar(
+                info = gambitBar,
+                chips = streamChips.ifEmpty { listOfNotNull(videoRes) },
+                timeshiftOffsetSec = timeshiftOffset,
+                onScrub = onScrubLive,
+                scrubStepSec = LIVE_SCRUB_STEP_SEC,
+                onGoToLive = onGoToLive,
+                firstFocus = playFocus,
+                timelineFocus = seekFocus,
+            )
+        } else if (controlsVisible) {
             // Scrims: a FLAT semi-transparent panel behind the controls, feathered to transparent only at
             // the inner edge. A pure gradient faded out exactly where the chips and the Now/Next text sit,
             // so those washed out on bright scenes; a hard-edged band would instead draw a visible seam
