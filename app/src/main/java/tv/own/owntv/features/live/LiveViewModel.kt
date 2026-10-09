@@ -485,6 +485,20 @@ class LiveViewModel(
     /** Gambit: the channel last tuned to play, for the guide's ▶ ([previewChannel] follows the guide's cursor). */
     private val _gambitTunedId = MutableStateFlow<Long?>(null)
     val gambitTunedId: StateFlow<Long?> = _gambitTunedId.asStateFlow()
+    private val gambitContext: android.content.Context by lazy { org.koin.core.context.GlobalContext.get().get() }
+
+    /** Gambit: what was tuned in an earlier run, so the ▶ is there from the start. */
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            val saved = tv.own.owntv.gambit.GambitLastTuned.read(gambitContext) ?: return@launch
+            _gambitTunedId.compareAndSet(null, saved)
+        }
+    }
+
+    private fun gambitNoteTuned(channelId: Long) {
+        _gambitTunedId.value = channelId
+        viewModelScope.launch(Dispatchers.IO) { tv.own.owntv.gambit.GambitLastTuned.write(gambitContext, channelId) }
+    }
 
     // ---- end Gambit -----------------------------------------------------------------------------
 
@@ -870,10 +884,7 @@ class LiveViewModel(
             val savedId = settings.lastLiveChannelId.first()
             if (savedId > 0 && _previewChannel.value == null) {
                 ctx.first { it.profileId >= 0 }
-                channelDao.getById(savedId)?.let {
-                    if (_previewChannel.value == null) _previewChannel.value = it
-                    if (_gambitTunedId.value == null) _gambitTunedId.value = it.id // Gambit: the guide's ▶ from the start
-                }
+                channelDao.getById(savedId)?.let { if (_previewChannel.value == null) _previewChannel.value = it }
             }
         }
     }
@@ -1447,7 +1458,7 @@ class LiveViewModel(
         // carries a licence URL, so the external player would open it and fail immediately.
         if (externalPlayerOn.value && channel.drmConfig == null) { playExternal(channel); return }
         _previewChannel.value = channel
-        _gambitTunedId.value = channel.id // Gambit: the guide's ▶
+        gambitNoteTuned(channel.id) // Gambit: the guide's ▶
         clearTimeshift() // normal live = not timeshifted
         _catchupActive.value = false // tuning live ends any archive playback the HUD was showing
         // Core routes it (DRM, the pin, a learned panel refusal, the playlist, the setting), arms the
