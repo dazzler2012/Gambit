@@ -22,14 +22,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -103,8 +109,9 @@ internal fun GambitInfoBar(
     onGoToLive: (() -> Unit)?,
     firstFocus: FocusRequester,
     timelineFocus: FocusRequester,
+    menu: List<GambitMenuItem> = emptyList(),
 ) {
-    Box(Modifier.fillMaxSize()) { InfoBarContent(info, chips, timeshiftOffsetSec, onScrub, scrubStepSec, onGoToLive, firstFocus, timelineFocus) }
+    Box(Modifier.fillMaxSize()) { InfoBarContent(info, chips, timeshiftOffsetSec, onScrub, scrubStepSec, onGoToLive, firstFocus, timelineFocus, menu) }
 }
 
 @Composable
@@ -117,6 +124,7 @@ private fun BoxScope.InfoBarContent(
     onGoToLive: (() -> Unit)?,
     firstFocus: FocusRequester,
     timelineFocus: FocusRequester,
+    menu: List<GambitMenuItem> = emptyList(),
 ) {
     val accent = stageAccent.accent
     val formatTime = rememberSystemTimeFormatter()
@@ -125,6 +133,14 @@ private fun BoxScope.InfoBarContent(
     val programme = epg?.now?.takeIf { now < it.stopMs }
     val next = epg?.next ?: epg?.upcoming?.firstOrNull { it.startMs >= (programme?.stopMs ?: now) }
     val channel = info.channel
+    // Down from the tiles opens the menu row in place of the bottom block; Up comes back to the tiles.
+    var menuOpen by remember { mutableStateOf(false) }
+    var menuIndex by remember { mutableIntStateOf(0) }
+    var menuWasOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(menuOpen) {
+        if (menuOpen) menuWasOpen = true
+        else if (menuWasOpen) runCatching { firstFocus.requestFocus() }
+    }
 
     // Scrims: a light band behind the top line, a deep one behind the bottom block.
     Box(
@@ -151,7 +167,19 @@ private fun BoxScope.InfoBarContent(
         )
     }
 
-    Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(bottom = 40.mpx)) {
+    if (menuOpen && menu.isNotEmpty()) {
+        GambitMenuRow(
+            items = menu,
+            focus = firstFocus,
+            lastIndex = menuIndex,
+            onFocusIndex = { menuIndex = it },
+            onUp = { menuOpen = false },
+            modifier = Modifier.align(Alignment.BottomStart).padding(bottom = 40.mpx),
+        )
+        return
+    }
+
+    Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(bottom = 16.mpx)) {
         // Logo, then the programme lines.
         Row(Modifier.padding(start = 80.mpx, end = 80.mpx), verticalAlignment = Alignment.CenterVertically) {
             ChannelLogoTile(logoUrl = channel?.displayLogoUrl, modifier = Modifier.size(250.mpx, 170.mpx), fill = Color.Transparent) {
@@ -227,7 +255,9 @@ private fun BoxScope.InfoBarContent(
 
         // Tiles: TV guide, History, then the recently watched channels.
         LazyRow(
-            modifier = Modifier.fillMaxWidth().padding(top = 18.mpx),
+            modifier = Modifier.fillMaxWidth().padding(top = 18.mpx).onPreviewKeyEvent { e ->
+                if (menu.isNotEmpty() && e.type == KeyEventType.KeyDown && e.key == Key.DirectionDown) { menuOpen = true; true } else false
+            },
             contentPadding = PaddingValues(horizontal = 64.mpx),
             horizontalArrangement = Arrangement.spacedBy(14.mpx),
         ) {
@@ -241,16 +271,36 @@ private fun BoxScope.InfoBarContent(
                 ChannelTile(ch, info.recentProgrammes[ch.id]?.takeIf { now < it.stopMs }, now, accent) { info.onTune(ch) }
             }
         }
+        // ⌄ — the menu row is below.
+        if (menu.isNotEmpty()) {
+            Box(Modifier.fillMaxWidth().padding(top = 6.mpx), contentAlignment = Alignment.Center) {
+                OwnTVIcon(OwnTVIcon.CHEVRON_DOWN, tint = GambitColors.Muted, modifier = Modifier.size(30.mpx))
+            }
+        }
     }
 }
 
 private val TileWidth = 236.mpx
 private val TileHeight = 180.mpx
 
-/** OK (centre, Enter) on key up, the way the rest of Gambit's lists take it. */
-private fun Modifier.onOk(action: () -> Unit): Modifier = onKeyEvent { e ->
-    val ok = e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter
-    if (ok && e.type == KeyEventType.KeyUp) { action(); true } else ok
+/**
+ * OK (centre, Enter) on release — but only a release whose press this element saw. The press that opens
+ * the info bar lands before focus does, so without this its release clicked the first tile (TV guide).
+ * Losing focus forgets a half-made press.
+ */
+@Composable
+internal fun Modifier.gambitOnOk(action: () -> Unit): Modifier {
+    var pressed by remember { mutableStateOf(false) }
+    return onFocusChanged { if (!it.isFocused) pressed = false }
+        .onKeyEvent { e ->
+            val ok = e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter
+            when {
+                !ok -> false
+                e.type == KeyEventType.KeyDown -> { pressed = true; true }
+                e.type == KeyEventType.KeyUp -> { if (pressed) { pressed = false; action() }; true }
+                else -> true
+            }
+        }
 }
 
 @Composable
@@ -260,7 +310,7 @@ private fun ActionTile(icon: OwnTVIcon, label: String, accent: Color, onClick: (
     Column(
         modifier.size(TileWidth, TileHeight)
             .background(if (focused) gambitFocusFill(accent) else GambitPanelFill, RoundedCornerShape(10.mpx))
-            .onOk(onClick)
+            .gambitOnOk(onClick)
             .focusable(interactionSource = interaction),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -277,7 +327,7 @@ private fun ChannelTile(channel: ChannelEntity, programme: XtEpgEntry?, now: Lon
     Column(
         Modifier.size(TileWidth, TileHeight)
             .background(if (focused) gambitFocusFill(accent) else GambitPanelFill, RoundedCornerShape(10.mpx))
-            .onOk(onClick)
+            .gambitOnOk(onClick)
             .focusable(interactionSource = interaction)
             .padding(horizontal = 14.mpx, vertical = 14.mpx),
         horizontalAlignment = Alignment.CenterHorizontally,

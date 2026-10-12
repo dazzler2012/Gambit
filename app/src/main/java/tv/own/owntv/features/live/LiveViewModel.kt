@@ -495,6 +495,9 @@ class LiveViewModel(
         }
     }
 
+    /** Gambit: the last played channel itself, for the guide to open on its folder and row. */
+    suspend fun gambitTunedChannel(): ChannelEntity? = _gambitTunedId.value?.let { channelDao.getById(it) }
+
     private fun gambitNoteTuned(channelId: Long) {
         _gambitTunedId.value = channelId
         viewModelScope.launch(Dispatchers.IO) { tv.own.owntv.gambit.GambitLastTuned.write(gambitContext, channelId) }

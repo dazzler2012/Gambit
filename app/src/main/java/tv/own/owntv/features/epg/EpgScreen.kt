@@ -314,6 +314,29 @@ fun EpgScreen(
         onRestored()
     }
 
+    // Gambit: the TV Guide opens on the last played channel's folder, scrolled to its row (TiviMate). Focus
+    // moves to that row only if the grid already has it; entered from the menu, focus stays there.
+    LaunchedEffect(Unit) {
+        if (liveMode) return@LaunchedEffect
+        val ch = liveVm.gambitTunedChannel() ?: return@LaunchedEffect
+        ch.categoryId?.let { vm.setCategoryFilter(LiveKey.Folder(it)) }
+        // The folder's own list, then the row: up to 5 s for it to arrive. The list on screen when the
+        // guide opens (All channels, say) holds the channel too, but at another row number.
+        val folder = ch.categoryId
+        val idx = kotlinx.coroutines.withTimeoutOrNull(5_000) {
+            var i = -1
+            while (i < 0) {
+                val rows = state.channels
+                if (!state.loading && (folder == null || rows.all { it.categoryId == folder })) i = rows.indexOfFirst { it.id == ch.id }
+                if (i < 0) delay(100)
+            }
+            i
+        } ?: return@LaunchedEffect
+        focusedRow = idx
+        runCatching { rowListState.scrollToItem((idx - 2).coerceAtLeast(0)) }
+        if (gridHasFocus) focusGrid(idx)
+    }
+
     // --- Overlays --------------------------------------------------------------------------------------
     var menuFor by remember { mutableStateOf<Pair<ChannelEntity, EpgProgrammeEntity>?>(null) }
     var channelMenuFor by remember { mutableStateOf<ChannelEntity?>(null) }
