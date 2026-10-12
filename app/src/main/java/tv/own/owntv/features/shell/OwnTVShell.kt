@@ -1144,6 +1144,17 @@ fun OwnTVShell(
                             onRestored = { restoreFocus = false },
                             modifier = Modifier
                                 .fillMaxSize()
+                                // Gambit: while the side menu is open over the content, More's panel slides out from under it.
+                                .then(
+                                    tv.own.owntv.gambit.ui.rail.gambitBesideOpenRail(
+                                        railOpen = railState == tv.own.owntv.features.shell.components.RailState.OPEN &&
+                                            railSize != tv.own.owntv.core.settings.SettingsRepository.NavSize.COMPACT,
+                                        openWidth = tv.own.owntv.gambit.ui.rail.gambitRailOpenWidth(railSize),
+                                        contentStart = if (navStyle == tv.own.owntv.core.settings.SettingsRepository.NavStyle.DOCKED) {
+                                            tv.own.owntv.features.shell.components.railDockedReserve(navSize)
+                                        } else 0.dp,
+                                    ),
+                                )
                                 .onFocusChanged { if (it.hasFocus) focusedLayer = ShellLayer.CONTENT }
                                 .focusGroup(),
                         )

@@ -10,7 +10,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import tv.own.owntv.ui.theme.ownTvTween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,6 +61,21 @@ fun gambitRailOpenWidth(size: NavSize): Dp = when (size) {
 
 /** The space a docked rail takes from the content: its open width and a gap. */
 fun gambitRailDockedReserve(size: NavSize): Dp = gambitRailOpenWidth(size) + 16.mpx
+
+/**
+ * For a screen with its own panel at its left edge (More): while the open menu lies over the content
+ * ([railOpen]), slide the whole screen over so that panel sits beside the menu — [openWidth] the menu's
+ * open width, [contentStart] where the content area begins, [panelInset] where the panel begins inside it.
+ * A drawing offset only (nothing is laid out again, focus stays put), with the menu's own 320 ms slide.
+ */
+@Composable
+fun gambitBesideOpenRail(railOpen: Boolean, openWidth: Dp, contentStart: Dp, panelInset: Dp = 24.mpx): Modifier {
+    val target = if (railOpen) (openWidth + 16.mpx - contentStart - panelInset).coerceAtLeast(0.mpx) else 0.mpx
+    val px = with(LocalDensity.current) { target.toPx() }
+    val shift by animateFloatAsState(px, ownTvTween(320))
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    return Modifier.graphicsLayer { translationX = if (rtl) -shift else shift }
+}
 
 /** The strip itself: flat #121212 from the top of the screen to the bottom. */
 fun gambitRailPanel(): Modifier = Modifier.background(GambitColors.Rail)
