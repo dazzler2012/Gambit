@@ -23,6 +23,7 @@ object GambitDefaults {
     private const val KEY_APPLIED = "defaults_v1"
     private const val KEY_ACCENT_V2 = "accent_v2"
     private const val KEY_UPDATE_CHECK_OFF = "update_check_off_v1"
+    private const val KEY_NAV = "nav_v1"
 
     /** Light green: readable as text on black. Focus fills darken it (see GambitTokens). */
     const val ACCENT_HEX = "#66BB6A"
@@ -53,6 +54,14 @@ object GambitDefaults {
         if (!prefs.getBoolean(KEY_UPDATE_CHECK_OFF, false)) {
             settings.setUpdateCheckOnStart(false)
             prefs.edit().putBoolean(KEY_UPDATE_CHECK_OFF, true).apply()
+        }
+        // The side menu as TiviMate's: the icon strip at rest, opening over the content while it has
+        // focus (Docked + Compact, Widen on focus = Normal), the screen's full height. Once, and only
+        // where OwnTV's defaults are still in place.
+        if (!prefs.getBoolean(KEY_NAV, false)) {
+            if (settings.navWiden.first() == null) settings.setNavWiden(SettingsRepository.NavSize.NORMAL)
+            if (settings.navLength.first() == SettingsRepository.NavLength.FIT) settings.setNavLength(SettingsRepository.NavLength.FULL)
+            prefs.edit().putBoolean(KEY_NAV, true).apply()
         }
         if (prefs.getBoolean(KEY_APPLIED, false)) return
         if (settings.customAccent.first().isBlank()) settings.setCustomAccent(ACCENT_HEX)

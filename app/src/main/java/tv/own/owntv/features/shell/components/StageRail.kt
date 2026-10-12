@@ -106,7 +106,7 @@ private val NavSize.openWidth get() = when (this) {
 
 /** The space a docked rail takes from the content, from the screen edge: 28 + 84 capsule, 24 + width with names. */
 fun railDockedReserve(size: NavSize) =
-    if (size == NavSize.COMPACT) (28 + 84 + 16).mpx else (24 + size.openWidth + 16).mpx
+    if (size == NavSize.COMPACT) (28 + 84 + 16).mpx else tv.own.owntv.gambit.ui.rail.gambitRailDockedReserve(size) // Gambit: was (24 + size.openWidth + 16).mpx
 
 /**
  * Where content starts below the top-right cluster (34 + its 68 height + a gap) on screens that have not
@@ -178,13 +178,14 @@ fun StageRail(
         }
         if (state == RailState.HIDDEN) RailEdgeGlow(Modifier.align(Alignment.CenterStart))
 
-        val width = if (open) size.openWidth.mpx else 84.mpx
-        val edge = if (open) 24.mpx else 28.mpx
+        // Gambit: TiviMate's flat strip, flush with the screen edge (was the floating capsule).
+        val width = if (open) tv.own.owntv.gambit.ui.rail.gambitRailOpenWidth(size) else tv.own.owntv.gambit.ui.rail.GambitRailClosedWidth
+        val edge = 0.mpx
         Column(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .offset(x = edge)
-                .then(if (full) Modifier.padding(vertical = 24.mpx).fillMaxHeight() else Modifier)
+                .fillMaxHeight() // Gambit: always the screen's height (was only with Length = Full)
                 .width(width)
                 .graphicsLayer {
                     val travel = (width + edge).toPx()
@@ -228,7 +229,7 @@ fun StageRail(
                     true
                 }
                 .focusGroup()
-                .stageGlass(if (open) 34.mpx else 42.mpx, overContent = true)
+                .then(tv.own.owntv.gambit.ui.rail.gambitRailPanel()) // Gambit: was stageGlass
                 .padding(
                     horizontal = if (open) 16.mpx else 0.mpx,
                     vertical = if (open) 22.mpx else 16.mpx,
@@ -236,9 +237,9 @@ fun StageRail(
             horizontalAlignment = if (open) Alignment.Start else Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.mpx),
         ) {
-            RailBrand(open)
+            tv.own.owntv.gambit.ui.rail.GambitRailBrand(open) // Gambit: was RailBrand
             if (nowPlaying != null) {
-                RailItem(
+                tv.own.owntv.gambit.ui.rail.GambitRailItem( // Gambit: was RailItem
                     icon = if (nowPlaying.audioMode) OwnTVIcon.EQ else OwnTVIcon.PLAY,
                     label = stringResource(R.string.shell_now_playing),
                     trailing = if (nowPlaying.audioMode && counts) stringResource(R.string.shell_now_playing_audio) else null,
@@ -248,10 +249,10 @@ fun StageRail(
                     accentIcon = true,
                     onClick = onNowPlaying,
                 )
-                RailSeparator(open)
+                tv.own.owntv.gambit.ui.rail.GambitRailSeparator() // Gambit: was RailSeparator(open)
             }
             items.forEach { section ->
-                RailItem(
+                tv.own.owntv.gambit.ui.rail.GambitRailItem( // Gambit: was RailItem
                     icon = section.stageIcon,
                     label = stringResource(section.labelRes),
                     trailing = if (counts) count(section)?.let { NumberFormat.getIntegerInstance(LocalConfiguration.current.locales[0]).format(it) } else null,
@@ -265,8 +266,8 @@ fun StageRail(
             }
             // Full height: the profile sits at the bottom, after the last separator.
             if (full) Spacer(Modifier.weight(1f))
-            RailSeparator(open)
-            RailProfile(open, profileName, profileLine.takeIf { counts }, avatarId, avatarPath, onSwitchProfile, onPickAvatar)
+            tv.own.owntv.gambit.ui.rail.GambitRailSeparator() // Gambit: was RailSeparator(open)
+            tv.own.owntv.gambit.ui.rail.GambitRailProfile(open, profileName, profileLine.takeIf { counts }, avatarId, avatarPath, onSwitchProfile, onPickAvatar)
         }
     }
 }
