@@ -348,6 +348,12 @@ fun EpgScreen(
     var dayOpen by remember { mutableStateOf(false) }
     var sheetOpen by remember { mutableStateOf(false) }
     var sheetHadFocus by remember { mutableStateOf(false) }
+    // Gambit: hide / move from the category sheet, as Live TV's column — the group whose menu is open,
+    // Live TV's move in progress, and the sheet row focus goes back to when either closes.
+    var gambitGroupMenu by remember { mutableStateOf<tv.own.owntv.features.live.LiveRailItem?>(null) }
+    val gambitGroupMove by liveVm.categoryMoveState.collectAsStateWithLifecycle()
+    var gambitReturnRow by remember { mutableStateOf<Int?>(null) }
+    var gambitMoveKey by remember { mutableStateOf<LiveKey?>(null) }
     var searchOpen by remember { mutableStateOf(false) }
     // The field reports "not focused" when it first attaches; it only closes after it has had focus (playbook 10).
     var searchHadFocus by remember { mutableStateOf(false) }
@@ -652,7 +658,12 @@ fun EpgScreen(
                     scope.launch { runCatching { rowListState.scrollToItem(0) } }
                     focusGrid(0)
                 },
-                onLongSelect = {},
+                // Gambit: Live TV's hide / move menu (was {}), for provider and custom groups only.
+                onLongSelect = { idx ->
+                    railItems.getOrNull(idx)?.takeIf { it.key is LiveKey.Folder || it.key is LiveKey.Custom }?.let { gambitGroupMenu = it }
+                },
+                focusRowIndex = gambitReturnRow,
+                onRowFocused = { gambitReturnRow = null },
                 onNavigateRight = { sheetOpen = false; focusGrid() },
                 focusRequester = sheetFocus,
                 sheetTitle = stringResource(R.string.content_epg_guide_category),
@@ -663,10 +674,56 @@ fun EpgScreen(
                     .fillMaxHeight()
                     .onFocusChanged {
                         // Closes when focus leaves it — not on the "unfocused" report every node gets when it attaches.
-                        if (it.hasFocus) sheetHadFocus = true else if (sheetHadFocus && sheetOpen) sheetOpen = false
+                        if (it.hasFocus) sheetHadFocus = true
+                        else if (sheetHadFocus && sheetOpen && gambitGroupMenu == null && gambitGroupMove == null) sheetOpen = false // Gambit: not while its menu / move is up
                     },
             )
         }
+    }
+
+    // Gambit: the category sheet's hide / move — OwnTV's own menu and move overlay, Live TV's actions.
+    gambitGroupMenu?.let { item ->
+        tv.own.owntv.features.shell.components.CategoryContextMenu(
+            categoryName = item.title.orEmpty(), // a provider or custom group's own name
+            canHide = true,
+            canMove = true,
+            onHide = {
+                gambitGroupMenu = null
+                val row = railItems.indexOfFirst { it.key == item.key }
+                // The guide was showing this group: show All channels rather than an empty grid.
+                if (item.key == categoryKey) { if (liveMode) liveVm.select(LiveKey.All) else vm.setCategoryFilter(null) }
+                liveVm.hideCategory(item.key)
+                // Back to the row now in its place, once the list no longer holds the group.
+                scope.launch {
+                    kotlinx.coroutines.withTimeoutOrNull(1_000) { while (railItems.any { it.key == item.key }) delay(50) }
+                    gambitReturnRow = row.coerceAtMost(railItems.size - 1).coerceAtLeast(0)
+                }
+            },
+            onMove = { gambitMoveKey = item.key; gambitGroupMenu = null; liveVm.enterCategoryMoveMode(item.key) },
+            onDismiss = {
+                gambitGroupMenu = null
+                gambitReturnRow = railItems.indexOfFirst { it.key == item.key }.takeIf { it >= 0 }
+            },
+        )
+    }
+    gambitGroupMove?.let { ms ->
+        tv.own.owntv.ui.components.MoveOrderOverlay(
+            title = stringResource(R.string.content_move),
+            itemNames = ms.items,
+            activeIndex = ms.activeIndex,
+            onMoveUp = liveVm::moveCategoryUp,
+            onMoveDown = liveVm::moveCategoryDown,
+            onCommit = liveVm::commitCategoryMove,
+            onCancel = liveVm::cancelCategoryMove,
+        )
+    }
+    // Gambit: after a move (saved or cancelled), focus back on the moved group in the sheet.
+    LaunchedEffect(gambitGroupMove) {
+        if (gambitGroupMove != null) return@LaunchedEffect
+        val key = gambitMoveKey ?: return@LaunchedEffect
+        gambitMoveKey = null
+        delay(60)
+        gambitReturnRow = railItems.indexOfFirst { it.key == key }.takeIf { it >= 0 }
     }
 
     menuFor?.let { (ch, p) ->
