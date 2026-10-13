@@ -464,7 +464,10 @@ internal fun LiveCategories(
     val setQuery: (String) -> Unit = onSearchQueryChange ?: { localQuery = it }
     val visible = remember(entries, query) {
         val q = query.trim()
-        if (q.isEmpty()) entries.indices.toList() else entries.indices.filter { entries[it].label.contains(q, ignoreCase = true) }
+        // Gambit: the full name shown ("UK | SPORTS") as well as the parsed one ("SPORTS").
+        if (q.isEmpty()) entries.indices.toList() else entries.indices.filter {
+            entries[it].label.contains(q, ignoreCase = true) || entries[it].item.title?.contains(q, ignoreCase = true) == true
+        }
     }
     val rowFocusers = remember(visible.size) { List(visible.size) { FocusRequester() } }
     val searchFocus = remember { FocusRequester() }
@@ -508,7 +511,7 @@ internal fun LiveCategories(
     val a = stageAccent
     Column(
         modifier
-            .then(if (sheet) Modifier.stageGlass(StageRadii.Sheet, overContent = true).padding(horizontal = 16.mpx, vertical = 26.mpx) else Modifier),
+            .then(if (sheet) Modifier.then(tv.own.owntv.gambit.ui.groups.gambitGroupSheetPanel()).padding(horizontal = 16.mpx, vertical = 26.mpx) else Modifier), // Gambit: was stageGlass
     ) {
         if (sheet) {
             Row(
@@ -516,8 +519,9 @@ internal fun LiveCategories(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(sheetTitle, style = stageText(26, 800), color = StageColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                Text(sheetHint, style = stageText(17, 400), color = StageColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 16.mpx))
+                // Gambit: the title first, the hint takes what is left (was the other way round, cutting the title).
+                Text(sheetTitle, style = stageText(26, 800), color = StageColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(sheetHint, style = stageText(17, 400), color = StageColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).padding(start = 16.mpx))
             }
         }
         // Edge-only scrolling, as the channel list (no double step on ▼).
@@ -566,35 +570,23 @@ internal fun LiveCategories(
                 val entry = entries[index]
                 if (index == firstGroup && query.isBlank()) {
                     item(key = "__groups__") {
-                        if (sheet) StageGroupLabel(groupsHeading, sheet = true)
-                        else Text(
-                            groupsHeading, style = stageText(12.5f, 800, 0.13.em), color = StageColors.Dim, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(start = 14.mpx, top = 8.mpx, bottom = 8.mpx),
-                        )
+                        tv.own.owntv.gambit.ui.groups.GambitGroupHeading() // Gambit: the playlist's name (was groupsHeading, "GROUPS · UK")
                     }
                 }
                 item(key = entry.item.key.toString()) {
                     val rowModifier = Modifier.focusRequester(rowFocusers[pos]).then(rightKey)
                         .onFocusChanged { if (it.hasFocus) onRowFocus(index) }
                     val selected = index == selectedIndex
-                    if (sheet) {
-                        StageSheetItem(
-                            text = entry.label,
-                            onClick = { onSelect(index) },
-                            icon = entry.icon,
-                            count = entry.count?.let { tv.own.owntv.ui.components.formatCount(it) },
-                            selected = selected,
-                            maxLines = 2,
-                            tags = if (entry.name?.tags.isNullOrEmpty()) null else { focused ->
-                                entry.name.tags.forEach { StageTag(it, onAccent = if (focused) a.onAccent else null) }
-                            },
-                            trailing = entry.mark?.let { m -> { _ -> StagePlaylistMark(m) } },
-                            onLongClick = { onLongSelect(index) },
-                            modifier = rowModifier,
-                        )
-                    } else {
-                        LiveColumnItem(entry, selected, onClick = { onSelect(index) }, onLongClick = { onLongSelect(index) }, modifier = rowModifier)
-                    }
+                    // Gambit: TiviMate's rows in the sheet and the column alike — the provider's full group name,
+                    // no icon or count (was StageSheetItem / LiveColumnItem, with the name split into name + tags).
+                    tv.own.owntv.gambit.ui.groups.GambitGroupRow(
+                        label = if (entry.name != null) entry.item.title ?: entry.label else entry.label,
+                        selected = selected,
+                        onClick = { onSelect(index) },
+                        onLongClick = { onLongSelect(index) },
+                        modifier = rowModifier,
+                        mark = entry.mark?.color,
+                    )
                 }
             }
         }
