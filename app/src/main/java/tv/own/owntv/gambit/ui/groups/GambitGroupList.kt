@@ -63,7 +63,7 @@ fun GambitGroupRow(
             horizontalArrangement = Arrangement.spacedBy(12.mpx),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(label, style = stageText(26, 400), color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Text(tv.own.owntv.gambit.text.GambitText.decode(label), style = stageText(26, 400), color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             if (mark != null) Box(Modifier.size(8.mpx).background(mark, RoundedCornerShape(50)))
         }
     }

@@ -994,7 +994,7 @@ private fun KeepWatchingRow(
                     title = when (item) {
                         is HeroItem.MovieHero -> item.item.title
                         is HeroItem.SeriesHero -> item.series.name
-                        is HeroItem.LiveHero -> item.channel.name
+                        is HeroItem.LiveHero -> tv.own.owntv.gambit.text.GambitText.decode(item.channel.name) // Gambit: entities decoded
                     },
                     line = keepWatchingLine(item),
                     onClick = { onPlay(item) },

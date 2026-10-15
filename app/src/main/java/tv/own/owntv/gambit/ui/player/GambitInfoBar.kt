@@ -54,6 +54,7 @@ import androidx.tv.material3.Text
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import tv.own.owntv.R
+import tv.own.owntv.gambit.text.shownName
 import tv.own.owntv.core.database.entity.ChannelEntity
 import tv.own.owntv.core.epg.displayLogoUrl
 import tv.own.owntv.core.live.EpgNowNext
@@ -213,7 +214,7 @@ private fun BoxScope.InfoBarContent(
                     }
                     if (channel != null) {
                         Text(
-                            channel.number?.takeIf { info.showNumber }?.let { stringResource(R.string.gambit_channel_number_name, it.toString(), channel.name) } ?: channel.name,
+                            channel.number?.takeIf { info.showNumber }?.let { stringResource(R.string.gambit_channel_number_name, it.toString(), channel.shownName) } ?: channel.shownName,
                             style = stageText(28, 600), color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.padding(start = if (programme != null) 40.mpx else 0.mpx).weight(1f, fill = false),
                         )
@@ -334,7 +335,7 @@ private fun ChannelTile(channel: ChannelEntity, programme: XtEpgEntry?, now: Lon
     ) {
         ChannelLogoTile(logoUrl = channel.displayLogoUrl, modifier = Modifier.size(150.mpx, 96.mpx), fill = Color.Transparent) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(channel.name, style = stageText(22, 600), color = GambitColors.Text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(channel.shownName, style = stageText(22, 600), color = GambitColors.Text, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
         Text(

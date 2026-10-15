@@ -466,7 +466,7 @@ internal fun LiveCategories(
         val q = query.trim()
         // Gambit: the full name shown ("UK | SPORTS") as well as the parsed one ("SPORTS").
         if (q.isEmpty()) entries.indices.toList() else entries.indices.filter {
-            entries[it].label.contains(q, ignoreCase = true) || entries[it].item.title?.contains(q, ignoreCase = true) == true
+            entries[it].label.contains(q, ignoreCase = true) || entries[it].item.title?.let(tv.own.owntv.gambit.text.GambitText::decode)?.contains(q, ignoreCase = true) == true
         }
     }
     val rowFocusers = remember(visible.size) { List(visible.size) { FocusRequester() } }

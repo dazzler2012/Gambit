@@ -141,7 +141,7 @@ private fun GambitCategoryRow(name: String, current: Boolean, onClick: () -> Uni
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
-            name, style = stageText(26, 500),
+            tv.own.owntv.gambit.text.GambitText.decode(name), style = stageText(26, 500),
             color = if (current && !focused) accent else GambitColors.Text,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
         )

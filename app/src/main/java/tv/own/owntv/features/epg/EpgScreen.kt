@@ -707,7 +707,7 @@ fun EpgScreen(
         )
     }
     gambitGroupMove?.let { ms ->
-        tv.own.owntv.ui.components.MoveOrderOverlay(
+        tv.own.owntv.gambit.ui.GambitMoveOverlay( // Gambit: in a popup, over the top bar (was MoveOrderOverlay)
             title = stringResource(R.string.content_move),
             itemNames = ms.items,
             activeIndex = ms.activeIndex,

@@ -1420,7 +1420,7 @@ class LiveViewModel(
             }
             externalPlayerLauncher.launch(
                 url = url,
-                title = channel.name,
+                title = tv.own.owntv.gambit.text.GambitText.decode(channel.name), // Gambit: entities decoded
                 userAgent = source?.userAgent,
                 httpHeaders = SourceOverrides.headersWithReferer(channel.httpHeaders, source),
             )
@@ -1633,7 +1633,7 @@ class LiveViewModel(
             playingCatchupProgramme = programme // …and the anchor auto-play continues from
             releaseForArchive() // catch-up is a VOD-style archive on mpv, not the live ExoPlayer channel
             // isLive=false → seekable archive; isArchive → mid-GOP tolerant (hardware first, software rescue).
-            player.play(url, title = ch.name, subtitle = programme.title, logoUrl = ch.displayLogoUrl, isLive = false, isArchive = true, userAgent = sourceUa, httpHeaders = headersFor(ch))
+            player.play(url, title = tv.own.owntv.gambit.text.GambitText.decode(ch.name) /* Gambit: entities decoded */, subtitle = programme.title, logoUrl = ch.displayLogoUrl, isLive = false, isArchive = true, userAgent = sourceUa, httpHeaders = headersFor(ch))
             // The picture is this programme's own airtime, not the present — drive the "watching" clock
             // from its start, exactly as the rewind path does from the archive's start. The offset stays
             // null: a fixed programme is not the live rewind, so the HUD keeps its VOD chrome.
@@ -1800,7 +1800,7 @@ class LiveViewModel(
         clearLiveOnExo() // archive plays as a VOD-style mpv stream, not the live ExoPlayer channel
         player.play(
             url = url,
-            title = ch.name,
+            title = tv.own.owntv.gambit.text.GambitText.decode(ch.name), // Gambit: entities decoded
             logoUrl = ch.displayLogoUrl,
             isArchive = true,
             userAgent = sourceUa,

@@ -398,7 +398,7 @@ internal fun FavouritesPage(
         }
     }
     move?.let { m ->
-        MoveOrderOverlay(
+        tv.own.owntv.gambit.ui.GambitMoveOverlay( // Gambit: in a popup, over the top bar (was MoveOrderOverlay)
             title = stringResource(R.string.content_move),
             itemNames = m.names,
             activeIndex = m.index,

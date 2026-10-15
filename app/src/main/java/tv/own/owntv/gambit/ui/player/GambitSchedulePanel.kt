@@ -45,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.tv.material3.Text
 import tv.own.owntv.R
+import tv.own.owntv.gambit.text.shownName
 import tv.own.owntv.core.database.entity.ChannelEntity
 import tv.own.owntv.core.database.entity.EpgProgrammeEntity
 import tv.own.owntv.core.epg.displayLogoUrl
@@ -161,7 +162,7 @@ internal fun GambitSchedulePanel(
             }
             Column(Modifier.weight(1f)) {
                 Text(
-                    channel.number?.takeIf { showNumber }?.let { stringResource(R.string.gambit_channel_number_name, it.toString(), channel.name) } ?: channel.name,
+                    channel.number?.takeIf { showNumber }?.let { stringResource(R.string.gambit_channel_number_name, it.toString(), channel.shownName) } ?: channel.shownName,
                     style = stageText(26, 600), color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Text(subtitle, style = stageText(24, 400), color = GambitColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.mpx))

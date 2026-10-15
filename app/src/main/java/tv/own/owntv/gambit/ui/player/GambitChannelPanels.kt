@@ -19,6 +19,7 @@ import tv.own.owntv.core.database.entity.ChannelEntity
 import tv.own.owntv.core.database.entity.EpgProgrammeEntity
 import tv.own.owntv.core.live.LiveKey
 import tv.own.owntv.core.parser.XtEpgEntry
+import tv.own.owntv.gambit.text.shownName
 import tv.own.owntv.ui.theme.mpx
 
 /**
@@ -149,7 +150,7 @@ fun GambitChannelPanels(
         if (showSchedule && shown != null) {
             GambitProgrammeCard(
                 programme = described,
-                fallbackTitle = shown.first.name,
+                fallbackTitle = shown.first.shownName,
                 now = now,
                 modifier = Modifier.align(Alignment.TopEnd).padding(top = 48.mpx, end = 40.mpx),
             )

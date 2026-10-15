@@ -1030,7 +1030,7 @@ fun LiveScreen(
     contextChannel?.let { ch ->
         ChannelContextMenu(
             channel = ch,
-            title = ch.name,
+            title = tv.own.owntv.gambit.text.GambitText.decode(ch.name), // Gambit: entities decoded
             subtitle = listOfNotNull(headerLabel, vm.sourceNameOf(ch.sourceId)).joinToString(" · "),
             isFavorite = favoriteIds.contains(ch.id),
             epgMatchManual = vm.currentEpgMatch(ch) != null,
@@ -1113,7 +1113,7 @@ fun LiveScreen(
 
     // Move mode overlay — intercepts D-pad Up/Down/OK/Back while reordering.
     moveState?.let { ms ->
-        MoveOrderOverlay(
+        tv.own.owntv.gambit.ui.GambitMoveOverlay( // Gambit: in a popup, over the top bar (was MoveOrderOverlay)
             title = stringResource(R.string.content_reorder_channel),
             itemNames = ms.items.map { it.name },
             activeIndex = ms.activeIndex,
@@ -1126,7 +1126,7 @@ fun LiveScreen(
 
     // Category Move mode overlay — intercepts D-pad Up/Down/OK/Back while reordering.
     categoryMoveState?.let { ms ->
-        MoveOrderOverlay(
+        tv.own.owntv.gambit.ui.GambitMoveOverlay( // Gambit: in a popup, over the top bar (was MoveOrderOverlay)
             title = stringResource(R.string.content_move),
             itemNames = ms.items,
             activeIndex = ms.activeIndex,
