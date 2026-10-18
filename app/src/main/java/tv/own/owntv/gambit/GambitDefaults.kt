@@ -25,6 +25,13 @@ object GambitDefaults {
     private const val KEY_UPDATE_CHECK_OFF = "update_check_off_v1"
     private const val KEY_NAV = "nav_v1"
 
+    /**
+     * OwnTV's check for a new version at startup looks at OwnTV's releases, so Gambit never runs it — on
+     * every profile, whatever that profile's own setting says (the setting is per profile, and the one-time
+     * default below only reached the profile active when it ran). Read by OwnTVShell.
+     */
+    const val STARTUP_UPDATE_CHECK = false
+
     /** Light green: readable as text on black. Focus fills darken it (see GambitTokens). */
     const val ACCENT_HEX = "#66BB6A"
     /** The dark green the first Gambit builds set; moved to [ACCENT_HEX] once, by [apply]. */
