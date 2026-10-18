@@ -30,6 +30,10 @@
     <!-- More → About -->
     <string name="gambit_about_credits" translatable="false">Built on OwnTV by ahXN00, with features from TuvoraTV by paradox-kush and NuvioTV by NuvioMedia — all GPL-3.0.</string>
 
+    <!-- Settings → App's tile and group summary, without "updates" (those rows are hidden in Gambit) -->
+    <string name="settings_card_app" translatable="false">Language, startup, network, diagnostics</string>
+    <string name="settings_group_summary_app" translatable="false">Language, startup, network and diagnostics</string>
+
     <!-- Settings rows: a saved value with its reset action, "19 saved · Reset" -->
     <string name="gambit_settings_saved_reset" translatable="false">%1$s · %2$s</string>
 

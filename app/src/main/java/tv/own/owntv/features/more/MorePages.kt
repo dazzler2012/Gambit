@@ -221,7 +221,7 @@ private val SettingsCards = listOf(
     SettingsGroupCard(OwnTVIcon.HEADPHONES, R.string.settings_group_sound_subtitles, R.string.settings_card_sound, 11),
     SettingsGroupCard(OwnTVIcon.LIVE_TV, R.string.settings_live_tv, R.string.settings_card_live, 12),
     SettingsGroupCard(OwnTVIcon.REC, R.string.settings_group_watching_recording, R.string.settings_card_watching, 11),
-    SettingsGroupCard(OwnTVIcon.INFO, R.string.settings_group_app, R.string.settings_card_app, 10),
+    SettingsGroupCard(OwnTVIcon.INFO, R.string.settings_group_app, R.string.settings_card_app, 10 - tv.own.owntv.gambit.ui.settings.GambitHiddenSettingsKeys.size), // Gambit: minus the hidden update-check and app-icon rows
 )
 
 /** The card last opened, so Back from its group lands on it again rather than on the search field. */

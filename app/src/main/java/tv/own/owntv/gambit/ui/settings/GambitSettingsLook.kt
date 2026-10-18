@@ -1,6 +1,7 @@
 package tv.own.owntv.gambit.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.tv.material3.Text
@@ -107,13 +109,17 @@ fun GambitSettingsHeading(text: String, count: Int?, first: Boolean) {
     }
 }
 
-/** On: a light green thumb on a dark green track. Off: a grey thumb on a grey track. */
+/**
+ * On: a light green thumb on a dark green track. Off: a grey thumb on a grey track. The "on" track is
+ * darker than a focused row's fill (which is the accent darkened 55%), so it still shows on a focused row.
+ */
 @Composable
 fun GambitSwitch(on: Boolean) {
     val accent = stageAccent.accent
     Box(
         Modifier.size(56.mpx, 32.mpx)
-            .background(if (on) gambitFocusFill(accent) else Color.White.copy(alpha = 0.14f), RoundedCornerShape(16.mpx)),
+            .background(if (on) lerp(accent, Color.Black, 0.78f) else Color.White.copy(alpha = 0.14f), RoundedCornerShape(16.mpx))
+            .border(1.mpx, if (on) accent.copy(alpha = 0.5f) else Color.Transparent, RoundedCornerShape(16.mpx)),
     ) {
         Box(
             Modifier.offset(x = if (on) 28.mpx else 4.mpx, y = 4.mpx).size(24.mpx)
