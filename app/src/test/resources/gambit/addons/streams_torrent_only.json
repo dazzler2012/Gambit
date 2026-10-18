@@ -1,0 +1,6 @@
+{
+  "streams": [
+    { "name": "T1", "infoHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "fileIdx": 1 },
+    { "name": "T2", "infoHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "sources": ["tracker:udp://tracker.example:1337"] }
+  ]
+}

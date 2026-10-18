@@ -1,0 +1,15 @@
+{
+  "streams": [
+    { "name": "[RD+] Example\n1080p", "title": "Film.2001.1080p.mkv\n💾 2.1 GB",
+      "url": "https://debrid.example/dl/TOKEN-ONE/film.mkv",
+      "behaviorHints": { "bingeGroup": "example|1080p", "filename": "Film.2001.1080p.mkv", "videoSize": 2254857830,
+        "notWebReady": true, "proxyHeaders": { "request": { "User-Agent": "Example/1.0", "Referer": "https://debrid.example/" } } },
+      "subtitles": [ { "id": "en1", "url": "https://subs.example/en.srt", "lang": "eng" }, { "id": "no-url" } ] },
+    { "name": "Example\n720p", "description": "Film.2001.720p.mkv", "url": "http://debrid.example/dl/TOKEN-TWO/film720.mkv" },
+    { "name": "Torrent only", "title": "Film.2001.2160p", "infoHash": "0123456789abcdef0123456789abcdef01234567", "fileIdx": 0 },
+    { "name": "Trailer", "ytId": "abcdefghijk" },
+    { "name": "Website", "externalUrl": "https://site.example/watch" },
+    { "name": "Magnet", "url": "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567" },
+    { "name": "Nothing to play" }
+  ]
+}

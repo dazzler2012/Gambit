@@ -1,0 +1,10 @@
+{
+  "metas": [
+    { "id": "tt0000001", "type": "movie", "name": "First Film", "poster": "https://img.example/1.jpg",
+      "releaseInfo": "2001", "imdbRating": 7.8, "genres": ["Action", "Drama"] },
+    { "id": "tt0000002", "name": "Second Film", "year": 2002, "genres": "Comedy" },
+    { "type": "movie", "name": "No id: dropped" },
+    "not-an-object",
+    { "id": "tt0000003", "type": "movie", "name": null, "poster": "" }
+  ]
+}

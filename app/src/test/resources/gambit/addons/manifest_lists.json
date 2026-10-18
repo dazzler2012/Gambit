@@ -1,0 +1,12 @@
+{
+  "id": "org.example.lists",
+  "version": "2.0.0",
+  "name": "Example Lists",
+  "resources": ["catalog"],
+  "types": ["movie", "series"],
+  "catalogs": [
+    { "type": "movie", "id": "list.watchlist", "name": "Watchlist", "extraSupported": ["skip", "genre"] },
+    { "type": "series", "id": "list.trending", "name": "Trending", "extraSupported": ["skip", "search"], "extraRequired": ["search"] },
+    { "type": "movie", "name": "No id: dropped" }
+  ]
+}

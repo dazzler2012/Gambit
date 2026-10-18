@@ -1,0 +1,10 @@
+{
+  "id": "org.example.odd",
+  "name": "Odd Addon",
+  "resources": ["meta", 42, null, { "types": ["movie"] }, "stream"],
+  "types": "movie",
+  "idPrefixes": null,
+  "catalogs": "not-a-list",
+  "behaviorHints": null,
+  "unknownField": { "anything": true }
+}
