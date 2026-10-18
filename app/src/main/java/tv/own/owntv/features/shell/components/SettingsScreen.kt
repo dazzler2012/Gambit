@@ -838,7 +838,7 @@ fun SettingsScreen(
         ),
         // Plan Z — About and the error log left with the Data group. A page of facts and a log are
         // not preferences; both are More rows now, opening the very same dialogs.
-    )
+    ).filterNot { it.key in tv.own.owntv.gambit.ui.settings.GambitHiddenSettingsKeys } // Gambit: no update-check or app-icon rows
 
     // --- Two-pane root: the flat list above is still the single source of truth for order, tone,
     // icon, chip and click of every row. Here it is only *sliced* into (heading, its rows) so the
@@ -1158,7 +1158,9 @@ fun SettingsScreen(
                 listOf(R.string.settings_catchup_player), R.string.settings_search_keywords_catchup, OwnTVIcon.CATCHUP) { saveScroll(); dialogReturn = searchFieldFocus; showCatchupTime = true }
         // A setting is found by its own name only: "play" lists every setting with "play" in its name (owner).
         val needle = searchQuery.trim().lowercase()
+        val gambitHidden = tv.own.owntv.gambit.ui.settings.gambitHiddenSettingsTitles() // Gambit: the hidden rows stay out of search too
         (entries + videoEntries + screenRowEntries)
+            .filterNot { e -> e.title in gambitHidden }
             .filter { e -> e.title.lowercase().contains(needle) }
             .distinctBy { it.group + it.title }
     }

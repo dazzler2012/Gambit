@@ -518,7 +518,7 @@ fun StageRow(
 fun StageMenu(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier
-            .stageGlass(StageRadii.Menu, overContent = true)
+            .then(if (tv.own.owntv.gambit.ui.theme.GambitLook.FlatFocus) tv.own.owntv.gambit.ui.settings.gambitMenuPanel() else Modifier.stageGlass(StageRadii.Menu, overContent = true)) // Gambit: flat #121212
             .padding(start = 16.mpx, end = 16.mpx, top = 22.mpx, bottom = 16.mpx),
         content = content,
     )
@@ -1071,6 +1071,7 @@ fun StageStepper(value: String) {
 /** `.sw2`: 56×32 switch, display only like [StageStepper]. */
 @Composable
 fun StageSwitch(on: Boolean) {
+    if (tv.own.owntv.gambit.ui.theme.GambitLook.FlatFocus) { tv.own.owntv.gambit.ui.settings.GambitSwitch(on); return } // Gambit: light green on dark green
     val a = stageAccent
     Box(
         Modifier

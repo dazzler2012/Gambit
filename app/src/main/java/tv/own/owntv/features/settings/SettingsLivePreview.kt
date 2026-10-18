@@ -114,7 +114,7 @@ internal fun SettingsLivePreview() {
                         Modifier
                             .height(64.mpx)
                             .drawBehind { drawOuterRing(a.focus, 3.mpx.toPx(), 22.mpx.toPx()) }
-                            .background(a.accent, RoundedCornerShape(22.mpx))
+                            .background(if (tv.own.owntv.gambit.ui.theme.GambitLook.FlatFocus) tv.own.owntv.gambit.ui.theme.gambitFocusFill(a.accent) else a.accent, RoundedCornerShape(22.mpx)) // Gambit: dark green under white text
                             .padding(horizontal = 30.mpx),
                         horizontalArrangement = Arrangement.spacedBy(12.mpx),
                         verticalAlignment = Alignment.CenterVertically,
