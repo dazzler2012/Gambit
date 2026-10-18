@@ -503,6 +503,21 @@ class LiveViewModel(
         viewModelScope.launch(Dispatchers.IO) { tv.own.owntv.gambit.GambitLastTuned.write(gambitContext, channelId) }
     }
 
+    /**
+     * Gambit: the programme on now per channel, read the way the TV Guide reads a row — that read includes
+     * the provider's own guide, which is all some playlists have (the quick lookup and the batch read find
+     * nothing for them). One small read per channel, so at most [GAMBIT_NOW_LIMIT] channels per call.
+     */
+    private suspend fun gambitNowFromGuide(channels: List<ChannelEntity>): Map<Long, tv.own.owntv.core.parser.XtEpgEntry> {
+        val t = System.currentTimeMillis()
+        return buildMap {
+            channels.take(GAMBIT_NOW_LIMIT).forEach { ch ->
+                val rows = runCatching { gambitGuideReader.row(ch, custom.value, epgOffset.value, t - 6 * 3_600_000L, t + 3_600_000L) }.getOrDefault(emptyList())
+                rows.firstOrNull { t >= it.startMs && t < it.stopMs }?.let { p -> put(ch.id, tv.own.owntv.core.parser.XtEpgEntry(p.title, p.description.orEmpty(), p.startMs, p.stopMs)) }
+            }
+        }
+    }
+
     // ---- end Gambit -----------------------------------------------------------------------------
 
     /** The user's custom combined categories with live member counts — the "Move to…" dialog's list. */
@@ -1901,7 +1916,10 @@ class LiveViewModel(
         if (missing.isEmpty()) return
         nowPlayingJob?.cancel()
         nowPlayingJob = viewModelScope.launch {
-            val found = runCatching { nowPlayingFor(missing) }.getOrDefault(emptyMap())
+            val quick = runCatching { nowPlayingFor(missing) }.getOrDefault(emptyMap())
+            // Gambit: what the quick lookup can't answer, from the guide's own reader (with the provider
+            // fallback) — the tiles and player lists showed "No information" where the guide had a programme.
+            val found = quick + gambitNowFromGuide(missing.filter { it.id !in quick })
             // Remember the ones with no guide too, as null — otherwise they are re-queried on
             // every single append, which is most of the cost this removes.
             publishNowPlaying(found + missing.filter { it.id !in found }.associate { it.id to null })
@@ -2040,6 +2058,8 @@ class LiveViewModel(
         liveCountFlow(key, c.profileId, c.sourceIds, hiddenCats, channelDao, customCategoryDao)
 
     private companion object {
+        /** Gambit: channels per call read through the guide for "on now" (each is one small read). */
+        const val GAMBIT_NOW_LIMIT = 24
         const val ENGINE_TAG = "LiveEngine"
 
         /** How long a channel must stay tuned before it counts as watched — see [recordLiveHistory]. */
