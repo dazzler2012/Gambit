@@ -9,10 +9,11 @@ import tv.own.owntv.R
  * its root list and its search results.
  *  - "Check for updates" and "Check for updates on startup": they look for OwnTV's releases, not Gambit's.
  *  - "App icon": Gambit has one icon.
+ *  - Quick's "Check for updates on startup" toggle: the same setting, and Gambit never checks at startup.
  */
 
 /** Root row keys (SettingsScreen's RootRow.key). */
-val GambitHiddenSettingsKeys: Set<String> = setOf("app_icon", "check_updates", "update_startup")
+val GambitHiddenSettingsKeys: Set<String> = setOf("app_icon", "check_updates", "update_startup", "quick_check_update")
 
 /** The same rows' titles, as Settings search lists them. */
 @Composable
