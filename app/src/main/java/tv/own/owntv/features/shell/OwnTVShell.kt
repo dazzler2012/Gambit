@@ -1962,6 +1962,8 @@ fun OwnTVShell(
         val settingsRepo = koinInject<tv.own.owntv.core.settings.SettingsRepository>()
         val updateCheckOnStart by settingsRepo.updateCheckOnStart.collectAsStateWithLifecycle(initialValue = false)
         LaunchedEffect(updateCheckOnStart) {
+            // Gambit: never at startup, on any profile — it checks OwnTV's releases, not Gambit's.
+            if (!tv.own.owntv.gambit.GambitDefaults.STARTUP_UPDATE_CHECK && updateCheckOnStart) return@LaunchedEffect
             if (updateCheckOnStart && !showStartupToast) {
                 kotlinx.coroutines.delay(5_000)
                 showStartupToast = true
