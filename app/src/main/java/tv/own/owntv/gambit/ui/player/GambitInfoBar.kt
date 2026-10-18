@@ -131,8 +131,11 @@ private fun BoxScope.InfoBarContent(
     val formatTime = rememberSystemTimeFormatter()
     val epg by info.nowNext.collectAsStateWithLifecycle()
     val now by produceState(System.currentTimeMillis()) { while (true) { delay(1_000); value = System.currentTimeMillis() } }
-    val programme = epg?.now?.takeIf { now < it.stopMs }
-    val next = epg?.next ?: epg?.upcoming?.firstOrNull { it.startMs >= (programme?.stopMs ?: now) }
+    // The guide's "now" is only refreshed now and then: once its programme has ended, the one on air is
+    // found among next and upcoming (it was "No information" with the right programme on the next line).
+    val known = remember(epg) { listOfNotNull(epg?.now, epg?.next) + epg?.upcoming.orEmpty() }
+    val programme = known.firstOrNull { now >= it.startMs && now < it.stopMs }
+    val next = known.filter { it.startMs >= (programme?.stopMs ?: now) }.minByOrNull { it.startMs }
     val channel = info.channel
     // Down from the tiles opens the menu row in place of the bottom block; Up comes back to the tiles.
     var menuOpen by remember { mutableStateOf(false) }
