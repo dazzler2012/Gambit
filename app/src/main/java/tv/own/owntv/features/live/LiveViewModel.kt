@@ -1894,7 +1894,10 @@ class LiveViewModel(
     fun ensureNowPlaying(loaded: List<ChannelEntity>) {
         if (loaded.isEmpty()) return
         val known = cachedNowPlaying()
-        val missing = loaded.filter { it.id !in known }
+        // Gambit: a programme that has ended counts as missing, so its channel moves on to what is on now
+        // (it stayed "No information" in the info bar's tiles and the player's lists). Was `it.id !in known`.
+        val t = System.currentTimeMillis()
+        val missing = loaded.filter { it.id !in known || known[it.id]?.let { p -> t >= p.stopMs } == true }
         if (missing.isEmpty()) return
         nowPlayingJob?.cancel()
         nowPlayingJob = viewModelScope.launch {

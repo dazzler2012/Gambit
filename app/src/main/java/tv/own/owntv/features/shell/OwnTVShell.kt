@@ -424,7 +424,11 @@ fun OwnTVShell(
     val overlayNowPlaying by liveVm.nowPlaying.collectAsStateWithLifecycle()
     val overlayProgrammes by liveVm.nowProgrammes.collectAsStateWithLifecycle() // Gambit: times for the channel list
     LaunchedEffect(showChannelList, zapChannels) {
-        if (showChannelList && zapChannels.size > 1) liveVm.ensureNowPlaying(zapChannels)
+        // Gambit: and again on each minute while open, so an ended programme moves on (was once).
+        while (showChannelList && zapChannels.size > 1) {
+            liveVm.ensureNowPlaying(zapChannels)
+            kotlinx.coroutines.delay(60_000 - System.currentTimeMillis() % 60_000 + 500)
+        }
     }
     // Recently-watched channels for the right-hand history overlay — re-read each time it opens (and
     // after a zap, since tuning writes a new history row) so the newest channel is always on top.
@@ -438,8 +442,14 @@ fun OwnTVShell(
         val playing = previewChannel?.id
         value = runCatching { liveVm.historyChannels() }.getOrDefault(emptyList()).filter { it.id != playing }.take(12)
     }
-    LaunchedEffect(gambitRecent) { if (gambitRecent.isNotEmpty()) liveVm.ensureNowPlaying(gambitRecent) }
-    LaunchedEffect(historyChannels) { liveVm.ensureNowPlaying(historyChannels) }
+    // Gambit: the info bar's tiles and the history list, re-checked on each minute (was once).
+    LaunchedEffect(gambitRecent, historyChannels) {
+        val shown = gambitRecent + historyChannels
+        while (shown.isNotEmpty()) {
+            liveVm.ensureNowPlaying(shown)
+            kotlinx.coroutines.delay(60_000 - System.currentTimeMillis() % 60_000 + 500)
+        }
+    }
     // Batch 7 — the single most-recent resumable item, surfaced as a shared top-bar "Continue" chip.
     val continueTarget by homeVm.continueTarget.collectAsStateWithLifecycle()
 
