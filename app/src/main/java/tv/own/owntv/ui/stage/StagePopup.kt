@@ -34,6 +34,7 @@ import androidx.tv.material3.Text
 import tv.own.owntv.ui.components.LocalTvImeMetrics
 import tv.own.owntv.ui.components.OwnTVIcon
 import tv.own.owntv.ui.components.OwnTVPopup
+import tv.own.owntv.ui.components.longPressMenuGuard
 import tv.own.owntv.ui.components.trapAllFocusExit
 import tv.own.owntv.ui.theme.StageColors
 import tv.own.owntv.ui.theme.mpx
@@ -75,7 +76,9 @@ fun StagePopup(
         val ime = LocalTvImeMetrics.current
         val density = LocalDensity.current
         BoxWithConstraints(
-            Modifier.fillMaxSize().background(Color(2, 5, 6).copy(alpha = 0.55f)).trapAllFocusExit().focusGroup(),
+            // Gambit: ignore OK until the press that opened this popup is released (a long press's release
+            // otherwise clicked the focused button — the profile delete confirmation closed on Cancel at once).
+            Modifier.fillMaxSize().background(Color(2, 5, 6).copy(alpha = 0.55f)).longPressMenuGuard().trapAllFocusExit().focusGroup(),
             contentAlignment = if (ime.visible) Alignment.TopCenter else Alignment.Center,
         ) {
             val edge = 40.mpx
