@@ -1,0 +1,7 @@
+{
+  "device_code": "fake-device-code-DDDD",
+  "user_code": "FAKE1234",
+  "verification_url": "https://trakt.fake.test/activate",
+  "expires_in": 600,
+  "interval": 5
+}
