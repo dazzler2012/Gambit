@@ -1,0 +1,30 @@
+[
+  {
+    "progress": 37.5,
+    "paused_at": "2026-10-21T08:30:00.000Z",
+    "id": 501,
+    "type": "movie",
+    "movie": {
+      "title": "Fake Movie",
+      "year": 2010,
+      "ids": { "trakt": 1001, "slug": "fake-movie-2010", "imdb": "tt0000001", "tmdb": 2001 }
+    }
+  },
+  {
+    "progress": 80.1,
+    "paused_at": "2026-10-20T22:00:00.000Z",
+    "id": 502,
+    "type": "episode",
+    "episode": {
+      "season": 1,
+      "number": 3,
+      "title": "Fake Episode",
+      "ids": { "trakt": 3003, "tvdb": 4003, "imdb": null, "tmdb": 5003 }
+    },
+    "show": {
+      "title": "Fake Show",
+      "year": 2015,
+      "ids": { "trakt": 6001, "slug": "fake-show", "tvdb": 7001, "imdb": "tt0000002", "tmdb": 8001 }
+    }
+  }
+]

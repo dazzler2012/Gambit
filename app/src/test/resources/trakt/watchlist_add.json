@@ -1,0 +1,12 @@
+{
+  "added": { "movies": 1, "shows": 1, "seasons": 0, "episodes": 0 },
+  "existing": { "movies": 0, "shows": 0, "seasons": 0, "episodes": 1 },
+  "not_found": {
+    "movies": [ { "ids": { "imdb": "tt0000999" } } ],
+    "shows": [],
+    "seasons": [],
+    "episodes": [],
+    "people": []
+  },
+  "list": { "updated_at": "2026-10-21T12:00:00.000Z", "item_count": 5 }
+}

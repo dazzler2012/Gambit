@@ -1,0 +1,30 @@
+[
+  {
+    "id": 111,
+    "watched_at": "2026-10-20T20:15:00.000Z",
+    "action": "scrobble",
+    "type": "movie",
+    "movie": {
+      "title": "Fake Movie",
+      "year": 2010,
+      "ids": { "trakt": 1001, "slug": "fake-movie-2010", "imdb": "tt0000001", "tmdb": 2001 }
+    }
+  },
+  {
+    "id": 112,
+    "watched_at": "2026-10-19T21:00:00.000Z",
+    "action": "watch",
+    "type": "episode",
+    "episode": {
+      "season": 2,
+      "number": 7,
+      "title": null,
+      "ids": { "trakt": 3007, "tvdb": 4007, "imdb": null, "tmdb": null }
+    },
+    "show": {
+      "title": "Fake Show",
+      "year": 2015,
+      "ids": { "trakt": 6001, "slug": "fake-show", "tvdb": 7001, "imdb": "tt0000002", "tmdb": 8001 }
+    }
+  }
+]

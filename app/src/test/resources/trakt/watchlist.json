@@ -1,0 +1,57 @@
+[
+  {
+    "rank": 1,
+    "id": 701,
+    "listed_at": "2026-09-01T10:00:00.000Z",
+    "notes": null,
+    "type": "movie",
+    "movie": {
+      "title": "Fake Movie",
+      "year": 2010,
+      "ids": { "trakt": 1001, "slug": "fake-movie-2010", "imdb": "tt0000001", "tmdb": 2001 }
+    }
+  },
+  {
+    "rank": 2,
+    "id": 702,
+    "listed_at": "2026-09-02T10:00:00.000Z",
+    "notes": null,
+    "type": "show",
+    "show": {
+      "title": "Fake Show",
+      "year": 2015,
+      "ids": { "trakt": 6001, "slug": "fake-show", "tvdb": 7001, "imdb": "tt0000002", "tmdb": 8001 }
+    }
+  },
+  {
+    "rank": 3,
+    "id": 703,
+    "listed_at": "2026-09-03T10:00:00.000Z",
+    "notes": null,
+    "type": "season",
+    "season": { "number": 2, "ids": { "trakt": 9002, "tvdb": 9102, "tmdb": 9202 } },
+    "show": {
+      "title": "Fake Show",
+      "year": 2015,
+      "ids": { "trakt": 6001, "slug": "fake-show", "tvdb": 7001, "imdb": "tt0000002", "tmdb": 8001 }
+    }
+  },
+  {
+    "rank": 4,
+    "id": 704,
+    "listed_at": "2026-09-04T10:00:00.000Z",
+    "notes": null,
+    "type": "episode",
+    "episode": {
+      "season": 1,
+      "number": 3,
+      "title": "Fake Episode",
+      "ids": { "trakt": 3003, "tvdb": 4003, "imdb": null, "tmdb": 5003 }
+    },
+    "show": {
+      "title": "Fake Show",
+      "year": 2015,
+      "ids": { "trakt": 6001, "slug": "fake-show", "tvdb": 7001, "imdb": "tt0000002", "tmdb": 8001 }
+    }
+  }
+]
