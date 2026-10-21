@@ -52,6 +52,16 @@ class AddonUrlTest {
     }
 
     @Test
+    fun `episode id colons are percent encoded in meta, stream and subtitles urls`() {
+        // NuvioTV and TuvoraTV encode these ids with URLEncoder, so tt1:1:2 goes out as tt1%3A1%3A2.
+        val u = url("https://addon.example/abc?config=xyz")
+        assertEquals("https://addon.example/abc/meta/series/tt1%3A1%3A2.json?config=xyz", u.metaUrl("series", "tt1:1:2"))
+        assertEquals("https://addon.example/abc/stream/series/tt1%3A1%3A2.json?config=xyz", u.streamUrl("series", "tt1:1:2"))
+        assertEquals("https://addon.example/abc/subtitles/series/tt1%3A1%3A2.json?config=xyz", u.subtitlesUrl("series", "tt1:1:2"))
+        assertEquals("https://addon.example/abc/meta/anime/kitsu%3A42.json?config=xyz", u.metaUrl("anime", "kitsu:42"))
+    }
+
+    @Test
     fun `catalog extras are encoded into the last path segment`() {
         val u = url("https://addon.example/abc")
         assertEquals("https://addon.example/abc/catalog/movie/popular/skip=100.json",

@@ -65,7 +65,8 @@ class AddonUrl private constructor(
         /**
          * Percent-encodes one path value the way JavaScript's encodeURIComponent does, which is what the
          * Stremio clients use for types, ids and extra values. Episode ids like `tt123:1:2` become
-         * `tt123%3A1%3A2`; addon servers decode the path before routing.
+         * `tt123%3A1%3A2`; addon servers decode the path before routing. NuvioTV and TuvoraTV send meta
+         * and stream ids the same way (URLEncoder, so the colons are encoded there too).
          */
         internal fun encode(value: String): String {
             val out = StringBuilder()
