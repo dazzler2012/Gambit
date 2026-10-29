@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Gambit · Add an addon</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0e0e0e; color: #f2f2f2; font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 28px 18px 40px; }
+  h1 { font-size: 24px; margin: 0 0 6px; }
+  p { color: #b4b4b4; margin: 0 0 22px; }
+  label { display: block; font-weight: 600; margin: 18px 0 6px; }
+  textarea, input { width: 100%; box-sizing: border-box; background: #232323; color: #f2f2f2; border: 1px solid #3a3a3a;
+    border-radius: 10px; padding: 12px; font: inherit; }
+  textarea { min-height: 120px; resize: vertical; word-break: break-all; }
+  input { font-size: 22px; letter-spacing: 6px; }
+  button { margin-top: 22px; width: 100%; padding: 14px; border: 0; border-radius: 10px; background: #2b5a2e; color: #fff;
+    font: inherit; font-weight: 700; }
+  button:disabled { opacity: .6; }
+  #out { margin-top: 18px; min-height: 1.5em; font-weight: 600; }
+  .ok { color: #66bb6a; } .err { color: #ef9a9a; }
+  small { display: block; color: #8c8c8c; margin-top: 26px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Add a Stremio addon</h1>
+  <p>Paste your addon's manifest address (from its configure page, or "Copy link" in Stremio) and the PIN shown on the TV.</p>
+  <form id="f" autocomplete="off">
+    <label for="url">Addon address</label>
+    <textarea id="url" name="url" required spellcheck="false" autocapitalize="off" autocorrect="off"
+      placeholder="https://…/manifest.json"></textarea>
+    <label for="pin">PIN from the TV</label>
+    <input id="pin" name="pin" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6">
+    <button id="go" type="submit">Send to the TV</button>
+  </form>
+  <div id="out" role="status"></div>
+  <small>The address goes straight to the TV on your home network and is stored there encrypted. Gambit only ever shows its name and host.</small>
+</main>
+<script>
+  const f = document.getElementById('f'), out = document.getElementById('out'), go = document.getElementById('go');
+  const say = (t, ok) => { out.textContent = t; out.className = ok ? 'ok' : 'err'; };
+  const reasons = {
+    PIN: 'That PIN is not right. Check the TV and try again.',
+    LOCKED: 'Too many wrong PINs. Open “Add from phone” on the TV again for a new PIN.',
+    CLOSED: 'The TV is no longer waiting. Open “Add from phone” on the TV again.',
+    NOT_AN_ADDRESS: 'That is not an addon address (it should start with https:// or stremio://).',
+    UNREACHABLE: 'The TV could not reach that addon. Check the address and the TV’s internet.',
+    NOT_AN_ADDON: 'That address did not return a Stremio addon manifest.'
+  };
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    go.disabled = true; say('Sending…', true);
+    try {
+      const r = await fetch('/add', { method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ url: f.url.value, pin: f.pin.value }) });
+      const j = await r.json();
+      if (j.ok) { f.reset(); say('Added: ' + j.message + '. You can close this page.', true); return; }
+      say(reasons[j.message] || 'Something went wrong. Try again.', false);
+    } catch (_) { say('Could not reach the TV. Is it still showing the QR code?', false); }
+    go.disabled = false;
+  });
+</script>
+</body>
+</html>

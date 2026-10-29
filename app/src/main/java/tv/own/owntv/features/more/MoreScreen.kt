@@ -67,7 +67,7 @@ import tv.own.owntv.ui.theme.stageAccent
 import tv.own.owntv.ui.theme.stageText
 
 /** The sheet's items, top to bottom. [DEVELOPER] exists only in local builds (BuildConfig.DEV_TOOLS). */
-private enum class MoreItem { SETTINGS, FAVORITES, HISTORY, BACKUP, LOCAL_SYNC, ERROR_LOG, ABOUT, DEVELOPER }
+private enum class MoreItem { SETTINGS, FAVORITES, HISTORY, ADDONS /* Gambit */, BACKUP, LOCAL_SYNC, ERROR_LOG, ABOUT, DEVELOPER }
 
 /**
  * More (Stage P8-01 … P8-08): the glass section sheet, topped by the profile, and one page on the right
@@ -126,6 +126,11 @@ fun MoreScreen(
     BackHandler(enabled = pageFocused) { backToSheet() }
 
     val favorites by vm.favorites.collectAsStateWithLifecycle()
+    // Gambit: More → Addons (Stremio), not on kids profiles.
+    val gambitAddons: tv.own.owntv.gambit.ui.addons.AddonsViewModel = koinViewModel()
+    val gambitKids by gambitAddons.kids.collectAsStateWithLifecycle()
+    val gambitAddonCount by gambitAddons.addons.collectAsStateWithLifecycle()
+    LaunchedEffect(gambitKids) { if (gambitKids && selected == MoreItem.ADDONS) selected = MoreItem.SETTINGS }
     val history by vm.history.collectAsStateWithLifecycle()
     val sync by vm.sync.collectAsStateWithLifecycle()
     val lastBackup by vm.lastBackup.collectAsStateWithLifecycle()
@@ -164,6 +169,7 @@ fun MoreScreen(
             GroupLabel(stringResource(R.string.more_group_your_things))
             item(MoreItem.FAVORITES, OwnTVIcon.FAVORITE, stringResource(R.string.content_category_favorites), favorites.total.toString(), false)
             item(MoreItem.HISTORY, OwnTVIcon.HISTORY, stringResource(R.string.content_category_history), history.total.toString(), false)
+            if (!gambitKids) item(MoreItem.ADDONS, OwnTVIcon.PLAYLIST, stringResource(R.string.gambit_addons_title), gambitAddonCount.size.toString(), false) // Gambit
             GroupLabel(stringResource(R.string.more_group_keep_safe))
             item(
                 MoreItem.BACKUP, OwnTVIcon.DOWNLOADS, stringResource(R.string.settings_backup_restore),
@@ -210,6 +216,7 @@ fun MoreScreen(
                     onClearHistory = { settingsVm.clearWatchHistory(it) },
                     onPlayChannel = onPlayChannel, onPlayMovie = onPlayMovie, onPlayEpisode = onPlayEpisode, onOpenSeries = onOpenSeries,
                 )
+                MoreItem.ADDONS -> tv.own.owntv.gambit.ui.addons.GambitAddonsPage(entry = pageTarget, vm = gambitAddons) // Gambit
                 MoreItem.BACKUP -> BackupScreen(entry = pageTarget, modifier = Modifier.fillMaxSize())
                 MoreItem.LOCAL_SYNC -> LocalSyncScreen(entry = pageTarget, modifier = Modifier.fillMaxSize())
                 MoreItem.ERROR_LOG -> ErrorLogPage(setEntry = setEntry, onCountChanged = { logVersion++ })

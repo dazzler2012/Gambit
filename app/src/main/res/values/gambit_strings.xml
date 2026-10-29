@@ -34,6 +34,43 @@
     <string name="settings_card_app" translatable="false">Language, startup, network, diagnostics</string>
     <string name="settings_group_summary_app" translatable="false">Language, startup, network and diagnostics</string>
 
+    <!-- More → Addons (Phase 2, Stage 1) -->
+    <string name="gambit_addons_title" translatable="false">Addons</string>
+    <plurals name="gambit_addons_count" translatable="false">
+        <item quantity="one">%1$d addon</item>
+        <item quantity="other">%1$d addons</item>
+    </plurals>
+    <string name="gambit_addons_description" translatable="false">Stremio addons on this TV, shared by its profiles and asked in this order. Only each addon\'s name and host are shown: its address holds your own keys and stays on this TV, encrypted.</string>
+    <string name="gambit_addons_add_phone" translatable="false">Add from phone</string>
+    <string name="gambit_addons_add_typed" translatable="false">Type an address</string>
+    <string name="gambit_addons_empty" translatable="false">No addons yet.</string>
+    <string name="gambit_addons_address" translatable="false">Addon address</string>
+    <string name="gambit_addons_address_hint" translatable="false">https://…/manifest.json</string>
+    <string name="gambit_addons_add" translatable="false">Add</string>
+    <string name="gambit_addons_added" translatable="false">Added: %1$s</string>
+    <string name="gambit_addons_not_added" translatable="false">Not added</string>
+    <string name="gambit_addons_err_address" translatable="false">That isn\'t an addon address. It should start with https:// or stremio://.</string>
+    <string name="gambit_addons_err_unreachable" translatable="false">The TV couldn\'t reach that addon. Check the address and the internet connection.</string>
+    <string name="gambit_addons_err_manifest" translatable="false">That address didn\'t return a Stremio addon.</string>
+    <string name="gambit_addons_enable" translatable="false">Turn on</string>
+    <string name="gambit_addons_disable" translatable="false">Turn off</string>
+    <string name="gambit_addons_move_up" translatable="false">Move up</string>
+    <string name="gambit_addons_move_down" translatable="false">Move down</string>
+    <string name="gambit_addons_remove" translatable="false">Remove</string>
+    <string name="gambit_addons_remove_title" translatable="false">Remove %1$s?</string>
+    <string name="gambit_addons_remove_body" translatable="false">Its address is deleted from this TV. To use it again, add it again.</string>
+    <string name="gambit_addons_version" translatable="false">v%1$s</string>
+    <plurals name="gambit_addons_catalogs" translatable="false">
+        <item quantity="one">%1$d catalog</item>
+        <item quantity="other">%1$d catalogs</item>
+    </plurals>
+    <string name="gambit_addons_separator" translatable="false">" · "</string>
+    <string name="gambit_addons_phone_steps" translatable="false">On a phone on the same Wi-Fi, scan the code (or open the address), paste the addon\'s address and enter the PIN.</string>
+    <string name="gambit_addons_pin" translatable="false">PIN</string>
+    <string name="gambit_addons_locked" translatable="false">Too many wrong PINs. Close this and open Add from phone again for a new PIN.</string>
+    <string name="gambit_addons_server_failed" translatable="false">The TV couldn\'t open the page. Check it\'s on Wi-Fi or Ethernet and try again.</string>
+    <string name="gambit_addons_closed" translatable="false">The page is closed. Open Add from phone again.</string>
+
     <!-- Settings rows: a saved value with its reset action, "19 saved · Reset" -->
     <string name="gambit_settings_saved_reset" translatable="false">%1$s · %2$s</string>
 

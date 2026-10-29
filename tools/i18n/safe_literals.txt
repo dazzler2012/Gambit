@@ -859,6 +859,55 @@
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	update_check_off_v1
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitLastTuned.kt	gambit
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitLastTuned.kt	last_tuned_channel_v1
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonManifest.kt	catalogs
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonManifest.kt	id
+2	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonManifest.kt	name
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonManifest.kt	resources
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonManifest.kt	types
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonManifest.kt	version
+1	preference-key	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	addons_v1
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	catalogs
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	enabled
+1	preference-key	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	gambit_addons
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	host
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	id
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	name
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	resources
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	sealed
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	types
+1	json	app/src/main/java/tv/own/owntv/gambit/addons/AddonStore.kt	version
+1	empty	app/src/main/java/tv/own/owntv/gambit/addons/AddonUrls.kt	\0
+1	url	app/src/main/java/tv/own/owntv/gambit/addons/AddonUrls.kt	$path?$query
+1	url	app/src/main/java/tv/own/owntv/gambit/addons/AddonUrls.kt	/manifest.json
+1	url	app/src/main/java/tv/own/owntv/gambit/addons/AddonUrls.kt	http://
+2	url	app/src/main/java/tv/own/owntv/gambit/addons/AddonUrls.kt	https://
+2	url	app/src/main/java/tv/own/owntv/gambit/addons/AddonUrls.kt	stremio://
+5	empty	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	\0
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	/
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	/?
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	/add
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	CLOSED
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	Content-Length
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	Content-Type: $type Content-Length: ${bytes.size} Cache-Control: no-store
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	Error
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	GET
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	HTTP/1.1 $code ${if (code == 200) "OK" else "Error"}
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	LOCKED
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	OK
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	PIN
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	POST
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	Referrer-Policy: no-referrer X-Content-Type-Options: nosniff Connection: close
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	UTF-8
+1	mime	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	application/json; charset=utf-8
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	message
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	ok
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	pin
+1	mime	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	text/html; charset=utf-8
+1	mime	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	text/plain; charset=utf-8
+1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonServer.kt	url
+1	technical	app/src/main/java/tv/own/owntv/gambit/addons/GambitSecretStore.kt	AES/GCM/NoPadding
+1	technical	app/src/main/java/tv/own/owntv/gambit/addons/GambitSecretStore.kt	AndroidKeyStore
+1	technical	app/src/main/java/tv/own/owntv/gambit/addons/GambitSecretStore.kt	gambit_addons_v1
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	"
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	#
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	#X
@@ -874,6 +923,9 @@
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	lt
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	nbsp
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	quot
+1	empty	app/src/main/java/tv/own/owntv/gambit/ui/addons/GambitAddonsPage.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/gambit/ui/addons/GambitAddonsPage.kt	,
+1	technical	app/src/main/java/tv/own/owntv/gambit/ui/addons/GambitAddonsPage.kt	http://
 1	locale	app/src/main/java/tv/own/owntv/gambit/ui/guide/GambitGuide.kt	EEEdMMM
 1	technical	app/src/main/java/tv/own/owntv/gambit/ui/guide/GambitGuide.kt	tnum
 1	locale	app/src/main/java/tv/own/owntv/gambit/ui/player/GambitInfoBar.kt	EEEdMMM
