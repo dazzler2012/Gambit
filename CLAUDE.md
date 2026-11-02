@@ -13,9 +13,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - One feature or fix per task. Keep changes small.
 
 ## Build and verify
-- Build command: `./gradlew assembleDebug`
-- A task is not done until the build passes.
-- If the build fails, report the exact error. Do not guess at a fix silently.
+- Builds run on GitHub Actions after each push, not in this session. Do not install the Android SDK here.
+- After pushing, check the GitHub Actions run for that commit and report pass/fail with the exact error.
+- A task is not done until the GitHub build passes, or I confirm it's fine.
 
 ## End of every task
 Give a short summary:
