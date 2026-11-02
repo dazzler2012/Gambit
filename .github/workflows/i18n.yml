@@ -55,9 +55,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      # Full history, never --depth: the checkout above is a full clone, and a shallow fetch here would cut
+      # the base branch off at its tip, so merge-base finds no common commit once the base has moved ahead.
       - name: Fetch base branch
         if: ${{ github.event_name == 'pull_request' }}
-        run: git fetch --no-tags --depth=1 origin "${GITHUB_BASE_REF}"
+        run: git fetch --no-tags origin "${GITHUB_BASE_REF}"
 
       - name: Hardcoded-literal ratchet
         env:
