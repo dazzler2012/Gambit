@@ -17,7 +17,6 @@ local.properties
 .serena/
 .codegraph/
 .zcode/
-CLAUDE.md
 AGENT_HANDOVER.md
 
 # Signing keys & secrets — NEVER commit these
