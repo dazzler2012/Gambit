@@ -156,7 +156,7 @@ fun GambitRailItem(
                 }
             }
             if (trailing != null) {
-                Text(trailing, style = stageText(22, 500), color = if (focused) Color.White else GambitColors.Dim, maxLines = 1)
+                Text(trailing, style = stageText(22, 500), color = if (focused) Color.White else GambitColors.Dim, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }

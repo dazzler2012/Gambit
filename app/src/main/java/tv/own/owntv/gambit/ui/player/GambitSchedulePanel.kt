@@ -224,7 +224,7 @@ private fun DayHeading(dayStartMs: Long, now: Long, accent: Color) {
         }
     }
     Text(
-        label, style = stageText(26, 500), color = gambitAccentLight(accent), maxLines = 1,
+        label, style = stageText(26, 500), color = gambitAccentLight(accent), maxLines = 1, overflow = TextOverflow.Ellipsis,
         modifier = Modifier.padding(start = 16.mpx, top = 22.mpx, bottom = 10.mpx),
     )
 }
@@ -260,7 +260,7 @@ private fun ProgrammeLine(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(24.mpx),
     ) {
-        Text(time, style = stageText(28, 400).copy(fontFeatureSettings = Tabular), color = color, maxLines = 1)
+        Text(time, style = stageText(28, 400).copy(fontFeatureSettings = Tabular), color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(title, style = stageText(28, 400), color = color, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
     }
 }
