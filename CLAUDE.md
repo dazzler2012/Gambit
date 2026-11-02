@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Goal: TiviMate-style look and feel, plus a Nuvio/Stremio-style element.
 
 ## How to work
+- Before starting a task, switch to main and pull first.
 - For any change touching more than one file, propose a plan and wait for approval before editing.
 - One feature or fix per task. Keep changes small.
 
@@ -25,6 +26,7 @@ Give a short summary:
 
 ## Rules learned
 <!-- Add one-line rules here when Claude makes a mistake -->
+- On Windows, run the repo's Python tools in UTF-8 mode (`python -X utf8 ...`). Plain Windows Python misreads symbols like ▾ and ✕.
 
 # Upstream OwnTV reference
 
