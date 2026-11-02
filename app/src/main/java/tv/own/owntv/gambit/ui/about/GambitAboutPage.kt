@@ -33,7 +33,7 @@ import tv.own.owntv.ui.theme.stageText
 @Composable
 internal fun GambitAboutPage(entry: FocusRequester, onOpenLanguage: () -> Unit) {
     Column(Modifier.fillMaxSize().focusGroup().widthIn(max = 900.mpx)) {
-        Text(stringResource(R.string.app_name), style = stageText(46, 800), color = GambitColors.Text, maxLines = 1)
+        Text(stringResource(R.string.app_name), style = stageText(46, 800), color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(
             stringResource(R.string.settings_about_version, BuildConfig.VERSION_NAME),
             style = stageText(22, 700), color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis,

@@ -166,7 +166,7 @@ private fun BoxScope.InfoBarContent(
         val datePattern = remember(locale) { DateFormat.getBestDateTimePattern(locale, "EEEdMMM") }
         Text(
             stringResource(R.string.gambit_date_time, DateFormat.format(datePattern, Date(now)).toString(), formatTime(now)),
-            style = stageText(34, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Text, maxLines = 1,
+            style = stageText(34, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(start = 24.mpx),
         )
     }
@@ -199,7 +199,7 @@ private fun BoxScope.InfoBarContent(
                     if (programme != null) {
                         Text(
                             stringResource(R.string.gambit_time_range, formatTime(programme.startMs), formatTime(programme.stopMs)),
-                            style = stageText(28, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Muted, maxLines = 1,
+                            style = stageText(28, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                         val progress = ((now - programme.startMs).toFloat() / (programme.stopMs - programme.startMs).coerceAtLeast(1)).coerceIn(0f, 1f)
                         Box(
@@ -212,7 +212,7 @@ private fun BoxScope.InfoBarContent(
                         val left = ((programme.stopMs - now) + 59_999) / 60_000
                         Text(
                             stringResource(R.string.player_duration_minutes, left.toInt()), style = stageText(28, 400), color = GambitColors.Muted,
-                            maxLines = 1, modifier = Modifier.padding(start = 24.mpx),
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 24.mpx),
                         )
                     }
                     if (channel != null) {
@@ -224,7 +224,7 @@ private fun BoxScope.InfoBarContent(
                     }
                     chips.forEach { chip ->
                         Text(
-                            chip, style = stageText(20, 600), color = Color.Black, maxLines = 1,
+                            chip, style = stageText(20, 600), color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.padding(start = 16.mpx)
                                 .background(GambitColors.Muted, RoundedCornerShape(5.mpx))
                                 .padding(horizontal = 8.mpx, vertical = 2.mpx),
@@ -235,7 +235,7 @@ private fun BoxScope.InfoBarContent(
                     Row(Modifier.padding(top = 10.mpx), verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             stringResource(R.string.gambit_time_range, formatTime(next.startMs), formatTime(next.stopMs)),
-                            style = stageText(28, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Muted, maxLines = 1,
+                            style = stageText(28, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                         Text(next.title, style = stageText(28, 400), color = GambitColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 24.mpx))
                     }
@@ -419,12 +419,12 @@ private fun GambitTimeline(
             val s = offsetSec % 60
             Text(
                 stringResource(R.string.gambit_behind_live, m, s), style = stageText(24, 600).copy(fontFeatureSettings = Tabular),
-                color = GambitColors.Text, maxLines = 1, modifier = Modifier.padding(start = 20.mpx),
+                color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 20.mpx),
             )
             if (focused && onGoToLive != null) {
                 Text(
                     stringResource(R.string.player_go_live), style = stageText(24, 600), color = gambitAccentLight(accent),
-                    maxLines = 1, modifier = Modifier.padding(start = 16.mpx),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 16.mpx),
                 )
             }
         }
