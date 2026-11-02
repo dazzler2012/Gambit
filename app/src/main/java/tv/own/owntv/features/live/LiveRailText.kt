@@ -8,7 +8,7 @@ import tv.own.owntv.core.live.LiveKey
 
 /** Built-in rail labels are presentation text; category names remain provider/profile data. */
 @Composable
-fun LiveRailItem.displayLabel(@StringRes allLabelRes: Int = R.string.content_category_all_channels): String = title ?: when (key) {
+fun LiveRailItem.displayLabel(@StringRes allLabelRes: Int = R.string.content_category_all_channels): String = title?.let(tv.own.owntv.gambit.text.GambitText::decode) ?: when (key) { // Gambit: entities decoded
     LiveKey.Favorites -> stringResource(R.string.content_category_favorites)
     LiveKey.History -> stringResource(R.string.content_category_history)
     LiveKey.Catchup -> stringResource(R.string.content_catchup)

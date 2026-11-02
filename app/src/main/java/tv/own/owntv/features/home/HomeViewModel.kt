@@ -203,7 +203,7 @@ class HomeViewModel(
         }
         MediaType.LIVE -> channelDao.getById(h.itemId)?.let { c ->
             if (!tv.own.owntv.core.content.AdultCategoryClassifier.allows(pid, c.categoryId, profileDao, categoryDao)) return@let null
-            ContinueTarget(ContinueKind.LIVE, c.name, ContinueAction.LAST_CHANNEL, channelId = c.id)
+            ContinueTarget(ContinueKind.LIVE, tv.own.owntv.gambit.text.GambitText.decode(c.name) /* Gambit: entities decoded */, ContinueAction.LAST_CHANNEL, channelId = c.id)
         }
         else -> null
     }

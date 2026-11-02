@@ -372,6 +372,7 @@ fun OwnTVShell(
     val previewChannel by liveVm.previewChannel.collectAsStateWithLifecycle()
     val playerRecording by liveVm.playerRecording.collectAsStateWithLifecycle()
     val liveProviderNames by liveVm.providerNames.collectAsStateWithLifecycle()
+    val gambitSourceNames by liveVm.sourceNames.collectAsStateWithLifecycle() // Gambit: "Voco  •  <category>" list header
     // Favorite state for the player HUD's in-stream favorite toggle (live channel / movie / series).
     val liveFavoriteIds by liveVm.favoriteIds.collectAsStateWithLifecycle()
     val playingMovie by movieVm.playingMovie.collectAsStateWithLifecycle()
@@ -421,8 +422,13 @@ fun OwnTVShell(
     // Shares the Live list's resolved titles, so opening the overlay over a list already on screen
     // asks for nothing, and only genuinely new channels cost a query.
     val overlayNowPlaying by liveVm.nowPlaying.collectAsStateWithLifecycle()
+    val overlayProgrammes by liveVm.nowProgrammes.collectAsStateWithLifecycle() // Gambit: times for the channel list
     LaunchedEffect(showChannelList, zapChannels) {
-        if (showChannelList && zapChannels.size > 1) liveVm.ensureNowPlaying(zapChannels)
+        // Gambit: and again on each minute while open, so an ended programme moves on (was once).
+        while (showChannelList && zapChannels.size > 1) {
+            liveVm.ensureNowPlaying(zapChannels)
+            kotlinx.coroutines.delay(60_000 - System.currentTimeMillis() % 60_000 + 500)
+        }
     }
     // Recently-watched channels for the right-hand history overlay — re-read each time it opens (and
     // after a zap, since tuning writes a new history row) so the newest channel is always on top.
@@ -431,7 +437,19 @@ fun OwnTVShell(
         value = runCatching { liveVm.historyChannels() }.getOrDefault(emptyList())
     }
     val historyNowPlaying = overlayNowPlaying // one shared map; the history rail adds to it below
-    LaunchedEffect(historyChannels) { liveVm.ensureNowPlaying(historyChannels) }
+    // Gambit: recently watched channels for the info bar's tiles (not the one playing), re-read after a tune.
+    val gambitRecent by produceState(emptyList<ChannelEntity>(), previewChannel?.id) {
+        val playing = previewChannel?.id
+        value = runCatching { liveVm.historyChannels() }.getOrDefault(emptyList()).filter { it.id != playing }.take(12)
+    }
+    // Gambit: the info bar's tiles and the history list, re-checked on each minute (was once).
+    LaunchedEffect(gambitRecent, historyChannels) {
+        val shown = gambitRecent + historyChannels
+        while (shown.isNotEmpty()) {
+            liveVm.ensureNowPlaying(shown)
+            kotlinx.coroutines.delay(60_000 - System.currentTimeMillis() % 60_000 + 500)
+        }
+    }
     // Batch 7 — the single most-recent resumable item, surfaced as a shared top-bar "Continue" chip.
     val continueTarget by homeVm.continueTarget.collectAsStateWithLifecycle()
 
@@ -1136,6 +1154,17 @@ fun OwnTVShell(
                             onRestored = { restoreFocus = false },
                             modifier = Modifier
                                 .fillMaxSize()
+                                // Gambit: while the side menu is open over the content, More's panel slides out from under it.
+                                .then(
+                                    tv.own.owntv.gambit.ui.rail.gambitBesideOpenRail(
+                                        railOpen = railState == tv.own.owntv.features.shell.components.RailState.OPEN &&
+                                            railSize != tv.own.owntv.core.settings.SettingsRepository.NavSize.COMPACT,
+                                        openWidth = tv.own.owntv.gambit.ui.rail.gambitRailOpenWidth(railSize),
+                                        contentStart = if (navStyle == tv.own.owntv.core.settings.SettingsRepository.NavStyle.DOCKED) {
+                                            tv.own.owntv.features.shell.components.railDockedReserve(navSize)
+                                        } else 0.dp,
+                                    ),
+                                )
                                 .onFocusChanged { if (it.hasFocus) focusedLayer = ShellLayer.CONTENT }
                                 .focusGroup(),
                         )
@@ -1474,7 +1503,7 @@ fun OwnTVShell(
                   // Step one, and where the picker always starts: every Live TV category across every
                   // playlist, so a tile can be filled from a playlist the user was not browsing —
                   // which is the whole point of the grid. Back here leaves the picker entirely.
-                  tv.own.owntv.features.shell.components.CategoryBrowserOverlay(
+                  tv.own.owntv.gambit.ui.player.GambitCategoryList( // Gambit: was CategoryBrowserOverlay
                       categories = browserCategories,
                       currentKey = grid.tiles.getOrNull(tile)?.channel?.categoryId?.let { tv.own.owntv.core.live.LiveKey.Folder(it) },
                       onSelect = { key -> liveVm.loadChannelsForCategory(key) },
@@ -1482,12 +1511,13 @@ fun OwnTVShell(
                       modifier = Modifier.fillMaxSize(),
                   )
               } else if (zapChannels.isNotEmpty()) {
-                  tv.own.owntv.features.shell.components.ChannelListOverlay(
+                  tv.own.owntv.gambit.ui.player.GambitChannelList( // Gambit: was ChannelListOverlay
                       channels = zapChannels,
                       currentId = grid.tiles.getOrNull(tile)?.channel?.id,
+                      programmes = overlayProgrammes,
                       title = zapOverlayTitle,
                       showNumbers = directTuneEnabled,
-                      providerNames = liveProviderNames,
+                      providerNames = gambitSourceNames,
                       alignEnd = true,
                       // Step two: that category's channels. Back goes up to the categories rather than
                       // out, so a wrong turn costs one press instead of starting again.
@@ -1642,6 +1672,20 @@ fun OwnTVShell(
                     // "End of programme" only at the live edge: rewound, the programme on air is not the one being watched.
                     sleepProgrammeEndMs = if (isTunedLive && !timeshifted) { { liveVm.nowNext.value?.now?.stopMs } } else null,
                     liveLeftRightRewinds = liveLeftRightRewinds,
+                    // Gambit: the info bar for live channels.
+                    gambitLiveInfo = if (isTunedLive) {
+                        tv.own.owntv.gambit.ui.player.GambitLiveInfo(
+                            channel = previewChannel,
+                            header = tv.own.owntv.gambit.ui.player.gambitListHeader(previewChannel, zapOverlayTitle, gambitSourceNames),
+                            showNumber = directTuneEnabled,
+                            nowNext = liveVm.nowNext,
+                            recent = gambitRecent,
+                            recentProgrammes = overlayProgrammes,
+                            onOpenGuide = { exitPlayer(); onSelectSection(MainSection.EPG) },
+                            onOpenHistory = { showHistoryList = true },
+                            onTune = { liveVm.ensurePlaying(it) },
+                        )
+                    } else null,
                     timeshiftOffsetSec = if (isTunedLive) { { timeshiftOffsetState.value } } else null,
                     onTuneToNumber = if (directTuneEnabled && isTunedLive && isLiveStream && !timeshifted && previewChannel != null) liveVm::tuneByNumber else null,
                     directTuneContextKey = previewChannel?.id ?: 0L,
@@ -1784,41 +1828,37 @@ fun OwnTVShell(
                     )
                 }
                 // Left — the playing channel's own provider category.
-                if (showChannelList && isLiveChannel) {
-                    if (showCategoryBrowser) {
-                        // Second Left — every Live TV category.
-                        tv.own.owntv.features.shell.components.CategoryBrowserOverlay(
-                            categories = browserCategories,
-                            currentKey = previewChannel?.categoryId?.let { tv.own.owntv.core.live.LiveKey.Folder(it) },
-                            onSelect = { key -> liveVm.loadChannelsForCategory(key) },
-                            onDismiss = { liveVm.hideCategoryBrowser() },
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else if (zapChannels.isNotEmpty()) {
-                        // First Left — the channels of the current category. A browsed-to category may
-                        // hold a single channel, so this renders for any non-empty list.
-                        tv.own.owntv.features.shell.components.ChannelListOverlay(
-                            channels = zapChannels,
-                            currentId = previewChannel?.id,
-                            nowPlaying = overlayNowPlaying,
-                            title = zapOverlayTitle,
-                            showNumbers = directTuneEnabled,
-                            onSelect = { liveVm.ensurePlaying(it); showChannelList = false },
-                            onDismiss = { showChannelList = false },
-                    onOpenCategories = { liveVm.showCategories() },
-                    providerNames = liveProviderNames,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
+                // Gambit: the channels (first Left) and every Live TV category beside them (second Left)
+                // in one panel set, in place of ChannelListOverlay / CategoryBrowserOverlay.
+                if (showChannelList && isLiveChannel && (showCategoryBrowser || zapChannels.isNotEmpty())) {
+                    tv.own.owntv.gambit.ui.player.GambitChannelPanels(
+                        showCategories = showCategoryBrowser,
+                        categories = browserCategories,
+                        currentCategory = previewChannel?.categoryId?.let { tv.own.owntv.core.live.LiveKey.Folder(it) },
+                        onSelectCategory = { key -> liveVm.loadChannelsForCategory(key) },
+                        onHideCategories = { liveVm.hideCategoryBrowser() },
+                        channels = zapChannels,
+                        currentId = previewChannel?.id,
+                        onSelectChannel = { liveVm.ensurePlaying(it); showChannelList = false },
+                        onDismiss = { showChannelList = false },
+                        onOpenCategories = { liveVm.showCategories() },
+                        programmes = overlayProgrammes,
+                        title = zapOverlayTitle,
+                        showNumbers = directTuneEnabled,
+                        providerNames = gambitSourceNames,
+                        modifier = Modifier.fillMaxSize(),
+                        loadSchedule = liveVm::gambitSchedule, // Gambit: the schedule column
+                        loadDescription = liveVm::programmeDescription,
+                    )
                 }
                 // Right — recently watched, to hop straight back to the previous channel.
                 if (showHistoryList && isLiveChannel && historyChannels.isNotEmpty()) {
-                    tv.own.owntv.features.shell.components.ChannelListOverlay(
+                    tv.own.owntv.gambit.ui.player.GambitChannelList( // Gambit: was ChannelListOverlay
                         channels = historyChannels,
                         currentId = previewChannel?.id,
-                        nowPlaying = historyNowPlaying,
+                        programmes = overlayProgrammes,
                 title = stringResource(R.string.content_history),
-                providerNames = liveProviderNames,
+                providerNames = gambitSourceNames,
                         showNumbers = directTuneEnabled,
                         alignEnd = true,
                         onSelect = { liveVm.ensurePlaying(it); showHistoryList = false },
@@ -1932,6 +1972,8 @@ fun OwnTVShell(
         val settingsRepo = koinInject<tv.own.owntv.core.settings.SettingsRepository>()
         val updateCheckOnStart by settingsRepo.updateCheckOnStart.collectAsStateWithLifecycle(initialValue = false)
         LaunchedEffect(updateCheckOnStart) {
+            // Gambit: never at startup, on any profile — it checks OwnTV's releases, not Gambit's.
+            if (!tv.own.owntv.gambit.GambitDefaults.STARTUP_UPDATE_CHECK && updateCheckOnStart) return@LaunchedEffect
             if (updateCheckOnStart && !showStartupToast) {
                 kotlinx.coroutines.delay(5_000)
                 showStartupToast = true

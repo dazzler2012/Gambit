@@ -668,7 +668,9 @@ internal fun VideoPlayerGroupRows(
     // OpenSubtitles account lives as an in-place sub-screen of this tab (plan §15). These three
     // are declared before the early return so they survive while the sub-screen is shown — that's
     // what lets Back land focus on the row that opened it instead of the top of the list.
-    var dialog by remember { mutableStateOf(Dialog.NONE) }
+    // Gambit: keyed on the page, so a list left open on one page (Picture's Maximum video quality) does
+    // not carry over into the next one this same call draws (Sound & subtitles). Was remember { … }.
+    var dialog by remember(group) { mutableStateOf(Dialog.NONE) }
     /** Whether the Custom-latency stepper actually set a value this time round — the mode switch to
      *  Custom, and the low-latency acknowledgement, both hang off that rather than off merely opening it. */
     var customCommitted by remember { mutableStateOf(false) }

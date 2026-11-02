@@ -14,7 +14,8 @@ object ProviderTags {
     // "DE|", "DE |", "UK |" — two or three capitals and a bar at the very start.
     private val countryPrefix = Regex("""^([A-Z]{2,3})\s*\|\s*""")
 
-    fun parse(raw: String): ProviderName {
+    fun parse(source: String): ProviderName {
+        val raw = tv.own.owntv.gambit.text.GambitText.decode(source) // Gambit: HTML entities as sent by some providers ("&#127875;" → 🎃)
         val prefix = countryPrefix.find(raw)
         var rest = if (prefix != null) raw.substring(prefix.range.last + 1) else raw
         val tags = mutableListOf<String>()

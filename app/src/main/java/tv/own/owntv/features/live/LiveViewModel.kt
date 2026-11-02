@@ -464,6 +464,62 @@ class LiveViewModel(
         .map { it.value }
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
+    // ---- Gambit ---------------------------------------------------------------------------------
+
+    /** Gambit: every active Live source's name, even with one playlist — the in-player list header. */
+    val sourceNames: StateFlow<Map<Long, String>> = ctx
+        .map { it.sourceNames }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /** Gambit: the guide's own per-channel read, for the in-player schedule column. */
+    private val gambitGuideReader by lazy {
+        tv.own.owntv.core.live.GuideReader(
+            epgDao, org.koin.core.context.GlobalContext.get().get<tv.own.owntv.core.epg.EpgSourceStore>(), sourceDao, epgReader,
+        )
+    }
+
+    /** Gambit: one channel's programmes between [fromMs] and [toMs] (descriptions are fetched on demand). */
+    suspend fun gambitSchedule(ch: ChannelEntity, fromMs: Long, toMs: Long): List<tv.own.owntv.core.database.entity.EpgProgrammeEntity> =
+        gambitGuideReader.row(ch, custom.value, epgOffset.value, fromMs, toMs)
+
+    /** Gambit: the channel last tuned to play, for the guide's ▶ ([previewChannel] follows the guide's cursor). */
+    private val _gambitTunedId = MutableStateFlow<Long?>(null)
+    val gambitTunedId: StateFlow<Long?> = _gambitTunedId.asStateFlow()
+    private val gambitContext: android.content.Context by lazy { org.koin.core.context.GlobalContext.get().get() }
+
+    /** Gambit: what was tuned in an earlier run, so the ▶ is there from the start. */
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            val saved = tv.own.owntv.gambit.GambitLastTuned.read(gambitContext) ?: return@launch
+            _gambitTunedId.compareAndSet(null, saved)
+        }
+    }
+
+    /** Gambit: the last played channel itself, for the guide to open on its folder and row. */
+    suspend fun gambitTunedChannel(): ChannelEntity? = _gambitTunedId.value?.let { channelDao.getById(it) }
+
+    private fun gambitNoteTuned(channelId: Long) {
+        _gambitTunedId.value = channelId
+        viewModelScope.launch(Dispatchers.IO) { tv.own.owntv.gambit.GambitLastTuned.write(gambitContext, channelId) }
+    }
+
+    /**
+     * Gambit: the programme on now per channel, read the way the TV Guide reads a row — that read includes
+     * the provider's own guide, which is all some playlists have (the quick lookup and the batch read find
+     * nothing for them). One small read per channel, so at most [GAMBIT_NOW_LIMIT] channels per call.
+     */
+    private suspend fun gambitNowFromGuide(channels: List<ChannelEntity>): Map<Long, tv.own.owntv.core.parser.XtEpgEntry> {
+        val t = System.currentTimeMillis()
+        return buildMap {
+            channels.take(GAMBIT_NOW_LIMIT).forEach { ch ->
+                val rows = runCatching { gambitGuideReader.row(ch, custom.value, epgOffset.value, t - 6 * 3_600_000L, t + 3_600_000L) }.getOrDefault(emptyList())
+                rows.firstOrNull { t >= it.startMs && t < it.stopMs }?.let { p -> put(ch.id, tv.own.owntv.core.parser.XtEpgEntry(p.title, p.description.orEmpty(), p.startMs, p.stopMs)) }
+            }
+        }
+    }
+
+    // ---- end Gambit -----------------------------------------------------------------------------
+
     /** The user's custom combined categories with live member counts — the "Move to…" dialog's list. */
     val moveTargets: StateFlow<List<MoveTarget>> = combine(ctx, custom) { c, cust -> c to cust }
         .flatMapLatest { (c, cust) ->
@@ -1379,7 +1435,7 @@ class LiveViewModel(
             }
             externalPlayerLauncher.launch(
                 url = url,
-                title = channel.name,
+                title = tv.own.owntv.gambit.text.GambitText.decode(channel.name), // Gambit: entities decoded
                 userAgent = source?.userAgent,
                 httpHeaders = SourceOverrides.headersWithReferer(channel.httpHeaders, source),
             )
@@ -1420,6 +1476,7 @@ class LiveViewModel(
         // carries a licence URL, so the external player would open it and fail immediately.
         if (externalPlayerOn.value && channel.drmConfig == null) { playExternal(channel); return }
         _previewChannel.value = channel
+        gambitNoteTuned(channel.id) // Gambit: the guide's ▶
         clearTimeshift() // normal live = not timeshifted
         _catchupActive.value = false // tuning live ends any archive playback the HUD was showing
         // Core routes it (DRM, the pin, a learned panel refusal, the playlist, the setting), arms the
@@ -1591,7 +1648,7 @@ class LiveViewModel(
             playingCatchupProgramme = programme // …and the anchor auto-play continues from
             releaseForArchive() // catch-up is a VOD-style archive on mpv, not the live ExoPlayer channel
             // isLive=false → seekable archive; isArchive → mid-GOP tolerant (hardware first, software rescue).
-            player.play(url, title = ch.name, subtitle = programme.title, logoUrl = ch.displayLogoUrl, isLive = false, isArchive = true, userAgent = sourceUa, httpHeaders = headersFor(ch))
+            player.play(url, title = tv.own.owntv.gambit.text.GambitText.decode(ch.name) /* Gambit: entities decoded */, subtitle = programme.title, logoUrl = ch.displayLogoUrl, isLive = false, isArchive = true, userAgent = sourceUa, httpHeaders = headersFor(ch))
             // The picture is this programme's own airtime, not the present — drive the "watching" clock
             // from its start, exactly as the rewind path does from the archive's start. The offset stays
             // null: a fixed programme is not the live rewind, so the HUD keeps its VOD chrome.
@@ -1758,7 +1815,7 @@ class LiveViewModel(
         clearLiveOnExo() // archive plays as a VOD-style mpv stream, not the live ExoPlayer channel
         player.play(
             url = url,
-            title = ch.name,
+            title = tv.own.owntv.gambit.text.GambitText.decode(ch.name), // Gambit: entities decoded
             logoUrl = ch.displayLogoUrl,
             isArchive = true,
             userAgent = sourceUa,
@@ -1852,11 +1909,17 @@ class LiveViewModel(
     fun ensureNowPlaying(loaded: List<ChannelEntity>) {
         if (loaded.isEmpty()) return
         val known = cachedNowPlaying()
-        val missing = loaded.filter { it.id !in known }
+        // Gambit: a programme that has ended counts as missing, so its channel moves on to what is on now
+        // (it stayed "No information" in the info bar's tiles and the player's lists). Was `it.id !in known`.
+        val t = System.currentTimeMillis()
+        val missing = loaded.filter { it.id !in known || known[it.id]?.let { p -> t >= p.stopMs } == true }
         if (missing.isEmpty()) return
         nowPlayingJob?.cancel()
         nowPlayingJob = viewModelScope.launch {
-            val found = runCatching { nowPlayingFor(missing) }.getOrDefault(emptyMap())
+            val quick = runCatching { nowPlayingFor(missing) }.getOrDefault(emptyMap())
+            // Gambit: what the quick lookup can't answer, from the guide's own reader (with the provider
+            // fallback) — the tiles and player lists showed "No information" where the guide had a programme.
+            val found = quick + gambitNowFromGuide(missing.filter { it.id !in quick })
             // Remember the ones with no guide too, as null — otherwise they are re-queried on
             // every single append, which is most of the cost this removes.
             publishNowPlaying(found + missing.filter { it.id !in found }.associate { it.id to null })
@@ -1995,6 +2058,8 @@ class LiveViewModel(
         liveCountFlow(key, c.profileId, c.sourceIds, hiddenCats, channelDao, customCategoryDao)
 
     private companion object {
+        /** Gambit: channels per call read through the guide for "on now" (each is one small read). */
+        const val GAMBIT_NOW_LIMIT = 24
         const val ENGINE_TAG = "LiveEngine"
 
         /** How long a channel must stay tuned before it counts as watched — see [recordLiveHistory]. */

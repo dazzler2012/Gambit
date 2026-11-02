@@ -28,6 +28,9 @@ import tv.own.owntv.R
 import tv.own.owntv.core.brand.AppIcon
 import tv.own.owntv.core.brand.AppIconSwitcher
 import tv.own.owntv.core.settings.SettingsRepository
+import tv.own.owntv.gambit.ui.brand.GambitMark
+import tv.own.owntv.gambit.ui.brand.GambitWordmark
+import tv.own.owntv.gambit.ui.theme.GambitLook
 import tv.own.owntv.ui.theme.OwnTVTheme
 import tv.own.owntv.ui.theme.stageAccent
 
@@ -57,6 +60,7 @@ private fun accentTriangle(): Color? {
  */
 @Composable
 fun BrandMark(icon: AppIcon, size: Dp, modifier: Modifier = Modifier, followAccent: Boolean = true) {
+    if (GambitLook.Brand) { GambitMark(size, modifier); return } // Gambit: the pawn instead of the OwnTV card
     val small = size <= 32.dp
     val accent = accentTriangle().takeIf { followAccent }
     if (icon == AppIcon.PIXEL && !small) {
@@ -132,6 +136,7 @@ private fun pixelDots(): List<Triple<Float, Float, Int>> {
  */
 @Composable
 fun Wordmark(width: Dp, modifier: Modifier = Modifier, tv: Color = stageAccent.accent, own: Color = WordmarkCream) {
+    if (GambitLook.Brand) { GambitWordmark(width, modifier, own); return } // Gambit: "Gambit" instead of "owntv"
     Box(modifier.width(width).height(width * 182f / 988f)) {
         Image(painterResource(R.drawable.owntv_wordmark_own), null, Modifier.fillMaxSize(), colorFilter = ColorFilter.tint(own))
         Image(painterResource(R.drawable.owntv_wordmark_tv), null, Modifier.fillMaxSize(), colorFilter = ColorFilter.tint(tv))

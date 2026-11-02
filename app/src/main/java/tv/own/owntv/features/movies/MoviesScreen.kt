@@ -1088,7 +1088,7 @@ fun MoviesScreen(
 
     // Move mode overlay.
     moveState?.let { ms ->
-        MoveOrderOverlay(
+        tv.own.owntv.gambit.ui.GambitMoveOverlay( // Gambit: in a popup, over the top bar (was MoveOrderOverlay)
             title = stringResource(R.string.content_reorder_movie),
             itemNames = ms.items.map { it.name },
             activeIndex = ms.activeIndex,
@@ -1101,7 +1101,7 @@ fun MoviesScreen(
 
     // Category Move mode overlay — intercepts D-pad Up/Down/OK/Back while reordering.
     categoryMoveState?.let { ms ->
-        MoveOrderOverlay(
+        tv.own.owntv.gambit.ui.GambitMoveOverlay( // Gambit: in a popup, over the top bar (was MoveOrderOverlay)
             title = stringResource(R.string.content_move),
             itemNames = ms.items,
             activeIndex = ms.activeIndex,

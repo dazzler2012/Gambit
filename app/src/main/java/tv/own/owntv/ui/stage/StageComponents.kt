@@ -51,6 +51,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.em
 import androidx.tv.material3.Text
+import tv.own.owntv.gambit.ui.theme.GambitLook
+import tv.own.owntv.gambit.ui.theme.gambitFocusDecor
 import tv.own.owntv.ui.components.OwnTVIcon
 import tv.own.owntv.ui.theme.StageAccent
 import tv.own.owntv.ui.theme.StageColors
@@ -75,7 +77,11 @@ enum class StageFocus { FX, FILLED, PRIMARY, POSTER }
 @Composable
 fun Modifier.stageFocusLook(style: StageFocus, radius: Dp): Modifier = stageFocusDecor(style, radius, stageAccent)
 
-private fun Modifier.stageFocusDecor(style: StageFocus, radius: Dp, a: StageAccent) = drawBehind {
+// Gambit: the focus look is swapped for a flat fill (gambit/ui/theme/GambitTokens.kt).
+private fun Modifier.stageFocusDecor(style: StageFocus, radius: Dp, a: StageAccent): Modifier =
+    if (GambitLook.FlatFocus) gambitFocusDecor(style, radius, a) else stageFocusDecorOwnTV(style, radius, a)
+
+private fun Modifier.stageFocusDecorOwnTV(style: StageFocus, radius: Dp, a: StageAccent) = drawBehind {
     val r = radius.toPx()
     val px = 1.mpx.toPx()
     when (style) {
@@ -512,7 +518,7 @@ fun StageRow(
 fun StageMenu(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier
-            .stageGlass(StageRadii.Menu, overContent = true)
+            .then(if (tv.own.owntv.gambit.ui.theme.GambitLook.FlatFocus) tv.own.owntv.gambit.ui.settings.gambitMenuPanel() else Modifier.stageGlass(StageRadii.Menu, overContent = true)) // Gambit: flat #121212
             .padding(start = 16.mpx, end = 16.mpx, top = 22.mpx, bottom = 16.mpx),
         content = content,
     )
@@ -1065,6 +1071,7 @@ fun StageStepper(value: String) {
 /** `.sw2`: 56×32 switch, display only like [StageStepper]. */
 @Composable
 fun StageSwitch(on: Boolean) {
+    if (tv.own.owntv.gambit.ui.theme.GambitLook.FlatFocus) { tv.own.owntv.gambit.ui.settings.GambitSwitch(on); return } // Gambit: light green on dark green
     val a = stageAccent
     Box(
         Modifier

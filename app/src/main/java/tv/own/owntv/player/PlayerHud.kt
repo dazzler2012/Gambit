@@ -216,6 +216,9 @@ fun PlayerHud(
     // N6 — Settings → "Left and right rewind live TV": with the controls hidden, Left/Right on a
     // catch-up channel scrub instead of opening the lists. Films always seek.
     liveLeftRightRewinds: Boolean = false,
+    // Gambit: the playing live channel for the info bar; non-null draws it in place of the top strip,
+    // centre controls and dock on live channels.
+    gambitLiveInfo: tv.own.owntv.gambit.ui.player.GambitLiveInfo? = null,
     modifier: Modifier = Modifier,
 ) {
     // T14 — nothing that ticks is read in this root scope: with the controls hidden it used to recompose
@@ -631,7 +634,59 @@ fun PlayerHud(
         // stop button one stray D-pad press from the middle of a programme is not a kindness.
         RecordingBadge(modifier = Modifier.align(Alignment.TopEnd))
 
-        if (controlsVisible) {
+        // "Report this stream" — shared by the dock and Gambit's menu row.
+        val reportDuration = duration.takeIf { it > 0 }?.let { formatTime(it) }
+        val reportSavedMessage = stringResource(R.string.player_report_saved)
+        val reportStream: () -> Unit = {
+            val meta = player.currentMeta.value
+            // The readout is gathered on the player's own thread now (A-F2), so the report is
+            // written from a coroutine. The confirmation still flashes immediately — the user
+            // pressed a button and must see it acknowledged.
+            // Read at the press, not per tick.
+            val reportPosition = tv.own.owntv.ui.components.formatTimestamp(reportContext.resources, position.value)
+            hudScope.launch {
+                val snapshot = buildString {
+                    appendLine(player.streamInfo().joinToString("\n") { (k, v) -> "  $k: $v" })
+                    appendLine("  position: $reportPosition${reportDuration?.let { " / $it" }.orEmpty()}")
+                }
+                PlaybackErrorLog.report(
+                    context = reportContext,
+                    engine = engineChip ?: "?",
+                    live = isLive,
+                    title = meta.title,
+                    snapshot = snapshot,
+                )
+            }
+            engineMsg = reportSavedMessage
+            engineFlash++
+        }
+
+        // Gambit: live channels get the info bar in TiviMate's layout; an error keeps OwnTV's chrome.
+        val gambitBar = gambitLiveInfo?.takeIf { isLive && error == null }
+        if (controlsVisible && gambitBar != null) {
+            tv.own.owntv.gambit.ui.player.GambitInfoBar(
+                info = gambitBar,
+                chips = streamChips.ifEmpty { listOfNotNull(videoRes) },
+                timeshiftOffsetSec = timeshiftOffset,
+                onScrub = onScrubLive,
+                scrubStepSec = LIVE_SCRUB_STEP_SEC,
+                onGoToLive = onGoToLive,
+                firstFocus = playFocus,
+                timelineFocus = seekFocus,
+                menu = tv.own.owntv.gambit.ui.player.gambitLiveMenu(
+                    player = player, volume = volume, audioCount = audioCount, subCount = subCount,
+                    zoomMode = zoomMode, speedLabel = formatSpeed(speed),
+                    favorite = favorite, onToggleFavorite = onToggleFavorite,
+                    onOpenJumpBack = if (onJumpBack != null) { { dialog = HudDialog.JUMP_BACK } } else null,
+                    onPreviousChannel = onPreviousChannel,
+                    compatMode = compatMode, onToggleCompatMode = toggleCompat,
+                    onPip = onPip, onAudioMode = onAudioMode, onMultiview = onMultiview,
+                    onRecordThis = onRecordThis, recordingThis = recordingThis,
+                    infoOn = showInfo, onInfo = { showInfo = !showInfo }, onReport = reportStream,
+                    onOpenDialog = { dialog = it },
+                ),
+            )
+        } else if (controlsVisible) {
             // Scrims: a FLAT semi-transparent panel behind the controls, feathered to transparent only at
             // the inner edge. A pure gradient faded out exactly where the chips and the Now/Next text sit,
             // so those washed out on bright scenes; a hard-edged band would instead draw a visible seam
@@ -671,9 +726,6 @@ fun PlayerHud(
             if (error == null) {
                 CenterControls(player, nav, isPlaying, isLive, onRewindLive, onForwardLive, timeshiftOffset, playFocus, modifier = Modifier.align(Alignment.Center))
 
-                val reportDuration = duration.takeIf { it > 0 }?.let { formatTime(it) }
-                val reportSavedMessage = stringResource(R.string.player_report_saved)
-
                 BottomBar(
                     seekFocus = seekFocus,
                     player = player, isLive = isLive, position = { position.value }, duration = duration,
@@ -687,29 +739,7 @@ fun PlayerHud(
                     compatMode = compatMode, onToggleCompatMode = toggleCompat,
                     vodOnExo = vodOnExo, onToggleVodEngine = toggleVod,
                     onInfo = { showInfo = !showInfo }, infoOn = showInfo,
-                    onReport = {
-                        val meta = player.currentMeta.value
-                        // The readout is gathered on the player's own thread now (A-F2), so the report is
-                        // written from a coroutine. The confirmation still flashes immediately — the user
-                        // pressed a button and must see it acknowledged.
-                        // Read at the press, not per tick.
-                        val reportPosition = tv.own.owntv.ui.components.formatTimestamp(reportContext.resources, position.value)
-                        hudScope.launch {
-                            val snapshot = buildString {
-                                appendLine(player.streamInfo().joinToString("\n") { (k, v) -> "  $k: $v" })
-                                appendLine("  position: $reportPosition${reportDuration?.let { " / $it" }.orEmpty()}")
-                            }
-                            PlaybackErrorLog.report(
-                                context = reportContext,
-                                engine = engineChip ?: "?",
-                                live = isLive,
-                                title = meta.title,
-                                snapshot = snapshot,
-                            )
-                        }
-                        engineMsg = reportSavedMessage
-                        engineFlash++
-                    },
+                    onReport = reportStream,
                     favorite = favorite, onToggleFavorite = onToggleFavorite,
                     onOpenDialog = { dialog = it }, onPip = onPip, onAudioMode = onAudioMode,
                     onMultiview = onMultiview, onRecordThis = onRecordThis, recordingThis = recordingThis, onBack = onBack,

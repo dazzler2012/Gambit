@@ -555,7 +555,7 @@ fun PopupSizeSample(sizePercent: Int) {
             Text(stringResource(R.string.content_exit_owntv), style = stageText(38, 800), color = StageColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(stringResource(R.string.content_exit_confirmation), style = stageText(18, 400), color = StageColors.Muted, modifier = Modifier.padding(top = 10.mpx))
             Row(Modifier.fillMaxWidth().padding(top = 46.mpx), horizontalArrangement = Arrangement.spacedBy(14.mpx, Alignment.End)) {
-                Box(Modifier.height(56.mpx).background(a.accent, RoundedCornerShape(StageRadii.Button)).padding(horizontal = 26.mpx), contentAlignment = Alignment.Center) {
+                Box(Modifier.height(56.mpx).background(if (tv.own.owntv.gambit.ui.theme.GambitLook.FlatFocus) tv.own.owntv.gambit.ui.theme.gambitFocusFill(a.accent) else a.accent /* Gambit: dark green under white text */, RoundedCornerShape(StageRadii.Button)).padding(horizontal = 26.mpx), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.common_cancel), style = stageText(19, 700), color = a.onAccent, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
                 Box(Modifier.height(56.mpx).background(a.accent.copy(alpha = 0.2f), RoundedCornerShape(StageRadii.Button)).padding(horizontal = 26.mpx), contentAlignment = Alignment.Center) {
@@ -599,6 +599,7 @@ private fun Int.mpxSpLine() = with(androidx.compose.ui.platform.LocalDensity.cur
  */
 @Composable
 fun StageSettingsHeading(text: String, count: Int?, first: Boolean = false) {
+    if (tv.own.owntv.gambit.ui.theme.GambitLook.FlatFocus) { tv.own.owntv.gambit.ui.settings.GambitSettingsHeading(text, count, first); return } // Gambit: sentence case, light green
     Row(
         Modifier.padding(start = 22.mpx, top = if (first) 2.mpx else 18.mpx, bottom = 8.mpx),
         horizontalArrangement = Arrangement.spacedBy(10.mpx),
@@ -675,6 +676,8 @@ fun StageSettingRow(
     ) { focused ->
         // While focused the panel follows this row, value changes included.
         if ((focused || keepPanel) && panel != null) androidx.compose.runtime.SideEffect { panel.help = help }
+        // Gambit: no icon, the value on a second line, the switch on the right.
+        if (tv.own.owntv.gambit.ui.theme.GambitLook.FlatFocus) { tv.own.owntv.gambit.ui.settings.GambitSettingRowContent(title, desc, value, pinned, enabled, focused); return@StageSurface }
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 22.mpx),
             horizontalArrangement = Arrangement.spacedBy(18.mpx),

@@ -78,7 +78,10 @@ internal fun WizardFrame(
             horizontalArrangement = Arrangement.spacedBy(14.mpx),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(44.mpx).background(LockupTile, RoundedCornerShape(12.mpx)), contentAlignment = Alignment.Center) {
+            if (tv.own.owntv.gambit.ui.theme.GambitLook.Brand) {
+                // Gambit: the app's own mark (was OwnTV's play mark on a cream tile).
+                tv.own.owntv.ui.components.BrandMark(tv.own.owntv.ui.components.rememberAppliedIcon(), 44.mpx)
+            } else Box(Modifier.size(44.mpx).background(LockupTile, RoundedCornerShape(12.mpx)), contentAlignment = Alignment.Center) {
                 OwnTVIcon(OwnTVIcon.PLAY, LockupMark, Modifier.size(22.mpx))
             }
             Text(stringResource(R.string.app_name), style = stageText(24, 800), color = StageColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)

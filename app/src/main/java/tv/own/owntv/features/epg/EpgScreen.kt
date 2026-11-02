@@ -63,6 +63,12 @@ import tv.own.owntv.core.live.LiveKey
 import tv.own.owntv.core.model.RecordingStatus
 import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.features.live.LiveCategories
+import tv.own.owntv.gambit.ui.guide.GambitChannelLabel
+import tv.own.owntv.gambit.ui.guide.GambitGuideRuler
+import tv.own.owntv.gambit.ui.guide.GambitGuideVideo
+import tv.own.owntv.gambit.ui.guide.GambitProgrammeBlock
+import tv.own.owntv.gambit.ui.guide.GambitProgrammeStrip
+import tv.own.owntv.gambit.ui.guide.gambitNowLine
 import tv.own.owntv.features.live.LiveViewModel
 import tv.own.owntv.features.live.ProviderTags
 import tv.own.owntv.features.live.edgeScrollSpec
@@ -199,6 +205,7 @@ fun EpgScreen(
     val playlistMarks by liveVm.playlistMarks.collectAsStateWithLifecycle()
     val livePreviewSetting by liveVm.livePreviewEnabled.collectAsStateWithLifecycle()
     val previewChannel by liveVm.previewChannel.collectAsStateWithLifecycle()
+    val gambitTunedId by liveVm.gambitTunedId.collectAsStateWithLifecycle() // Gambit: the ▶ on the playing channel
     val previewArmed by liveVm.previewArmed.collectAsStateWithLifecycle()
 
     // Live TV's Guide view shows Live TV's own category; the TV Guide keeps its own choice.
@@ -307,6 +314,29 @@ fun EpgScreen(
         onRestored()
     }
 
+    // Gambit: the TV Guide opens on the last played channel's folder, scrolled to its row (TiviMate). Focus
+    // moves to that row only if the grid already has it; entered from the menu, focus stays there.
+    LaunchedEffect(Unit) {
+        if (liveMode) return@LaunchedEffect
+        val ch = liveVm.gambitTunedChannel() ?: return@LaunchedEffect
+        ch.categoryId?.let { vm.setCategoryFilter(LiveKey.Folder(it)) }
+        // The folder's own list, then the row: up to 5 s for it to arrive. The list on screen when the
+        // guide opens (All channels, say) holds the channel too, but at another row number.
+        val folder = ch.categoryId
+        val idx = kotlinx.coroutines.withTimeoutOrNull(5_000) {
+            var i = -1
+            while (i < 0) {
+                val rows = state.channels
+                if (!state.loading && (folder == null || rows.all { it.categoryId == folder })) i = rows.indexOfFirst { it.id == ch.id }
+                if (i < 0) delay(100)
+            }
+            i
+        } ?: return@LaunchedEffect
+        focusedRow = idx
+        runCatching { rowListState.scrollToItem((idx - 2).coerceAtLeast(0)) }
+        if (gridHasFocus) focusGrid(idx)
+    }
+
     // --- Overlays --------------------------------------------------------------------------------------
     var menuFor by remember { mutableStateOf<Pair<ChannelEntity, EpgProgrammeEntity>?>(null) }
     var channelMenuFor by remember { mutableStateOf<ChannelEntity?>(null) }
@@ -318,6 +348,12 @@ fun EpgScreen(
     var dayOpen by remember { mutableStateOf(false) }
     var sheetOpen by remember { mutableStateOf(false) }
     var sheetHadFocus by remember { mutableStateOf(false) }
+    // Gambit: hide / move from the category sheet, as Live TV's column — the group whose menu is open,
+    // Live TV's move in progress, and the sheet row focus goes back to when either closes.
+    var gambitGroupMenu by remember { mutableStateOf<tv.own.owntv.features.live.LiveRailItem?>(null) }
+    val gambitGroupMove by liveVm.categoryMoveState.collectAsStateWithLifecycle()
+    var gambitReturnRow by remember { mutableStateOf<Int?>(null) }
+    var gambitMoveKey by remember { mutableStateOf<LiveKey?>(null) }
     var searchOpen by remember { mutableStateOf(false) }
     // The field reports "not focused" when it first attaches; it only closes after it has had focus (playbook 10).
     var searchHadFocus by remember { mutableStateOf(false) }
@@ -428,10 +464,8 @@ fun EpgScreen(
         // Top (44 → 404): the video, and beside it the programme under the cursor.
         Row(Modifier.padding(start = fx(64), end = fx(64), top = 44.mpx).fillMaxWidth().height(360.mpx)) {
         val videoChannel = if (effectivePreview) previewChannel ?: topChannel else topChannel
-        GuideVideo(
+        GambitGuideVideo( // Gambit: was GuideVideo
             channel = videoChannel,
-            channelLine = videoChannel?.let { listOfNotNull(it.number?.toString(), ProviderTags.parse(it.name).name).joinToString(" · ") },
-            nowTitle = videoChannel?.let { ch -> programmeAt(vm.cachedProgrammes(ch), liveNow)?.takeIf { liveNow < it.stopMs }?.title },
             previewEngine = liveVm.previewEngine,
             showVideo = effectivePreview && previewArmed,
             modifier = Modifier.width(640.mpx),
@@ -440,11 +474,10 @@ fun EpgScreen(
         Box(Modifier.weight(1f).fillMaxHeight()) {
             if (topChannel != null) {
                 val chName = ProviderTags.parse(topChannel.name).name
-                GuideProgrammeBlock(
-                    eyebrow = shown?.let { programmeEyebrow(it, chName, liveNow) },
-                    title = shown?.title ?: chName,
-                    details = if (shown == null) stringResource(R.string.content_epg_no_programme) else programmeDetailsLine(shown),
-                    synopsis = shown?.description,
+                GambitProgrammeBlock( // Gambit: was GuideProgrammeBlock
+                    programme = shown,
+                    fallbackTitle = chName,
+                    now = liveNow,
                     modifier = Modifier.padding(start = 46.mpx, top = 76.mpx).widthIn(max = 1080.mpx),
                 )
             }
@@ -530,9 +563,10 @@ fun EpgScreen(
                     val gx = fx(48) + labelW
                     // The number column fits the longest channel number (38 = the mockup's three digits).
                     val numberWidth = maxOf(38f, (state.channels.maxOfOrNull { it.number?.toString()?.length ?: 0 } ?: 0) * 11f).mpx
-                    GuideRuler(
+                    GambitGuideRuler( // Gambit: was GuideRuler
                         windowStart = state.windowStart, windowEnd = state.windowEnd, now = liveNow, scrollPx = scrollPx,
-                        modifier = Modifier.padding(start = gx).width(timelineW).height(40.mpx),
+                        labelWidth = labelW, timelineWidth = timelineW,
+                        modifier = Modifier.padding(start = fx(48)).height(40.mpx),
                     )
                     CompositionLocalProvider(androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides edgeScrollSpec) {
                         LazyColumn(
@@ -552,6 +586,7 @@ fun EpgScreen(
                                     channel = channel,
                                     name = rowName(channel),
                                     dot = playlistMarks[channel.sourceId]?.color,
+                                    playing = channel.id == gambitTunedId, // Gambit
                                     labelWidth = labelW,
                                     numberWidth = numberWidth,
                                     windowStart = state.windowStart,
@@ -595,7 +630,7 @@ fun EpgScreen(
                                 .padding(start = gx + nowX - 1.5.mpx, top = 38.mpx, bottom = 24.mpx)
                                 .width(3.mpx)
                                 .fillMaxHeight()
-                                .guideNowLine(stageAccent.accent),
+                                .gambitNowLine(), // Gambit: was guideNowLine(stageAccent.accent)
                         )
                     }
                 }
@@ -623,7 +658,12 @@ fun EpgScreen(
                     scope.launch { runCatching { rowListState.scrollToItem(0) } }
                     focusGrid(0)
                 },
-                onLongSelect = {},
+                // Gambit: Live TV's hide / move menu (was {}), for provider and custom groups only.
+                onLongSelect = { idx ->
+                    railItems.getOrNull(idx)?.takeIf { it.key is LiveKey.Folder || it.key is LiveKey.Custom }?.let { gambitGroupMenu = it }
+                },
+                focusRowIndex = gambitReturnRow,
+                onRowFocused = { gambitReturnRow = null },
                 onNavigateRight = { sheetOpen = false; focusGrid() },
                 focusRequester = sheetFocus,
                 sheetTitle = stringResource(R.string.content_epg_guide_category),
@@ -634,10 +674,56 @@ fun EpgScreen(
                     .fillMaxHeight()
                     .onFocusChanged {
                         // Closes when focus leaves it — not on the "unfocused" report every node gets when it attaches.
-                        if (it.hasFocus) sheetHadFocus = true else if (sheetHadFocus && sheetOpen) sheetOpen = false
+                        if (it.hasFocus) sheetHadFocus = true
+                        else if (sheetHadFocus && sheetOpen && gambitGroupMenu == null && gambitGroupMove == null) sheetOpen = false // Gambit: not while its menu / move is up
                     },
             )
         }
+    }
+
+    // Gambit: the category sheet's hide / move — OwnTV's own menu and move overlay, Live TV's actions.
+    gambitGroupMenu?.let { item ->
+        tv.own.owntv.features.shell.components.CategoryContextMenu(
+            categoryName = item.title.orEmpty(), // a provider or custom group's own name
+            canHide = true,
+            canMove = true,
+            onHide = {
+                gambitGroupMenu = null
+                val row = railItems.indexOfFirst { it.key == item.key }
+                // The guide was showing this group: show All channels rather than an empty grid.
+                if (item.key == categoryKey) { if (liveMode) liveVm.select(LiveKey.All) else vm.setCategoryFilter(null) }
+                liveVm.hideCategory(item.key)
+                // Back to the row now in its place, once the list no longer holds the group.
+                scope.launch {
+                    kotlinx.coroutines.withTimeoutOrNull(1_000) { while (railItems.any { it.key == item.key }) delay(50) }
+                    gambitReturnRow = row.coerceAtMost(railItems.size - 1).coerceAtLeast(0)
+                }
+            },
+            onMove = { gambitMoveKey = item.key; gambitGroupMenu = null; liveVm.enterCategoryMoveMode(item.key) },
+            onDismiss = {
+                gambitGroupMenu = null
+                gambitReturnRow = railItems.indexOfFirst { it.key == item.key }.takeIf { it >= 0 }
+            },
+        )
+    }
+    gambitGroupMove?.let { ms ->
+        tv.own.owntv.gambit.ui.GambitMoveOverlay( // Gambit: in a popup, over the top bar (was MoveOrderOverlay)
+            title = stringResource(R.string.content_move),
+            itemNames = ms.items,
+            activeIndex = ms.activeIndex,
+            onMoveUp = liveVm::moveCategoryUp,
+            onMoveDown = liveVm::moveCategoryDown,
+            onCommit = liveVm::commitCategoryMove,
+            onCancel = liveVm::cancelCategoryMove,
+        )
+    }
+    // Gambit: after a move (saved or cancelled), focus back on the moved group in the sheet.
+    LaunchedEffect(gambitGroupMove) {
+        if (gambitGroupMove != null) return@LaunchedEffect
+        val key = gambitMoveKey ?: return@LaunchedEffect
+        gambitMoveKey = null
+        delay(60)
+        gambitReturnRow = railItems.indexOfFirst { it.key == key }.takeIf { it >= 0 }
     }
 
     menuFor?.let { (ch, p) ->
@@ -745,6 +831,7 @@ private fun GuideRow(
     channel: ChannelEntity,
     name: String,
     dot: Color?,
+    playing: Boolean, // Gambit: the ▶ on the playing channel
     labelWidth: androidx.compose.ui.unit.Dp,
     numberWidth: androidx.compose.ui.unit.Dp,
     windowStart: Long,
@@ -781,7 +868,7 @@ private fun GuideRow(
     LaunchedEffect(focused, cursorTime, programmes) { if (focused) onShow(programmeAt(programmes, cursorTime)) }
     val rowSelected = focused && !cellMode
     Row(Modifier.fillMaxWidth().height(GuideGridDefaults.RowHeight), verticalAlignment = Alignment.CenterVertically) {
-        GuideChannelLabel(channel, name, dot, selected = selectedRow, numberWidth = numberWidth, modifier = Modifier.width(labelWidth))
+        GambitChannelLabel(channel, name, dot, numberWidth = numberWidth, playing = playing, modifier = Modifier.width(labelWidth)) // Gambit: was GuideChannelLabel
         Box(
             Modifier
                 .weight(1f)
@@ -816,17 +903,17 @@ private fun GuideRow(
                         else -> false
                     }
                 }
-                .focusable()
-                .then(if (rowSelected) Modifier.stageFocusLook(tv.own.owntv.ui.stage.StageFocus.FX, 14.mpx) else Modifier),
+                .focusable(), // Gambit: the selected row is drawn by the strip's cursor cell, not stageFocusLook(FX)
         ) {
             programmes?.let { progs ->
                 val catchupIds = remember(progs, channel, now) { progs.filter { vm.canCatchup(channel, it, now) }.mapTo(HashSet()) { it.id } }
-                ProgrammeStripCanvas(
+                GambitProgrammeStrip( // Gambit: was ProgrammeStripCanvas
                     programmes = progs,
                     windowStart = windowStart,
                     windowEnd = windowEnd,
                     now = now,
                     focusTime = if (focused && cellMode) cursorTime else null,
+                    rowCursor = if (rowSelected) cursorTime else null,
                     catchupIds = catchupIds,
                     recordingStarts = recordingStarts,
                     reminderStarts = reminderStarts,

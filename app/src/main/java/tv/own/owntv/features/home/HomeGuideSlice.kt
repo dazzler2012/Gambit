@@ -122,7 +122,7 @@ internal fun OnNowCard(
         ) {
             ChannelPlate(channel, Modifier.size(84.mpx, 60.mpx))
             Column(Modifier.weight(1f).fillMaxHeight()) {
-                Text(channel.name, style = stageText(20, 700), color = StageColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(tv.own.owntv.gambit.text.GambitText.decode(channel.name) /* Gambit: entities decoded */, style = stageText(20, 700), color = StageColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (programme != null) {
                     val left = timeLeftText(((programme.stopMs - now).coerceAtLeast(0L) + 59_999L) / 60_000L)
                     Spacer(Modifier.height(3.mpx))
