@@ -1,6 +1,6 @@
 name: Gambit CI
 
-# Every push, any branch, and on demand: unit tests, the i18n literal check, and a debug APK to
+# Every push, any branch, and on demand: unit tests, the i18n literal check, lint, and a debug APK to
 # download. android.yml only runs for main and v* tags, so without this a family-build or feature
 # branch gets no build at all. One optional secret, GAMBIT_DEBUG_KEYSTORE_BASE64: the owner's debug
 # key, so CI APKs update a local install.
@@ -70,6 +70,11 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew :app:testStandardDebugUnitTest --stacktrace
+
+      # Same lint gate as android.yml's check job (abortOnError), so a feature branch fails here
+      # instead of only after it lands on main.
+      - name: Lint
+        run: ./gradlew :app:lintStandardDebug --stacktrace
 
       - name: Build debug APKs
         run: ./gradlew :app:assembleDebug --stacktrace
