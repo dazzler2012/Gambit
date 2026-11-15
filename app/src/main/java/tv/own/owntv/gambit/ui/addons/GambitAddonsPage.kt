@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -98,7 +99,11 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
             }
             addons.forEach { a ->
                 key(a.url) {
-                    val focus = rowFocus.getOrPut(a.url) { FocusRequester() }
+                    val focus = remember { FocusRequester() }
+                    DisposableEffect(a.url) {
+                        rowFocus[a.url] = focus
+                        onDispose { rowFocus.remove(a.url) }
+                    }
                     AddonRow(a, onClick = { actionsFor = a }, modifier = Modifier.focusRequester(focus))
                 }
             }
