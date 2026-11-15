@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "id": "tt0000100",
+    "type": "series",
+    "name": "Example Show",
+    "description": "A test series.",
+    "runtime": "45 min",
+    "genres": ["Drama"],
+    "cast": ["Actor One", "Actor Two"],
+    "videos": [
+      { "id": "tt0000100:1:1", "title": "Pilot", "season": 1, "episode": 1, "released": "2020-01-01T00:00:00.000Z" },
+      { "id": "tt0000100:1:2", "name": "Second", "season": "1", "episode": "2" },
+      { "id": "tt0000100:2:1", "title": "Return", "season": 2, "number": 1, "overview": "Back again." },
+      { "title": "No id: dropped", "season": 2, "episode": 2 }
+    ]
+  }
+}

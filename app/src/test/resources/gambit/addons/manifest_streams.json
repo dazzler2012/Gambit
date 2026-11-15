@@ -1,0 +1,9 @@
+{
+  "id": "org.example.streams",
+  "version": "0.0.15",
+  "name": "Example Streams",
+  "resources": [ { "name": "stream", "types": ["movie", "series"], "idPrefixes": ["tt", "kitsu"] } ],
+  "types": ["movie", "series", "anime"],
+  "catalogs": [],
+  "behaviorHints": { "configurable": true, "configurationRequired": false }
+}

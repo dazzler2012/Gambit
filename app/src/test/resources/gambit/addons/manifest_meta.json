@@ -1,0 +1,19 @@
+{
+  "id": "org.example.meta",
+  "version": "1.4.2",
+  "name": "Example Meta",
+  "description": "Hand-written test fixture shaped like a metadata addon.",
+  "logo": "https://addon.example/logo.png",
+  "resources": [
+    "catalog",
+    { "name": "meta", "types": ["movie", "series"], "idPrefixes": ["tt", "tmdb:"] }
+  ],
+  "types": ["movie", "series"],
+  "catalogs": [
+    { "type": "movie", "id": "popular", "name": "Popular Movies",
+      "extra": [ { "name": "genre", "options": ["Action", "Drama"] }, { "name": "skip" } ] },
+    { "type": "series", "id": "popular", "name": "Popular Series", "extra": [ { "name": "skip" } ] },
+    { "type": "movie", "id": "search", "name": "Search", "extra": [ { "name": "search", "isRequired": true } ] }
+  ],
+  "behaviorHints": { "configurable": true }
+}

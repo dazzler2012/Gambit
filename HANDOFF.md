@@ -1,39 +1,34 @@
-# Handoff: ci/tests-and-build
+# Handoff: feature/addons-client
 
-Last updated 2026-11-02.
+Branch `feature/addons-client`, 4 commits on top of `family-build`. Last code commit: `0cfc904`.
 
-## State
-- Branch `ci/tests-and-build`, made from `family-build` at `1125000`. Everything is pushed.
-- PR #1 (`ci/tests-and-build` -> `family-build`) is **open, not merged**. Its description follows the new template.
-- `gambit-ci.yml` is already on `main` (PR #2, `8c83869`, the workflow file only). Same file as on this branch.
-- The upstream PR checklist workflow was removed from `main` (PR #3, `c01d3c3`), and the PR template is now a short
-  "what changed / why / how it was tested" form. The checklist no longer runs on PRs.
-- The 5 test files and the text-overflow fix are **not** on `main` or `family-build` yet. They only reach
-  `family-build` when PR #1 is merged.
+## Done
+- Stremio addon client in `tv.own.owntv.gambit.addons` (models, URL handling, OkHttp client, registry, repository).
+- In the real Gradle build, with `-x verifyI18nLiterals`: `:app:testDebugUnitTest` passed (239 tests, 62 addon tests, 0 failed) and `:app:assembleDebug` succeeded.
+- Episode ids: NuvioTV and TuvoraTV percent-encode colons in meta and stream URLs (`URLEncoder.encode`, so `tt1:1:2` is sent as `tt1%3A1%3A2`). Ours already matched. `AddonUrlTest` now pins this.
+- The meta fallback to the next matching addon is kept and tested.
 
-## What this branch adds
-- `.github/workflows/gambit-ci.yml`: on every push and manual run, runs `:app:testStandardDebugUnitTest`
-  (which runs `verifyI18nLiterals` through `preBuild`), then `:app:assembleDebug`, and uploads the
-  standard debug APK as `gambit-debug-<sha>`. No secrets.
-- 26 JVM unit tests under `app/src/test/java/tv/own/owntv/gambit/` (25 pass, 1 `@Ignore`d, see below).
-  No new dependencies.
-- Text-overflow fix (`85f3c1b`): the 18 single-line `Text(...)` calls in `gambit/ui/*` that set `maxLines`
-  without `overflow` now use `overflow = TextOverflow.Ellipsis`. No allowlist entries.
+## Open
+- **Blocker:** `Execution failed for task ':app:verifyI18nLiterals'` / `Hardcoded text check failed`.
+  - It flags JSON keys and similar literals in `gambit/addons/net/AddonJson.kt`.
+  - Without `-x verifyI18nLiterals`, both the test run and the debug build fail.
+- **Needs approval:** run `python tools/i18n/check_hardcoded_strings.py classify-safe` on the addon literals. It writes to `tools/i18n/safe_literals.txt`, which is an existing OwnTV file, so it needs the owner's OK first.
+  - Review each flagged literal before classifying it (expected categories are `json`, `protocol` and `uri`; not yet checked).
+- Left for later, as agreed: duplicate stream removal, and the Koin wiring in `OwnTVApp.kt`.
+- Minor, not acted on: `URLEncoder` and our encodeURIComponent-style encoder treat `! ' ( ) ~` differently. This doesn't affect episode ids.
 
-## PR #1 checks (as of 2026-11-02, head `85f3c1b`)
-- All pass: Gambit CI (`test-and-build`), i18n (`baseline`, `validate`, `pseudo`).
+## Next step
+1. Get approval for the `safe_literals.txt` change.
+2. Classify the addon literals.
+3. Rerun `./gradlew :app:testDebugUnitTest` and `:app:assembleDebug` without `-x`.
+4. Push.
 
-## Open items
-1. Merge PR #1 into `family-build`.
-2. Known bug, not fixed: `GambitDefaults.GUIDE_CHANNEL_SHARE = 26` is off core's 5-point grid; core
-   normalises it on read, so the guide shows 25/75. Fix the constant (25 or 30), then remove the
-   `@Ignore` in `GambitDefaultsTest`.
-3. Not covered by tests (would need app code changes or Robolectric): "now playing" lookup and schedule
-   day headings (inside Composables / `private`), `GambitDefaults.applyOnce`, `GambitLastTuned`.
-   Group hide/move, filtering and sorting live in OwnTV/core files, not `gambit.*`.
+## Rules still in force
+- Work only on `feature/addons-client`. Don't open a PR.
+- Don't edit existing OwnTV files without asking.
+- Never log or commit addon URLs; tests use `*.example` hosts only.
+- Make no live calls to real addons.
 
-## Notes
-- There is no `:app:testDebugUnitTest` task: the app has two flavors (standard, x86_64).
-- APK download: repo -> Actions -> Gambit CI -> a run -> Artifacts.
-- On Windows, run the i18n tools as `python -X utf8 tools/i18n/<script>.py`. Without UTF-8 mode the literal
-  ratchet misreads ▾ and ✕ and reports false regressions. `python3` is only the Microsoft Store stub here.
+## Environment notes
+- Maven Central returned HTTP 429 often in the cloud session. Plain retries worked.
+- The SDK needs `platforms;android-37.0` and `build-tools;37.0.0`.

@@ -2,7 +2,8 @@ name: Gambit CI
 
 # Every push, any branch, and on demand: unit tests, the i18n literal check, and a debug APK to
 # download. android.yml only runs for main and v* tags, so without this a family-build or feature
-# branch gets no build at all. No secrets: the debug APK is debug-signed.
+# branch gets no build at all. One optional secret, GAMBIT_DEBUG_KEYSTORE_BASE64: the owner's debug
+# key, so CI APKs update a local install.
 #
 # The i18n check is the Gradle task verifyI18nLiterals. app/build.gradle.kts hangs it on preBuild, so it
 # already runs inside the unit-test step below (and is UP-TO-DATE for the assemble after it). It is not
@@ -49,6 +50,20 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      # Gambit: sign debug APKs with the owner's own debug key (the one on their PC), so a CI APK installs
+      # over a local build and keeps its data. Without the secret the runner makes its own key, as before.
+      - name: Use the shared debug key
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.GAMBIT_DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$DEBUG_KEYSTORE_BASE64" ]; then
+            echo "::warning::No GAMBIT_DEBUG_KEYSTORE_BASE64 secret: this APK gets the runner's own debug key."
+            exit 0
+          fi
+          mkdir -p "$HOME/.android"
+          printf '%s' "$DEBUG_KEYSTORE_BASE64" | base64 -d > "$HOME/.android/debug.keystore"
+          echo "GAMBIT_DEBUG_KEY=1" >> "$GITHUB_ENV"
+
       # The app has two ABI flavors, so there is no plain testDebugUnitTest task. standard+debug is the
       # variant the JVM tests are written against (as in android.yml).
       - name: Unit tests (runs verifyI18nLiterals via preBuild)
@@ -58,6 +73,13 @@ jobs:
 
       - name: Build debug APKs
         run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Check the debug APK's signer
+        if: env.GAMBIT_DEBUG_KEY == '1'
+        run: |
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$apksigner" verify --print-certs app/build/outputs/apk/standard/debug/*.apk | tee "$RUNNER_TEMP/signer.txt"
+          grep -qi "SHA-256 digest: 73cc1a4947812527509bd8c6397247c18ff42f1a9ca3c2dcb3aa93e7f8c25bab" "$RUNNER_TEMP/signer.txt"
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
