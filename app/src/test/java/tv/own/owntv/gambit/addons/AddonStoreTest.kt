@@ -49,7 +49,12 @@ class AddonStoreTest {
             AddonError.InvalidUrl to AddonAddError.NOT_AN_ADDRESS,
             AddonError.Timeout(src) to AddonAddError.UNREACHABLE,
             AddonError.Network(src, "UnknownHostException") to AddonAddError.UNREACHABLE,
-            AddonError.HttpStatus(src, 404) to AddonAddError.UNREACHABLE,
+            AddonError.HttpStatus(src, 400) to AddonAddError.NOT_AN_ADDON,
+            AddonError.HttpStatus(src, 401) to AddonAddError.NOT_AN_ADDON,
+            AddonError.HttpStatus(src, 404) to AddonAddError.NOT_AN_ADDON,
+            AddonError.HttpStatus(src, 499) to AddonAddError.NOT_AN_ADDON,
+            AddonError.HttpStatus(src, 500) to AddonAddError.UNREACHABLE,
+            AddonError.HttpStatus(src, 503) to AddonAddError.UNREACHABLE,
             AddonError.MalformedJson(src) to AddonAddError.NOT_AN_ADDON,
             AddonError.MissingField(src, "name") to AddonAddError.NOT_AN_ADDON,
             AddonError.NotFound(src) to AddonAddError.NOT_AN_ADDON,
@@ -113,6 +118,10 @@ class AddonStoreTest {
         val store = AddonStore(repo, vault)
         assertEquals(AddonAddResult.Failed(AddonAddError.UNREACHABLE), store.add("$META_BASE/manifest.json"))
         assertEquals(AddonAddResult.Failed(AddonAddError.NOT_AN_ADDRESS), store.add("ftp://x"))
+        server.on("$META_BASE/manifest.json", Reply.Body("{}", code = 404))
+        assertEquals(AddonAddResult.Failed(AddonAddError.NOT_AN_ADDON), store.add("$META_BASE/manifest.json"))
+        server.on("$META_BASE/manifest.json", Reply.Body("{}", code = 503))
+        assertEquals(AddonAddResult.Failed(AddonAddError.UNREACHABLE), store.add("$META_BASE/manifest.json"))
         assertEquals(0, vault.writes)
         assertNull(vault.text)
     }

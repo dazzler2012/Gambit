@@ -15,10 +15,14 @@ sealed interface AddonAddResult {
     data class Failed(val error: AddonAddError) : AddonAddResult
 }
 
-/** What the add screens can say about a failed install. */
+/**
+ * What the add screens can say about a failed install. A 4xx means the server answered but has no
+ * addon at that address; a 5xx, like a timeout or a network error, means it couldn't be reached.
+ */
 fun AddonError.toAddError(): AddonAddError = when (this) {
     AddonError.InvalidUrl -> AddonAddError.NOT_AN_ADDRESS
-    is AddonError.Timeout, is AddonError.Network, is AddonError.HttpStatus -> AddonAddError.UNREACHABLE
+    is AddonError.HttpStatus -> if (code in 400..499) AddonAddError.NOT_AN_ADDON else AddonAddError.UNREACHABLE
+    is AddonError.Timeout, is AddonError.Network -> AddonAddError.UNREACHABLE
     is AddonError.MalformedJson, is AddonError.MissingField, is AddonError.NotFound, is AddonError.NoAddon -> AddonAddError.NOT_AN_ADDON
 }
 
