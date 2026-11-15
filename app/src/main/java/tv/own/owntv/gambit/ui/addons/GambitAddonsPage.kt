@@ -63,7 +63,8 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
     var typing by remember { mutableStateOf(false) }
     var actionsFor by remember { mutableStateOf<InstalledAddon?>(null) }
     var removing by remember { mutableStateOf<InstalledAddon?>(null) }
-    // Each row keeps its own focus target, so after Move up / Move down focus follows the moved addon.
+    // Each row keeps its own focus target, so after Move up / Move down focus follows the moved addon,
+    // and after Remove it lands on the addon that took its place (or the one above, if it was last).
     val rowFocus = remember { mutableMapOf<AddonUrl, FocusRequester>() }
     var refocus by remember { mutableStateOf<AddonUrl?>(null) }
     LaunchedEffect(refocus, addons) {
@@ -73,6 +74,15 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
         withFrameNanos { }
         runCatching { rowFocus[url]?.requestFocus() }
         refocus = null
+    }
+    // The last addon removed: focus goes to "Type an address" once the list is empty.
+    var refocusEntry by remember { mutableStateOf(false) }
+    LaunchedEffect(refocusEntry, addons) {
+        if (!refocusEntry || addons.isNotEmpty()) return@LaunchedEffect
+        withFrameNanos { }
+        withFrameNanos { }
+        runCatching { entry.requestFocus() }
+        refocusEntry = false
     }
 
     Column(Modifier.fillMaxSize().focusGroup().widthIn(max = 1100.mpx).verticalScroll(rememberScrollState())) {
@@ -148,7 +158,13 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
             title = stringResource(R.string.gambit_addons_remove_title, a.manifest.name),
             body = stringResource(R.string.gambit_addons_remove_body),
             confirm = stringResource(R.string.gambit_addons_remove),
-            onConfirm = { vm.remove(a.url); removing = null },
+            onConfirm = {
+                val i = addons.indexOfFirst { it.url == a.url }
+                val next = addons.getOrNull(i + 1) ?: addons.getOrNull(i - 1)
+                vm.remove(a.url)
+                if (next != null) refocus = next.url else refocusEntry = true
+                removing = null
+            },
             onCancel = { removing = null },
             focusCancel = true,
         )
