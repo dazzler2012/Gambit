@@ -8,3 +8,6 @@ object Fixtures {
         return stream.bufferedReader().use { it.readText() }
     }
 }
+
+/** The addon named on errors in parser tests: no manifest name yet, a test host. */
+internal val TEST_SOURCE = tv.own.owntv.gambit.addons.net.AddonSource(null, "test")

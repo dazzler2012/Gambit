@@ -862,7 +862,7 @@
 1	technical	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonRegistry.kt	${addon.manifest.id}|${addon.url.host}|${catalog.type}|${catalog.id}
 1	log	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonRegistry.kt	AddonRegistry(${all.joinToString()})
 2	protocol	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonRegistry.kt	search
-1	log	app/src/main/java/tv/own/owntv/gambit/addons/data/InstalledAddon.kt	InstalledAddon($label, enabled=$enabled)
+1	log	app/src/main/java/tv/own/owntv/gambit/addons/data/InstalledAddon.kt	InstalledAddon(${manifest.name}, ${url.host}, enabled=$enabled)
 1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonManifest.kt	catalog
 1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonManifest.kt	meta
 1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonManifest.kt	stream
@@ -930,7 +930,6 @@
 1	json	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonJson.kt	videos
 2	json	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonJson.kt	year
 1	json	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonJson.kt	ytId
-2	empty	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonResult.kt	\0
 1	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	$base/$path.json
 1	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	$base/manifest.json
 1	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	$url?$query

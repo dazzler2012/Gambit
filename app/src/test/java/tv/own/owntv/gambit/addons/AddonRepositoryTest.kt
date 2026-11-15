@@ -24,6 +24,7 @@ import tv.own.owntv.gambit.addons.model.StreamSupport
 import tv.own.owntv.gambit.addons.net.AddonClient
 import tv.own.owntv.gambit.addons.net.AddonError
 import tv.own.owntv.gambit.addons.net.AddonResult
+import tv.own.owntv.gambit.addons.net.AddonSource
 import tv.own.owntv.gambit.addons.net.AddonUrl
 import tv.own.owntv.gambit.addons.net.CatalogExtraArgs
 
@@ -50,7 +51,7 @@ class AddonRepositoryTest {
     @Test
     fun `install reports http failure with a redacted label`() = runBlocking {
         server.onJson("$META_BASE/manifest.json", "{}", code = 401)
-        assertEquals(AddonResult.Err(AddonError.HttpStatus("meta.example", 401)), repo.install("$META_BASE/manifest.json"))
+        assertEquals(AddonResult.Err(AddonError.HttpStatus(AddonSource(null, "meta.example"), 401)), repo.install("$META_BASE/manifest.json"))
     }
 
     @Test
@@ -75,7 +76,7 @@ class AddonRepositoryTest {
     @Test
     fun `catalog error carries the addon label, not the url`() = runBlocking {
         val ref = registry.browseCatalogs().first()
-        assertEquals(AddonResult.Err(AddonError.HttpStatus("Example Meta (meta.example)", 404)), repo.catalog(ref))
+        assertEquals(AddonResult.Err(AddonError.HttpStatus(AddonSource("Example Meta", "meta.example"), 404)), repo.catalog(ref))
     }
 
     @Test
@@ -106,7 +107,7 @@ class AddonRepositoryTest {
     @Test
     fun `meta returns the first error when every addon fails`() = runBlocking {
         server.onFixture("$META_BASE/meta/movie/tt1.json", "meta_null.json")
-        assertEquals(AddonResult.Err(AddonError.NotFound("Example Meta (meta.example)")), repo.meta(registry, "movie", "tt1"))
+        assertEquals(AddonResult.Err(AddonError.NotFound(AddonSource("Example Meta", "meta.example"))), repo.meta(registry, "movie", "tt1"))
     }
 
     @Test
@@ -144,7 +145,7 @@ class AddonRepositoryTest {
         server.onFixture("$STREAMS_B_BASE/stream/series/tt0000100%3A1%3A1.json", "malformed.json")
         val results = repo.streams(registry, "series", "tt0000100:1:1")
         assertEquals(2, results.playable.size)
-        assertEquals(listOf<AddonError>(AddonError.MalformedJson("Example Streams (streams-b.example)")), results.errors)
+        assertEquals(listOf<AddonError>(AddonError.MalformedJson(AddonSource("Example Streams", "streams-b.example"))), results.errors)
     }
 
     @Test

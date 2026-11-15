@@ -15,7 +15,7 @@ class AddonContentJsonTest {
 
     @Test
     fun `catalog items are read and unreadable items dropped`() {
-        val metas = ok(AddonJson.catalog(Fixtures.read("catalog_movies.json"), "test", "movie"))
+        val metas = ok(AddonJson.catalog(Fixtures.read("catalog_movies.json"), TEST_SOURCE, "movie"))
         assertEquals(listOf("tt0000001", "tt0000002", "tt0000003"), metas.map { it.id })
         val first = metas[0]
         assertEquals("First Film", first.name)
@@ -31,13 +31,13 @@ class AddonContentJsonTest {
 
     @Test
     fun `empty catalog is ok and missing metas is a typed error`() {
-        assertTrue(ok(AddonJson.catalog(Fixtures.read("catalog_empty.json"), "test", "movie")).isEmpty())
-        assertEquals(AddonResult.Err(AddonError.MissingField("test", "metas")), AddonJson.catalog("{}", "test", "movie"))
+        assertTrue(ok(AddonJson.catalog(Fixtures.read("catalog_empty.json"), TEST_SOURCE, "movie")).isEmpty())
+        assertEquals(AddonResult.Err(AddonError.MissingField(TEST_SOURCE, "metas")), AddonJson.catalog("{}", TEST_SOURCE, "movie"))
     }
 
     @Test
     fun `series meta with episodes is read`() {
-        val meta = ok(AddonJson.meta(Fixtures.read("meta_series.json"), "test", "series"))
+        val meta = ok(AddonJson.meta(Fixtures.read("meta_series.json"), TEST_SOURCE, "series"))
         assertEquals("tt0000100", meta.id)
         assertEquals("Example Show", meta.name)
         assertEquals(listOf("Actor One", "Actor Two"), meta.cast)
@@ -53,14 +53,14 @@ class AddonContentJsonTest {
 
     @Test
     fun `null meta is not found and malformed meta is typed`() {
-        assertEquals(AddonResult.Err(AddonError.NotFound("test")), AddonJson.meta(Fixtures.read("meta_null.json"), "test", "movie"))
-        assertEquals(AddonResult.Err(AddonError.MissingField("test", "meta.id")), AddonJson.meta("""{"meta":{"name":"x"}}""", "test", "movie"))
-        assertEquals(AddonResult.Err(AddonError.MalformedJson("test")), AddonJson.meta(Fixtures.read("malformed.json"), "test", "movie"))
+        assertEquals(AddonResult.Err(AddonError.NotFound(TEST_SOURCE)), AddonJson.meta(Fixtures.read("meta_null.json"), TEST_SOURCE, "movie"))
+        assertEquals(AddonResult.Err(AddonError.MissingField(TEST_SOURCE, "meta.id")), AddonJson.meta("""{"meta":{"name":"x"}}""", TEST_SOURCE, "movie"))
+        assertEquals(AddonResult.Err(AddonError.MalformedJson(TEST_SOURCE)), AddonJson.meta(Fixtures.read("malformed.json"), TEST_SOURCE, "movie"))
     }
 
     @Test
     fun `streams are classified by source`() {
-        val streams = ok(AddonJson.streams(Fixtures.read("streams_mixed.json"), "test"))
+        val streams = ok(AddonJson.streams(Fixtures.read("streams_mixed.json"), TEST_SOURCE))
         assertEquals(
             listOf(
                 StreamSupport.PLAYABLE, StreamSupport.PLAYABLE, StreamSupport.TORRENT, StreamSupport.YOUTUBE,
@@ -82,7 +82,7 @@ class AddonContentJsonTest {
 
     @Test
     fun `torrent only results parse without crashing and none are playable`() {
-        val streams = ok(AddonJson.streams(Fixtures.read("streams_torrent_only.json"), "test"))
+        val streams = ok(AddonJson.streams(Fixtures.read("streams_torrent_only.json"), TEST_SOURCE))
         assertEquals(2, streams.size)
         assertTrue(streams.all { it.support == StreamSupport.TORRENT })
         assertFalse(streams.any { it.isPlayable })
@@ -90,12 +90,12 @@ class AddonContentJsonTest {
 
     @Test
     fun `missing streams array is a typed error`() {
-        assertEquals(AddonResult.Err(AddonError.MissingField("test", "streams")), AddonJson.streams("""{"streams":null}""", "test"))
+        assertEquals(AddonResult.Err(AddonError.MissingField(TEST_SOURCE, "streams")), AddonJson.streams("""{"streams":null}""", TEST_SOURCE))
     }
 
     @Test
     fun `stream toString leaves out the link`() {
-        val streams = ok(AddonJson.streams(Fixtures.read("streams_mixed.json"), "test"))
+        val streams = ok(AddonJson.streams(Fixtures.read("streams_mixed.json"), TEST_SOURCE))
         streams.forEach { assertFalse(it.toString().contains("TOKEN")) }
         streams.flatMap { it.subtitles }.forEach { assertFalse(it.toString().contains("subs.example")) }
     }

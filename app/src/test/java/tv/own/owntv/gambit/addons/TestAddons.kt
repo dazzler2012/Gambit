@@ -14,7 +14,7 @@ object TestAddons {
     const val STREAMS_B_BASE = "https://streams-b.example/KEY-B"
 
     fun manifest(fixture: String): AddonManifest =
-        (AddonJson.manifest(Fixtures.read(fixture), "test") as AddonResult.Ok).value
+        (AddonJson.manifest(Fixtures.read(fixture), TEST_SOURCE) as AddonResult.Ok).value
 
     fun installed(base: String, fixture: String, enabled: Boolean = true) =
         InstalledAddon(AddonUrl.parse("$base/manifest.json")!!, manifest(fixture), enabled)

@@ -15,6 +15,7 @@ import tv.own.owntv.gambit.addons.FakeAddonServer.Reply
 import tv.own.owntv.gambit.addons.net.AddonClient
 import tv.own.owntv.gambit.addons.net.AddonError
 import tv.own.owntv.gambit.addons.net.AddonResult
+import tv.own.owntv.gambit.addons.net.AddonSource
 import tv.own.owntv.gambit.addons.net.AddonUrl
 import tv.own.owntv.gambit.addons.net.CatalogExtraArgs
 
@@ -58,39 +59,39 @@ class AddonClientTest {
     @Test
     fun `non 2xx is a typed http error`() = runBlocking {
         server.onJson("$secretBase/manifest.json", "{}", code = 503)
-        assertEquals(AddonResult.Err(AddonError.HttpStatus("addon.example", 503)), client.manifest(addon))
-        assertEquals(AddonResult.Err(AddonError.HttpStatus("addon.example", 404)), client.meta(addon, "movie", "tt9"))
+        assertEquals(AddonResult.Err(AddonError.HttpStatus(AddonSource(null, "addon.example"), 503)), client.manifest(addon))
+        assertEquals(AddonResult.Err(AddonError.HttpStatus(AddonSource(null, "addon.example"), 404)), client.meta(addon, "movie", "tt9"))
     }
 
     @Test
     fun `malformed body is a typed error`() = runBlocking {
         server.onFixture("$secretBase/stream/movie/tt1.json", "malformed.json")
-        assertEquals(AddonResult.Err(AddonError.MalformedJson("label")), client.streams(addon, "movie", "tt1", label = "label"))
+        assertEquals(AddonResult.Err(AddonError.MalformedJson(AddonSource("Label", "label.example"))), client.streams(addon, "movie", "tt1", source = AddonSource("Label", "label.example")))
     }
 
     @Test
     fun `missing field is a typed error`() = runBlocking {
         server.onJson("$secretBase/catalog/movie/popular.json", """{"items":[]}""")
-        assertEquals(AddonResult.Err(AddonError.MissingField("addon.example", "metas")), client.catalog(addon, "movie", "popular"))
+        assertEquals(AddonResult.Err(AddonError.MissingField(AddonSource(null, "addon.example"), "metas")), client.catalog(addon, "movie", "popular"))
     }
 
     @Test
     fun `socket timeout is a typed timeout`() = runBlocking {
         server.on("$secretBase/manifest.json", Reply.Fail(SocketTimeoutException("timeout")))
-        assertEquals(AddonResult.Err(AddonError.Timeout("addon.example")), client.manifest(addon))
+        assertEquals(AddonResult.Err(AddonError.Timeout(AddonSource(null, "addon.example"))), client.manifest(addon))
     }
 
     @Test
     fun `whole call time limit is a typed timeout`() = runBlocking {
         val slowClient = AddonClient(server.client, timeoutMs = 100)
         server.on("$secretBase/manifest.json", Reply.Slow(1_000, Fixtures.read("manifest_meta.json")))
-        assertEquals(AddonResult.Err(AddonError.Timeout("addon.example")), slowClient.manifest(addon))
+        assertEquals(AddonResult.Err(AddonError.Timeout(AddonSource(null, "addon.example"))), slowClient.manifest(addon))
     }
 
     @Test
     fun `connection failure keeps the exception type only`() = runBlocking {
         server.on("$secretBase/manifest.json", Reply.Fail(UnknownHostException("addon.example")))
-        assertEquals(AddonResult.Err(AddonError.Network("addon.example", "UnknownHostException")), client.manifest(addon))
+        assertEquals(AddonResult.Err(AddonError.Network(AddonSource(null, "addon.example"), "UnknownHostException")), client.manifest(addon))
     }
 
     @Test

@@ -28,10 +28,10 @@ class AddonRepository(private val client: AddonClient) {
 
     /** Fetches [addon]'s manifest again, keeping its URL and enabled state. */
     suspend fun refresh(addon: InstalledAddon): AddonResult<InstalledAddon> =
-        client.manifest(addon.url, addon.label).map { addon.copy(manifest = it) }
+        client.manifest(addon.url, addon.source).map { addon.copy(manifest = it) }
 
     suspend fun catalog(ref: CatalogRef, extra: CatalogExtraArgs = CatalogExtraArgs()): AddonResult<List<MetaPreview>> =
-        client.catalog(ref.addon.url, ref.catalog.type, ref.catalog.id, extra, ref.addon.label)
+        client.catalog(ref.addon.url, ref.catalog.type, ref.catalog.id, extra, ref.addon.source)
 
     /**
      * Meta from the first enabled addon that serves this type and id. If that addon fails or has
@@ -42,7 +42,7 @@ class AddonRepository(private val client: AddonClient) {
         if (candidates.isEmpty()) return AddonResult.Err(AddonError.NoAddon(AddonResources.META, type))
         var firstError: AddonResult.Err? = null
         for (addon in candidates) {
-            when (val result = client.meta(addon.url, type, id, addon.label)) {
+            when (val result = client.meta(addon.url, type, id, addon.source)) {
                 is AddonResult.Ok -> return result
                 is AddonResult.Err -> if (firstError == null) firstError = result
             }
@@ -58,7 +58,7 @@ class AddonRepository(private val client: AddonClient) {
         val candidates = registry.streamAddons(type, videoId)
         if (candidates.isEmpty()) return StreamResults(errors = listOf(AddonError.NoAddon(AddonResources.STREAM, type)))
         val results = coroutineScope {
-            candidates.map { addon -> async { addon to client.streams(addon.url, type, videoId, addon.label) } }.awaitAll()
+            candidates.map { addon -> async { addon to client.streams(addon.url, type, videoId, addon.source) } }.awaitAll()
         }
         val sourced = mutableListOf<SourcedStream>()
         val errors = mutableListOf<AddonError>()

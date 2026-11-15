@@ -14,7 +14,7 @@ import tv.own.owntv.gambit.addons.net.AddonResult
 
 class AddonManifestTest {
     private fun manifest(name: String): AddonManifest =
-        (AddonJson.manifest(Fixtures.read(name), "test") as AddonResult.Ok).value
+        (AddonJson.manifest(Fixtures.read(name), TEST_SOURCE) as AddonResult.Ok).value
 
     @Test
     fun `full manifest is parsed`() {
@@ -64,18 +64,18 @@ class AddonManifestTest {
     @Test
     fun `missing name is a typed error`() {
         assertEquals(
-            AddonResult.Err(AddonError.MissingField("test", "name")),
-            AddonJson.manifest(Fixtures.read("manifest_no_name.json"), "test"),
+            AddonResult.Err(AddonError.MissingField(TEST_SOURCE, "name")),
+            AddonJson.manifest(Fixtures.read("manifest_no_name.json"), TEST_SOURCE),
         )
     }
 
     @Test
     fun `malformed or non object json is a typed error`() {
-        val expected = AddonResult.Err(AddonError.MalformedJson("test"))
-        assertEquals(expected, AddonJson.manifest(Fixtures.read("malformed.json"), "test"))
-        assertEquals(expected, AddonJson.manifest("", "test"))
-        assertEquals(expected, AddonJson.manifest("[1,2]", "test"))
-        assertEquals(expected, AddonJson.manifest("<html>502 Bad Gateway</html>", "test"))
+        val expected = AddonResult.Err(AddonError.MalformedJson(TEST_SOURCE))
+        assertEquals(expected, AddonJson.manifest(Fixtures.read("malformed.json"), TEST_SOURCE))
+        assertEquals(expected, AddonJson.manifest("", TEST_SOURCE))
+        assertEquals(expected, AddonJson.manifest("[1,2]", TEST_SOURCE))
+        assertEquals(expected, AddonJson.manifest("<html>502 Bad Gateway</html>", TEST_SOURCE))
     }
 
     @Test

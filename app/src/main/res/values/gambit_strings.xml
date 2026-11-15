@@ -98,4 +98,7 @@
     <string name="setup_sync_device_description" translatable="false">Copy everything from your other Gambit device over Wi-Fi</string>
     <string name="setup_welcome_title" translatable="false">Welcome to Gambit</string>
     <string name="update_ready" translatable="false">Gambit v<xliff:g id="available">%1$s</xliff:g> is ready (you have v<xliff:g id="current">%2$s</xliff:g>).</string>
+
+    <!-- Addons (Phase 2): an addon named on an error, "AIOStreams (aiostreams.example)". Host only, never the path or query. -->
+    <string name="gambit_addons_label" translatable="false">%1$s (%2$s)</string>
 </resources>

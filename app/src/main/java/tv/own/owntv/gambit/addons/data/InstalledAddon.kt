@@ -1,6 +1,7 @@
 package tv.own.owntv.gambit.addons.data
 
 import tv.own.owntv.gambit.addons.model.AddonManifest
+import tv.own.owntv.gambit.addons.net.AddonSource
 import tv.own.owntv.gambit.addons.net.AddonUrl
 
 /**
@@ -12,8 +13,8 @@ data class InstalledAddon(
     val manifest: AddonManifest,
     val enabled: Boolean = true,
 ) {
-    /** Safe to show or put on an error: the addon's name and host, never the URL. */
-    val label: String get() = "${manifest.name} (${url.host})"
+    /** What errors carry to name this addon: its name and host, never the URL. The screen words it. */
+    val source: AddonSource get() = AddonSource(manifest.name, url.host)
 
-    override fun toString(): String = "InstalledAddon($label, enabled=$enabled)"
+    override fun toString(): String = "InstalledAddon(${manifest.name}, ${url.host}, enabled=$enabled)"
 }

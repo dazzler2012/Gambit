@@ -95,6 +95,6 @@ class AddonRegistryTest {
     fun `toString never shows addon urls`() {
         val text = registry.toString() + registry.browseCatalogs().joinToString()
         assertFalse(text, text.contains("KEY-"))
-        assertTrue(text.contains("Example Meta (meta.example)"))
+        assertTrue(text, text.contains("Example Meta, meta.example"))
     }
 }

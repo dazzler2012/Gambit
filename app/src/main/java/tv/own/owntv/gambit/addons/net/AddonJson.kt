@@ -21,11 +21,11 @@ import tv.own.owntv.gambit.addons.model.StreamBehaviorHints
  * of a list. Only a missing required field fails the parse. Items of a list that can't be read
  * are dropped, not fatal.
  *
- * [addon] is the redacted label put on errors. No error keeps the parser's message, which can quote the body.
+ * [addon] names the addon on errors (name and host only). No error keeps the parser's message, which can quote the body.
  */
 object AddonJson {
 
-    fun manifest(body: String, addon: String): AddonResult<AddonManifest> = parse(body, addon) { root ->
+    fun manifest(body: String, addon: AddonSource): AddonResult<AddonManifest> = parse(body, addon) { root ->
         val id = root.str("id") ?: return@parse AddonResult.Err(AddonError.MissingField(addon, "id"))
         val name = root.str("name") ?: return@parse AddonResult.Err(AddonError.MissingField(addon, "name"))
         val types = root.strings("types")
@@ -52,13 +52,13 @@ object AddonJson {
     }
 
     /** `{"metas": [...]}`. Items without an id are dropped; a missing item type falls back to [type]. */
-    fun catalog(body: String, addon: String, type: String): AddonResult<List<MetaPreview>> = parse(body, addon) { root ->
+    fun catalog(body: String, addon: AddonSource, type: String): AddonResult<List<MetaPreview>> = parse(body, addon) { root ->
         val metas = root.optJSONArray("metas") ?: return@parse AddonResult.Err(AddonError.MissingField(addon, "metas"))
         AddonResult.Ok(metas.objects().mapNotNull { metaPreview(it, type) })
     }
 
     /** `{"meta": {...}}`. A null or absent meta is [AddonError.NotFound]. */
-    fun meta(body: String, addon: String, type: String): AddonResult<MetaDetail> = parse(body, addon) { root ->
+    fun meta(body: String, addon: AddonSource, type: String): AddonResult<MetaDetail> = parse(body, addon) { root ->
         val meta = root.optJSONObject("meta") ?: return@parse AddonResult.Err(AddonError.NotFound(addon))
         val id = meta.str("id") ?: return@parse AddonResult.Err(AddonError.MissingField(addon, "meta.id"))
         AddonResult.Ok(
@@ -82,12 +82,12 @@ object AddonJson {
     }
 
     /** `{"streams": [...]}`. All streams are returned; [AddonStream.support] tells which can play. */
-    fun streams(body: String, addon: String): AddonResult<List<AddonStream>> = parse(body, addon) { root ->
+    fun streams(body: String, addon: AddonSource): AddonResult<List<AddonStream>> = parse(body, addon) { root ->
         val streams = root.optJSONArray("streams") ?: return@parse AddonResult.Err(AddonError.MissingField(addon, "streams"))
         AddonResult.Ok(streams.objects().map(::stream))
     }
 
-    private inline fun <T> parse(body: String, addon: String, block: (JSONObject) -> AddonResult<T>): AddonResult<T> =
+    private inline fun <T> parse(body: String, addon: AddonSource, block: (JSONObject) -> AddonResult<T>): AddonResult<T> =
         try {
             val root = JSONObject(body)
             block(root)
