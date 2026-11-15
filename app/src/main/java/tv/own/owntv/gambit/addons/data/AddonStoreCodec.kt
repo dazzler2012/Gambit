@@ -32,11 +32,11 @@ internal object AddonStoreCodec {
         })
         .toString()
 
-    /** The saved list, in order. Unreadable entries are dropped; unreadable text is an empty list. */
-    fun decode(text: String): List<InstalledAddon> {
-        val root = runCatching { JSONObject(text) }.getOrNull() ?: return emptyList()
-        if (root.optInt("v") != VERSION) return emptyList()
-        val items = root.optJSONArray("addons") ?: return emptyList()
+    /** The saved list, in order, or null when [text] can't be read at all. Unreadable entries are dropped. */
+    fun decode(text: String): List<InstalledAddon>? {
+        val root = runCatching { JSONObject(text) }.getOrNull() ?: return null
+        if (root.optInt("v") != VERSION) return null
+        val items = root.optJSONArray("addons") ?: return null
         return (0 until items.length()).mapNotNull { i ->
             val o = items.optJSONObject(i) ?: return@mapNotNull null
             val url = AddonUrl.parse(o.optString("url")) ?: return@mapNotNull null

@@ -25,10 +25,16 @@ import tv.own.owntv.gambit.addons.net.AddonError
 import tv.own.owntv.gambit.addons.net.AddonUrl
 
 class AddonStoreTest {
-    private class MemoryVault(var text: String? = null) : AddonVault {
+    /** [text] is what read() returns; [saved] says whether something is stored at all (true with null text = can't be opened). */
+    private class MemoryVault(var text: String? = null, var saved: Boolean = text != null, private val failWrites: Boolean = false) : AddonVault {
         var writes = 0
+        override fun hasSaved(): Boolean = saved
         override fun read(): String? = text
-        override fun write(text: String) { this.text = text; writes++ }
+        override fun write(text: String): Boolean {
+            if (failWrites) return false
+            this.text = text; saved = true; writes++
+            return true
+        }
     }
 
     private val server = FakeAddonServer()
@@ -73,9 +79,9 @@ class AddonStoreTest {
     }
 
     @Test
-    fun `unreadable saved text is an empty list, and a bad entry is dropped`() {
-        assertTrue(AddonStoreCodec.decode("not json").isEmpty())
-        assertTrue(AddonStoreCodec.decode("""{"v":99,"addons":[]}""").isEmpty())
+    fun `unreadable saved text is null, and a bad entry is dropped`() {
+        assertNull(AddonStoreCodec.decode("not json"))
+        assertNull(AddonStoreCodec.decode("""{"v":99,"addons":[]}"""))
         val good = AddonStoreCodec.encode(listOf(meta))
         val mixed = good.replace("\"addons\":[", "\"addons\":[{\"url\":\"nope\"},")
         assertEquals(listOf(meta), AddonStoreCodec.decode(mixed))
@@ -112,8 +118,30 @@ class AddonStoreTest {
     }
 
     @Test
-    fun `a lost key starts an empty list without crashing`() {
-        assertTrue(AddonStore(repo, MemoryVault(null)).registry.value.all.isEmpty())
+    fun `nothing saved is an empty list, not an unreadable one`() {
+        val store = AddonStore(repo, MemoryVault())
+        assertTrue(store.registry.value.all.isEmpty())
+        assertFalse(store.unreadable.value)
+    }
+
+    @Test
+    fun `a lost key or damaged data is flagged as unreadable without crashing`() {
+        val lostKey = AddonStore(repo, MemoryVault(text = null, saved = true))
+        assertTrue(lostKey.registry.value.all.isEmpty())
+        assertTrue(lostKey.unreadable.value)
+        assertTrue(AddonStore(repo, MemoryVault(text = "damaged")).unreadable.value)
+    }
+
+    @Test
+    fun `the unreadable flag clears once a new list is saved, not before`() = runBlocking {
+        server.onFixture("$META_BASE/manifest.json", "manifest_meta.json")
+        val failing = AddonStore(repo, MemoryVault(text = null, saved = true, failWrites = true))
+        failing.add("$META_BASE/manifest.json")
+        assertTrue(failing.unreadable.value)
+        val store = AddonStore(repo, MemoryVault(text = null, saved = true))
+        store.add("$META_BASE/manifest.json")
+        assertFalse(store.unreadable.value)
+        assertEquals(listOf(meta), store.registry.value.all)
     }
 
     @Test

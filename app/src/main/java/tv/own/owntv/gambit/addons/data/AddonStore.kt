@@ -24,12 +24,17 @@ fun AddonError.toAddError(): AddonAddError = when (this) {
 
 /**
  * Where the saved addon list lives. It holds addon addresses (the user's keys), so an implementation
- * must keep it encrypted and on this device only (see GambitAddonVault). [read] returns null when there
- * is nothing saved or it can't be opened (for example after the key was lost).
+ * must keep it encrypted and on this device only (see GambitAddonVault).
  */
 interface AddonVault {
+    /** True when a list was saved, whether or not it can still be opened. */
+    fun hasSaved(): Boolean
+
+    /** The saved text, or null when there is none or it can't be opened (for example after the key was lost). */
     fun read(): String?
-    fun write(text: String)
+
+    /** Saves [text]; false when it could not be saved. */
+    fun write(text: String): Boolean
 }
 
 /**
@@ -41,8 +46,16 @@ class AddonStore(
     private val repository: AddonRepository,
     private val vault: AddonVault,
 ) {
-    private val _registry = MutableStateFlow(AddonRegistry(load()))
+    private val saved: List<InstalledAddon>? = vault.read()?.let(AddonStoreCodec::decode)
+    private val _registry = MutableStateFlow(AddonRegistry(saved.orEmpty()))
     val registry: StateFlow<AddonRegistry> = _registry.asStateFlow()
+
+    private val _unreadable = MutableStateFlow(saved == null && vault.hasSaved())
+    /**
+     * True when a saved list exists but could not be read (the key was lost, or the data is damaged), so
+     * the addons need adding again. Goes back to false once a new list is saved.
+     */
+    val unreadable: StateFlow<Boolean> = _unreadable.asStateFlow()
 
     /**
      * Checks [raw] is an addon (its manifest loads and parses), then adds it at the end, or replaces the
@@ -76,9 +89,7 @@ class AddonStore(
             val next = change(_registry.value)
             if (next.all == _registry.value.all) return
             _registry.value = next
-            vault.write(AddonStoreCodec.encode(next.all))
+            if (vault.write(AddonStoreCodec.encode(next.all))) _unreadable.value = false
         }
     }
-
-    private fun load(): List<InstalledAddon> = vault.read()?.let(AddonStoreCodec::decode) ?: emptyList()
 }
