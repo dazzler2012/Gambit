@@ -16,6 +16,8 @@ import javax.crypto.spec.GCMParameterSpec
 class GambitSecretStore {
     private val keyStore: KeyStore by lazy { KeyStore.getInstance(KEYSTORE).apply { load(null) } }
 
+    /** Synchronized so two threads at first use can't each create a key (data sealed with the first would no longer open). */
+    @Synchronized
     private fun key(): SecretKey {
         (keyStore.getKey(ALIAS, null) as? SecretKey)?.let { return it }
         val gen = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE)
