@@ -108,7 +108,7 @@
         <item quantity="one">%1$d addon</item>
         <item quantity="other">%1$d addons</item>
     </plurals>
-    <string name="gambit_addons_description" translatable="false">Stremio addons on this TV, shared by its profiles and asked in this order. Only each addon\'s name and host are shown: its address holds your own keys and stays on this TV, encrypted.</string>
+    <string name="gambit_addons_description" translatable="false">Stremio addons on this TV, shared by all profiles and used in this order. Only the name and host are shown. The full address holds your keys and stays encrypted on this TV.</string>
     <string name="gambit_addons_add_typed" translatable="false">Type an address</string>
     <string name="gambit_addons_empty" translatable="false">No addons yet.</string>
     <string name="gambit_addons_unreadable_title" translatable="false">Your addons need adding again</string>
