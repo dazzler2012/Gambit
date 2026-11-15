@@ -12,10 +12,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -31,6 +34,7 @@ import tv.own.owntv.R
 import tv.own.owntv.gambit.addons.data.AddonAddError
 import tv.own.owntv.gambit.addons.data.AddonAddResult
 import tv.own.owntv.gambit.addons.data.InstalledAddon
+import tv.own.owntv.gambit.addons.net.AddonUrl
 import tv.own.owntv.gambit.ui.theme.GambitColors
 import tv.own.owntv.ui.components.OwnTVIcon
 import tv.own.owntv.ui.components.TextInputDialog
@@ -58,6 +62,17 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
     var typing by remember { mutableStateOf(false) }
     var actionsFor by remember { mutableStateOf<InstalledAddon?>(null) }
     var removing by remember { mutableStateOf<InstalledAddon?>(null) }
+    // Each row keeps its own focus target, so after Move up / Move down focus follows the moved addon.
+    val rowFocus = remember { mutableMapOf<AddonUrl, FocusRequester>() }
+    var refocus by remember { mutableStateOf<AddonUrl?>(null) }
+    LaunchedEffect(refocus, addons) {
+        val url = refocus ?: return@LaunchedEffect
+        if (addons.none { it.url == url }) return@LaunchedEffect
+        withFrameNanos { }
+        withFrameNanos { }
+        runCatching { rowFocus[url]?.requestFocus() }
+        refocus = null
+    }
 
     Column(Modifier.fillMaxSize().focusGroup().widthIn(max = 1100.mpx).verticalScroll(rememberScrollState())) {
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(14.mpx)) {
@@ -81,7 +96,12 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
             } else if (addons.isEmpty()) {
                 Text(stringResource(R.string.gambit_addons_empty), style = stageText(20, 500), color = GambitColors.Dim)
             }
-            addons.forEach { a -> AddonRow(a, onClick = { actionsFor = a }) }
+            addons.forEach { a ->
+                key(a.url) {
+                    val focus = rowFocus.getOrPut(a.url) { FocusRequester() }
+                    AddonRow(a, onClick = { actionsFor = a }, modifier = Modifier.focusRequester(focus))
+                }
+            }
         }
     }
 
@@ -113,8 +133,8 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
                 title = stringResource(if (a.enabled) R.string.gambit_addons_disable else R.string.gambit_addons_enable),
                 onClick = { vm.setEnabled(a.url, !a.enabled); actionsFor = null },
             )
-            StagePopupOption(title = stringResource(R.string.gambit_addons_move_up), onClick = { vm.move(a.url, -1); actionsFor = null })
-            StagePopupOption(title = stringResource(R.string.gambit_addons_move_down), onClick = { vm.move(a.url, 1); actionsFor = null })
+            StagePopupOption(title = stringResource(R.string.gambit_addons_move_up), onClick = { vm.move(a.url, -1); refocus = a.url; actionsFor = null })
+            StagePopupOption(title = stringResource(R.string.gambit_addons_move_down), onClick = { vm.move(a.url, 1); refocus = a.url; actionsFor = null })
             StagePopupOption(title = stringResource(R.string.gambit_addons_remove), danger = true, onClick = { removing = a; actionsFor = null })
         }
     }
@@ -132,8 +152,8 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
 
 /** Name, then "host · v1.4.2 · movie, series · 3 catalogs"; dimmed with "Off" when disabled. Host only, never the path or query. */
 @Composable
-private fun AddonRow(a: InstalledAddon, onClick: () -> Unit) {
-    StageSurface(onClick = onClick, radius = 10.mpx, modifier = Modifier.fillMaxWidth().heightIn(min = 84.mpx)) { focused ->
+private fun AddonRow(a: InstalledAddon, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    StageSurface(onClick = onClick, radius = 10.mpx, modifier = modifier.fillMaxWidth().heightIn(min = 84.mpx)) { focused ->
         Row(Modifier.fillMaxWidth().padding(horizontal = 24.mpx, vertical = 12.mpx), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(a.manifest.name, style = stageText(24, 600), color = if (a.enabled || focused) Color.White else GambitColors.Dim, maxLines = 1, overflow = TextOverflow.Ellipsis)
