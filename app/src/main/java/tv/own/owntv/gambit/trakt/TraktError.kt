@@ -7,7 +7,11 @@ import java.time.Instant
  * other user data, so they are safe to show and to log.
  */
 sealed class TraktError {
-    /** A short, plain description for logs and diagnostics. Never holds tokens or user data. */
+    /**
+     * A short, plain description for logs and diagnostics. Never holds tokens or user data.
+     *
+     * For logs only. UI must map each TraktError type to a gambit_strings.xml entry and never display this text.
+     */
     abstract val description: String
 
     override fun toString(): String = description
