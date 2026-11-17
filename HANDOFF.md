@@ -1,8 +1,12 @@
 # Handoff: main
 
-Last updated: 2026-11-17. Branch: `main` at `ff6d411a`. Replaces the old `feature/addons-client` handoff.
+Last updated: 2026-11-17. Branch: `main` at `cd04a844`. Replaces the old `feature/addons-client` handoff.
 
 ## Done
+- **Upstream sync complete (stages 1-3):** Gambit is now on OwnTV v5.2.2 (`42057337`), core 1.0.71, and CI builds with JDK 25 (Gradle 9.8.2).
+  - **Stage 3 merged:** v5.2.1 -> v5.2.2 (203 commits), core 1.0.69 -> 1.0.71. Branch `sync/stage-3` (kept): merge `e34f6a0c`, then `1ade9b84` (Gambit CI on JDK 25, its own commit).
+  - Merged to main with `--no-ff` in `cd04a844`. CI on `cd04a844`: Gambit CI, Android CI and i18n all passed.
+  - Shield: CI run 44125753235 debug APK (`1ade9b84`) installed with `adb install -r` (signer matched). Shield checks 1-4 and 6 passed (rail open/close on Home, Live and Movies; player Left panels and folder pick; More highlight; Home names; reboot lands on the launcher). No Gambit crash or ANR in logcat. Report: C:\Users\darre\reviews\gambit-stage3-shield-checks.md.
 - **Upstream sync stage 2 merged:** v5.2.1 -> `d1f12648` (guide performance, Coil cache, Search backdrop, Home row focus). Core stays 1.0.69; no Gradle or JDK change.
   - Branch `sync/stage-2` (kept): merge `5f1a3e56` (1 conflict in `EpgScreen.kt`; `GambitGuide.kt` ruler and programme strip take `scrollPx: () -> Int`).
   - Merged to main with `--no-ff` in `ff6d411a`. CI on `ff6d411a`: Gambit CI #40, Android CI #17 and i18n #20 all passed.
@@ -29,8 +33,7 @@ Last updated: 2026-11-17. Branch: `main` at `ff6d411a`. Replaces the old `featur
    - watchlist path `sync/watchlist/{type}/rank/asc`;
    - scrobbling an episode by show + season + number (`TraktScrobbleItem.EpisodeOfShow`).
 5. **Unmerged branches, status not checked:** `feature/addons-install` (WIP), `test/fixes-combined`, `claude/android-tv-family-setup-l2njf4`. Next action: review each and decide merge or leave.
-6. **Upstream OwnTV sync, stage 3 is next:** merge upstream v5.2.2 (`42057337`) on a new `sync/stage-3` branch (plan: C:\Users\darre\reviews\gambit-upstream-sync-plan.md, section 5). Core 1.0.69 -> 1.0.71; 203 commits. Expected conflicts: `OwnTVShell.kt`, `StageRail.kt`, `HomeViewModel.kt`, `LiveViewModel.kt`, `PlayerHud.kt`, possibly `EpgScreen.kt`. Known silent breakers include `MoreScreen.kt:129-133` (`selected` read-only, `320219e1`) and the rail's new `shown`/`namesAlpha` parameters.
-7. **JDK 25 lands in stage 3, as its own commit:** `89f62ca0` (Gradle 9.8.2, daemon JDK 25) is in stage 3. Decided: bump `gambit-ci.yml:31,35` to JDK 25 in a separate commit on `sync/stage-3`. Upstream's red CI around `89f62ca0` was missing core symbols, not the JDK.
+6. **Stage 3 check 5, not done:** with a locked category, confirm it is hidden in the player's folder list (Left, Left). Darren to do this on the Shield; it was skipped because it needs a category lock or PIN.
 
 ## Compiled and tested in CI, never run on a device
 - All Trakt code (there is no UI to reach it yet).
@@ -38,6 +41,7 @@ Last updated: 2026-11-17. Branch: `main` at `ff6d411a`. Replaces the old `featur
 ## Waiting on Darren
 - How Trakt keys are supplied (Gradle change, item 2).
 - What to do with the three unmerged branches (item 5).
+- Stage 3 check 5 on the Shield (item 6).
 
 ## Notes
 - Commit `ac1c8340` (Trakt models) does not compile its tests on its own; the merged result is fine. Only matters for bisecting.
