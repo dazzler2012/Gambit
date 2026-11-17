@@ -603,7 +603,7 @@ internal fun LiveCategories(
                         onClick = { onSelect(index) },
                         onLongClick = { onLongSelect(index) },
                         modifier = rowModifier,
-                        mark = entry.mark?.color,
+                        mark = entry.mark?.shownColor, // Gambit: core's PlaylistMark (3eef6c56)
                     )
                 }
             }
