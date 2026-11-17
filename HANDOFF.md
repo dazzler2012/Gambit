@@ -1,8 +1,12 @@
 # Handoff: main
 
-Last updated: 2026-11-17. Branch: `main` at `f4c1454f`. Replaces the old `feature/addons-client` handoff.
+Last updated: 2026-11-17. Branch: `main` at `2e880626`. Replaces the old `feature/addons-client` handoff.
 
 ## Done
+- **Upstream sync stage 1 merged:** OwnTV v5.1.0 -> v5.2.1 (`8f47da68`), core 1.0.64 -> 1.0.69.
+  - Branch `sync/stage-1` (kept): merge `65720c5e` (9 conflicts resolved, six post-merge fixes, ProviderTags decode moved to `gambit/text/GambitProviderTags.kt`), then `e764d418` (compile fixes for core 1.0.69: `shownColor` in `LiveStage.kt`, new `gambit_info_history` string).
+  - Merged to main with `--no-ff` in `2e880626`. CI on `2e880626`: Gambit CI #38, Android CI #16 and i18n #19 all passed.
+  - Shield: CI #37 debug APK installed with `adb install -r` (signer matched), launched with no crash logged; Darren passed all 7 on-screen checks (guide ▶ and preview on OK, move overlay colours, decoded names, recently watched panel, info bar tiles, long-press popup guard, player Left folder list).
 - CLAUDE.md now covers repo identity, working rules and CI notes (`4b515054`, merged in `c1e3592a`).
 - Trakt core merged into main (`f4c1454f`), in package `tv.own.owntv.gambit.trakt`:
   - device-code sign-in, token refresh, scrobble start/pause/stop, sync (history, playback, watchlist);
@@ -21,7 +25,8 @@ Last updated: 2026-11-17. Branch: `main` at `f4c1454f`. Replaces the old `featur
    - watchlist path `sync/watchlist/{type}/rank/asc`;
    - scrobbling an episode by show + season + number (`TraktScrobbleItem.EpisodeOfShow`).
 5. **Unmerged branches, status not checked:** `feature/addons-install` (WIP), `test/fixes-combined`, `claude/android-tv-family-setup-l2njf4`. Next action: review each and decide merge or leave.
-6. Upstream OwnTV sync: not started. Plan is in C:\Users\darre\reviews\gambit-upstream-sync-plan.md (3 stages). Blocked on Darren's decision: upstream commit 89f62ca0 needs JDK 25, gambit-ci.yml pins 21.
+6. **Upstream OwnTV sync, stage 2 is next:** merge upstream `d1f12648` on a new `sync/stage-2` branch (plan: C:\Users\darre\reviews\gambit-upstream-sync-plan.md, section 5). Expected: `EpgScreen.kt` conflicts; `GambitGuide.kt:175,268` must take `scrollPx: () -> Int`. Core stays 1.0.69.
+7. **Stage 3 (v5.2.2, `42057337`) brings JDK 25:** `89f62ca0` (Gradle 9.8.2, daemon JDK 25) is in stage 3 only. Decided: bump `gambit-ci.yml:31,35` to JDK 25 in stage 3, as its own commit.
 
 ## Compiled and tested in CI, never run on a device
 - All Trakt code (there is no UI to reach it yet).
