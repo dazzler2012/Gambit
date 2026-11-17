@@ -90,6 +90,17 @@ android {
             ?: ""
         buildConfigField("String", "TMDB_EDGE_KEY", "\"${edgeKey.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
 
+        // Gambit: Trakt Client ID. Not a secret for device-code sign-in (no client secret is used), but kept
+        // out of the repo: env var (CI injects the GitHub secret TRAKT_CLIENT_ID) > Gradle property >
+        // the out-of-repo properties file. Resolves "" when unset; the app then hides Trakt.
+        val traktClientId = (
+            System.getenv("TRAKT_CLIENT_ID")
+                ?: providers.gradleProperty("gambit.traktClientId").orNull
+                ?: localSigningProps.getProperty("gambit.traktClientId")
+                ?: ""
+            ).trim()
+        buildConfigField("String", "TRAKT_CLIENT_ID", "\"${traktClientId.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
