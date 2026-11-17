@@ -4,7 +4,8 @@ import java.time.Instant
 
 /**
  * Every way a Trakt call can fail. None of these carries a token, a code, a response body or any
- * other user data, so they are safe to show and to log.
+ * other user data, so their descriptions are safe to log. UI text comes from gambit_strings.xml,
+ * never from these descriptions.
  */
 sealed class TraktError {
     /**
