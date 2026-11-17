@@ -172,7 +172,8 @@ internal fun GambitGuideRuler(
     windowStart: Long,
     windowEnd: Long,
     now: Long,
-    scrollPx: Int,
+    /** How far the timeline is scrolled; read only while drawing and placing, as the rows do. */
+    scrollPx: () -> Int,
     labelWidth: Dp,
     timelineWidth: Dp,
     modifier: Modifier = Modifier,
@@ -196,7 +197,7 @@ internal fun GambitGuideRuler(
                 val px = 1.mpx.toPx()
                 drawRect(GambitColors.Divider, Offset(0f, size.height - 2 * px), Size(size.width, 2 * px))
                 if (nowIn) {
-                    val x = (now - windowStart) / 60_000f * GuideGridDefaults.PxPerMin.toPx() - scrollPx
+                    val x = (now - windowStart) / 60_000f * GuideGridDefaults.PxPerMin.toPx() - scrollPx()
                     if (x in 0f..size.width) drawCircle(light, 5 * px, Offset(x, size.height - px))
                 }
             },
@@ -209,6 +210,7 @@ internal fun GambitGuideRuler(
             val ppm = GuideGridDefaults.PxPerMin.toPx()
             val placeables = measurables.map { it.measure(Constraints()) }
             layout(constraints.maxWidth, constraints.maxHeight) {
+                val scrollPx = scrollPx()
                 placeables.forEachIndexed { i, pl ->
                     // Each label is centred on its half hour, as the cells below begin there.
                     val x = ((times[i] - windowStart) / 60_000f * ppm - scrollPx - pl.width / 2f).toInt()
@@ -265,7 +267,8 @@ internal fun GambitProgrammeStrip(
     catchupIds: Set<Long>,
     recordingStarts: Set<Long>,
     reminderStarts: Set<Long>,
-    scrollPx: Int,
+    /** How far the timeline is scrolled, shared by every row and the ruler. Read only while drawing. */
+    scrollPx: () -> Int,
 ) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer(cacheSize = 64)
@@ -275,7 +278,9 @@ internal fun GambitProgrammeStrip(
     val emptyText = stringResource(R.string.gambit_epg_no_information)
     val accentLight = gambitAccentLight(stageAccent.accent)
     val recRed = Color(0xFFFF5B5B)
-    Canvas(Modifier.fillMaxSize()) { clipRect {
+    Canvas(Modifier.fillMaxSize()) {
+        val scrollPx = scrollPx()
+        clipRect {
         val viewW = size.width
         val h = size.height
         val r = CornerRadius(GambitRadii.Cell.toPx())
