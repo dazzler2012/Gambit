@@ -994,6 +994,153 @@
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	lt
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	nbsp
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	quot
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	2
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	<redacted>
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	Gambit
+1	assertion	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	Trakt base URL is not http(s)
+1	assertion	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	Trakt client ID is blank
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	TraktConfig(clientId=$REDACTED, clientSecret=${if (clientSecret == null) "null" else REDACTED},
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	baseUrl=$baseUrl, userAgent=$userAgent)
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	http://
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	https://
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	https://api.trakt.tv
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	null
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktConfig.kt	urn:ietf:wg:oauth:2.0:oob
+2	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	POST
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	client_id
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	client_secret
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	code
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	device_code
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	expires_in
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	interval
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	oauth/device/code
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	oauth/device/token
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	user_code
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktDeviceAuth.kt	verification_url
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Not signed in to Trakt
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt could not find it (404)
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt network error ($kind)
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt rate limit hit (429), retry after ${retryAfterSeconds ?: "unknown"} s
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt refused the request (403)
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt rejected the sign-in (401)
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt request timed out
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt says this was already done (409)
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt sent an unreadable response: $reason
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt server error ($status)
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt sign-in code expired
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt sign-in code is not valid
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt sign-in code was already used
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt sign-in expired; sign in again
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt sign-in was denied
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt token storage failed ($kind)
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Trakt would not process the request (422)
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	Unexpected Trakt response ($status)
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktError.kt	unknown
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	Authorization
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	Bearer $accessToken
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	Content-Type
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	POST
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	PUT
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	Retry-After
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	User-Agent
+2	mime	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	application/json
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	expires_at
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	invalid JSON
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	trakt-api-key
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	trakt-api-version
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	unexpected shape
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktHttp.kt	watched_at
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	access_token
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	array item $i is not an object
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	bad date in '$key'
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	created_at
+2	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	empty body
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	episode
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	episodes
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	expires_in
+4	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	ids
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	imdb
+5	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	missing '$key'
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	missing 'show'
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	movie
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	movies
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	number
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	public
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	refresh_token
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	scope
+3	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	season
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	seasons
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	show
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	shows
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	slug
+3	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	title
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	tmdb
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	trakt
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	tvdb
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	type
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	unknown type '$type'
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	year
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktModels.kt	TraktDeviceCode(deviceCode=$REDACTED, userCode=$REDACTED, verificationUrl=$verificationUrl,
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktModels.kt	expiresInSeconds=$expiresInSeconds, intervalSeconds=$intervalSeconds)
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	POST
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	action
+4	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	episode
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	id
+3	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	ids
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	missing 'progress'
+3	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	movie
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	number
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	pause
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	progress
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	scrobble/$action
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	season
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	show
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	start
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	stop
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	title
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	year
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSession.kt	POST
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSession.kt	client_id
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSession.kt	client_secret
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSession.kt	grant_type
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSession.kt	oauth/token
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSession.kt	redirect_uri
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSession.kt	refresh_token
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	GET
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	POST
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	X-Pagination-Item-Count
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	X-Pagination-Limit
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	X-Pagination-Page
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	X-Pagination-Page-Count
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	action
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	added
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	all
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	deleted
+4	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	episodes
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	existing
+3	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	id
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	ids
+1	uri	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	limit
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	listed_at
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	missing 'progress'
+4	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	movies
+2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	not_found
+1	uri	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	page
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	paused_at
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	progress
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	rank
+3	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	seasons
+3	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	shows
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	sync/history
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	sync/history/${type.path}
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	sync/playback
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	sync/playback/${type.path}
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	sync/watchlist
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	sync/watchlist/${type.path}/rank/asc
+1	url	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	sync/watchlist/remove
+1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktSync.kt	watched_at
+1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktTokens.kt	TraktTokens(accessToken=$REDACTED, refreshToken=$REDACTED, expiresAtEpochSeconds=$expiresAtEpochSeconds, scope=$scope)
+1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktTokens.kt	public
 1	locale	app/src/main/java/tv/own/owntv/gambit/ui/guide/GambitGuide.kt	EEEdMMM
 1	technical	app/src/main/java/tv/own/owntv/gambit/ui/guide/GambitGuide.kt	tnum
 1	locale	app/src/main/java/tv/own/owntv/gambit/ui/player/GambitInfoBar.kt	EEEdMMM

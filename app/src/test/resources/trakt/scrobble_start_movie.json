@@ -1,0 +1,11 @@
+{
+  "id": 0,
+  "action": "start",
+  "progress": 1.25,
+  "sharing": { "twitter": false, "mastodon": false, "tumblr": false },
+  "movie": {
+    "title": "Fake Movie",
+    "year": 2010,
+    "ids": { "trakt": 1001, "slug": "fake-movie-2010", "imdb": "tt0000001", "tmdb": 2001 }
+  }
+}

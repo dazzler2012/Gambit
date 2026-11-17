@@ -1,0 +1,11 @@
+{
+  "id": 9876543210,
+  "action": "scrobble",
+  "progress": 99.9,
+  "sharing": { "twitter": false, "mastodon": false, "tumblr": false },
+  "movie": {
+    "title": "Fake Movie",
+    "year": 2010,
+    "ids": { "trakt": 1001, "slug": "fake-movie-2010", "imdb": "tt0000001", "tmdb": 2001 }
+  }
+}

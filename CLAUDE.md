@@ -20,6 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `main` is the integration branch. Work on `feature/*` or `fix/*`. Merge with a merge commit (`--no-ff`): no squash, no force-push, no branch deletion. Don't open a PR unless asked; if you do, the base repo is dazzler2012/Gambit.
 - Leave untracked `GAMBIT_*.md` files alone: don't commit or edit them.
 - Addon URLs can contain debrid API keys. Never log or print them. Tests use fake `*.example` hosts only.
+- `TraktError.description` is for logs only. UI must map each `TraktError` type to a `gambit_strings.xml` entry and never display this text.
 
 ## Build and verify
 - Builds run on GitHub Actions after each push, not in this session. Do not install the Android SDK here.
