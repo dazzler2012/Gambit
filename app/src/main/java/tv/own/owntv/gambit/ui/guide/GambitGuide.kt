@@ -121,7 +121,7 @@ internal fun GambitProgrammeBlock(
         if (programme == null) {
             Text(
                 stringResource(R.string.gambit_epg_no_information), style = stageText(26, 400), color = GambitColors.Muted,
-                maxLines = 1, modifier = Modifier.padding(top = 14.mpx),
+                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 14.mpx),
             )
             return@Column
         }
@@ -132,7 +132,7 @@ internal fun GambitProgrammeBlock(
         ) {
             Text(
                 timeRange(formatTime, programme.startMs, programme.stopMs),
-                style = stageText(26, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Muted, maxLines = 1,
+                style = stageText(26, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
             when {
                 now in programme.startMs until programme.stopMs -> {
@@ -145,11 +145,11 @@ internal fun GambitProgrammeBlock(
                         },
                     )
                     val left = ((programme.stopMs - now) + 59_999) / 60_000
-                    Text(stringResource(R.string.player_duration_minutes, left.toInt()), style = stageText(26, 400), color = GambitColors.Muted, maxLines = 1)
+                    Text(stringResource(R.string.player_duration_minutes, left.toInt()), style = stageText(26, 400), color = GambitColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 programme.startMs > now -> Text(
                     stringResource(R.string.content_epg_starts_in, durationText(((programme.startMs - now) + 59_999) / 60_000)),
-                    style = stageText(26, 400), color = GambitColors.Muted, maxLines = 1,
+                    style = stageText(26, 400), color = GambitColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -202,7 +202,7 @@ internal fun GambitGuideRuler(
             },
             content = {
                 times.forEach { t ->
-                    Text(formatTime(t), style = stageText(24, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Muted, maxLines = 1)
+                    Text(formatTime(t), style = stageText(24, 400).copy(fontFeatureSettings = Tabular), color = GambitColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             },
         ) { measurables, constraints ->

@@ -102,7 +102,7 @@ internal fun GambitCategoryListPanel(
             },
     ) {
         Box(Modifier.fillMaxWidth().height(76.mpx), contentAlignment = Alignment.CenterStart) {
-            Text(stringResource(R.string.content_category_browser_title), style = stageText(26, 600), color = GambitColors.Muted, maxLines = 1, modifier = Modifier.padding(horizontal = 32.mpx))
+            Text(stringResource(R.string.content_category_browser_title), style = stageText(26, 600), color = GambitColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 32.mpx))
         }
         LazyColumn(
             state = listState,

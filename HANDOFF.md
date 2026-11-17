@@ -1,47 +1,34 @@
-# Handoff: Trakt core (`feature/trakt-core`)
+# Handoff: feature/addons-client
 
-Last updated: 2026-11-02
-
-## Status: blocked, waiting on one decision
-
-The Trakt core (no UI) is written, tested and pushed. The build fails only on the repo's
-hardcoded-text check, and fixing that means editing an existing file, which needs approval.
+Branch `feature/addons-client`, 4 commits on top of `family-build`. Last code commit: `0cfc904`.
 
 ## Done
-
-- New package `tv.own.owntv.gambit.trakt` (app/src/main/java/tv/own/owntv/gambit/trakt/):
-  device-code sign-in, `TraktTokenStore` interface, automatic token refresh, scrobble
-  start/pause/stop, sync (history, playback progress, watchlist read/add/remove), typed errors.
-- 49 unit tests with fixture JSON and a fake host (app/src/test/.../gambit/trakt/,
-  app/src/test/resources/trakt/). No live calls, only fake keys.
-- Only new files added. No existing OwnTV file changed.
-- Last run (2026-10-21, with only `verifyI18nLiterals` skipped): `:app:testDebugUnitTest`
-  226 tests, 0 failures; `:app:assembleDebug` passed.
+- Stremio addon client in `tv.own.owntv.gambit.addons` (models, URL handling, OkHttp client, registry, repository).
+- In the real Gradle build, with `-x verifyI18nLiterals`: `:app:testDebugUnitTest` passed (239 tests, 62 addon tests, 0 failed) and `:app:assembleDebug` succeeded.
+- Episode ids: NuvioTV and TuvoraTV percent-encode colons in meta and stream URLs (`URLEncoder.encode`, so `tt1:1:2` is sent as `tt1%3A1%3A2`). Ours already matched. `AddonUrlTest` now pins this.
+- The meta fallback to the next matching addon is kept and tested.
 
 ## Open
+- **Blocker:** `Execution failed for task ':app:verifyI18nLiterals'` / `Hardcoded text check failed`.
+  - It flags JSON keys and similar literals in `gambit/addons/net/AddonJson.kt`.
+  - Without `-x verifyI18nLiterals`, both the test run and the debug build fail.
+- **Needs approval:** run `python tools/i18n/check_hardcoded_strings.py classify-safe` on the addon literals. It writes to `tools/i18n/safe_literals.txt`, which is an existing OwnTV file, so it needs the owner's OK first.
+  - Review each flagged literal before classifying it (expected categories are `json`, `protocol` and `uri`; not yet checked).
+- Left for later, as agreed: duplicate stream removal, and the Koin wiring in `OwnTVApp.kt`.
+- Minor, not acted on: `URLEncoder` and our encodeURIComponent-style encoder treat `! ' ( ) ~` differently. This doesn't affect episode ids.
 
-1. **Blocker:** `:app:verifyI18nLiterals FAILED — Hardcoded text found. Every literal must be
-   reachable by translators or declared technical.`
-   - Fix: register the Trakt literals in `tools/i18n/safe_literals.txt` with the repo's own
-     command, e.g. `python3 tools/i18n/check_hardcoded_strings.py classify-safe --path <file> --text <literal> --category json|url|log`.
-   - Needs the owner's OK, because the rule was "don't edit existing OwnTV files without asking".
-2. Re-run the full build with no checks skipped: `./gradlew :app:testDebugUnitTest :app:assembleDebug`.
-3. Optional: commit `ac1c834`'s tests don't compile alone (they use `TraktClient` from `f3aa79e`).
-   The branch tip is fine. Reorder only if bisecting matters.
-4. Write the final "complete" report (exit criteria, plug-in interfaces, key supply).
+## Next step
+1. Get approval for the `safe_literals.txt` change.
+2. Classify the addon literals.
+3. Rerun `./gradlew :app:testDebugUnitTest` and `:app:assembleDebug` without `-x`.
+4. Push.
 
-## Not verified (fixtures can't prove these)
+## Rules still in force
+- Work only on `feature/addons-client`. Don't open a PR.
+- Don't edit existing OwnTV files without asking.
+- Never log or commit addon URLs; tests use `*.example` hosts only.
+- Make no live calls to real addons.
 
-- `GET /sync/history` without a type.
-- Watchlist path `sync/watchlist/{type}/rank/asc`.
-- Scrobbling an episode by show + season + number (`TraktScrobbleItem.EpisodeOfShow`), taken from Trakt's legacy docs.
-
-## Notes for whoever picks this up
-
-- Trakt now marks `client_secret` as deprecated for on-device apps. `TraktConfig.clientSecret`
-  is optional and only sent when set.
-- Entry point for later wiring: `TraktClient(config, tokenStore, httpClient)` exposes
-  `session`, `deviceAuth`, `scrobbler`, `sync`. Storage plugs in via `TraktTokenStore`.
-- Keys are never hard-coded. They're meant to come from local.properties → BuildConfig in a
-  separate step, then be passed to `TraktConfig`.
-- Out of scope, untouched: UI, Koin wiring, storage implementation, Gradle/BuildConfig.
+## Environment notes
+- Maven Central returned HTTP 429 often in the cloud session. Plain retries worked.
+- The SDK needs `platforms;android-37.0` and `build-tools;37.0.0`.

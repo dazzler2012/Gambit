@@ -105,7 +105,7 @@ fun GambitSettingsHeading(text: String, count: Int?, first: Boolean) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text, style = stageText(20, 600), color = stageAccent.accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (count != null) Text(count.toString(), style = stageText(17, 500), color = GambitColors.Dim, maxLines = 1)
+        if (count != null) Text(count.toString(), style = stageText(17, 500), color = GambitColors.Dim, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
