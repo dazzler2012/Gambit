@@ -1,34 +1,35 @@
-# Handoff: feature/addons-client
+# Handoff: main
 
-Branch `feature/addons-client`, 4 commits on top of `family-build`. Last code commit: `0cfc904`.
+Last updated: 2026-11-17. Branch: `main` at `f4c1454f`. Replaces the old `feature/addons-client` handoff.
 
 ## Done
-- Stremio addon client in `tv.own.owntv.gambit.addons` (models, URL handling, OkHttp client, registry, repository).
-- In the real Gradle build, with `-x verifyI18nLiterals`: `:app:testDebugUnitTest` passed (239 tests, 62 addon tests, 0 failed) and `:app:assembleDebug` succeeded.
-- Episode ids: NuvioTV and TuvoraTV percent-encode colons in meta and stream URLs (`URLEncoder.encode`, so `tt1:1:2` is sent as `tt1%3A1%3A2`). Ours already matched. `AddonUrlTest` now pins this.
-- The meta fallback to the next matching addon is kept and tested.
+- CLAUDE.md now covers repo identity, working rules and CI notes (`4b515054`, merged in `c1e3592a`).
+- Trakt core merged into main (`f4c1454f`), in package `tv.own.owntv.gambit.trakt`:
+  - device-code sign-in, token refresh, scrobble start/pause/stop, sync (history, playback, watchlist);
+  - typed errors (`TraktError`); `description` is for logs only (KDoc + CLAUDE.md rule);
+  - 147 technical literals classified in `tools/i18n/safe_literals.txt` (`d8031d79`);
+  - unit tests with fixture JSON and fake hosts only.
+- CI on `f4c1454f`: Gambit CI #34, Android CI #14 and i18n #17 all passed.
+- Shield (192.168.50.101:5555): CI #34 debug APK installed with `adb install -r` (signer matched the installed app). The app launches, no crash was logged, and the Movies page drew normally (rail, posters, clock). Trakt itself was not exercised: there is no UI for it yet.
 
 ## Open
-- **Blocker:** `Execution failed for task ':app:verifyI18nLiterals'` / `Hardcoded text check failed`.
-  - It flags JSON keys and similar literals in `gambit/addons/net/AddonJson.kt`.
-  - Without `-x verifyI18nLiterals`, both the test run and the debug build fail.
-- **Needs approval:** run `python tools/i18n/check_hardcoded_strings.py classify-safe` on the addon literals. It writes to `tools/i18n/safe_literals.txt`, which is an existing OwnTV file, so it needs the owner's OK first.
-  - Review each flagged literal before classifying it (expected categories are `json`, `protocol` and `uri`; not yet checked).
-- Left for later, as agreed: duplicate stream removal, and the Koin wiring in `OwnTVApp.kt`.
-- Minor, not acted on: `URLEncoder` and our encodeURIComponent-style encoder treat `! ' ( ) ~` differently. This doesn't affect episode ids.
+1. **Trakt has no UI, no Koin wiring and no token storage.** Next action: plan the wiring (`TraktClient(config, tokenStore, httpClient)`, a `TraktTokenStore` implementation, a sign-in screen) and get approval before editing.
+2. **Trakt keys are not supplied yet.** The plan was local.properties -> BuildConfig -> `TraktConfig`. That touches Gradle, so it needs Darren's OK first.
+3. **When the Trakt UI is built:** map each `TraktError` type to a `gambit_strings.xml` entry; never show `description`.
+4. **Trakt calls not proven by fixtures** (check against the live API once wired):
+   - `GET /sync/history` without a type;
+   - watchlist path `sync/watchlist/{type}/rank/asc`;
+   - scrobbling an episode by show + season + number (`TraktScrobbleItem.EpisodeOfShow`).
+5. **Unmerged branches, status not checked:** `feature/addons-install` (WIP), `test/fixes-combined`, `claude/android-tv-family-setup-l2njf4`. Next action: review each and decide merge or leave.
+6. Upstream OwnTV sync: not started. Plan is in C:\Users\darre\reviews\gambit-upstream-sync-plan.md (3 stages). Blocked on Darren's decision: upstream commit 89f62ca0 needs JDK 25, gambit-ci.yml pins 21.
 
-## Next step
-1. Get approval for the `safe_literals.txt` change.
-2. Classify the addon literals.
-3. Rerun `./gradlew :app:testDebugUnitTest` and `:app:assembleDebug` without `-x`.
-4. Push.
+## Compiled and tested in CI, never run on a device
+- All Trakt code (there is no UI to reach it yet).
 
-## Rules still in force
-- Work only on `feature/addons-client`. Don't open a PR.
-- Don't edit existing OwnTV files without asking.
-- Never log or commit addon URLs; tests use `*.example` hosts only.
-- Make no live calls to real addons.
+## Waiting on Darren
+- How Trakt keys are supplied (Gradle change, item 2).
+- What to do with the three unmerged branches (item 5).
 
-## Environment notes
-- Maven Central returned HTTP 429 often in the cloud session. Plain retries worked.
-- The SDK needs `platforms;android-37.0` and `build-tools;37.0.0`.
+## Notes
+- Commit `ac1c8340` (Trakt models) does not compile its tests on its own; the merged result is fine. Only matters for bisecting.
+- Trakt marks `client_secret` as deprecated for on-device apps; `TraktConfig.clientSecret` is optional and only sent when set.
