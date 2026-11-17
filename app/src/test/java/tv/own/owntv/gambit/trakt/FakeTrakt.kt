@@ -49,7 +49,8 @@ internal class Canned(
  */
 internal class FakeTraktHost : Interceptor {
     private val routes = mutableMapOf<String, ArrayDeque<Canned>>()
-    val seen = mutableListOf<Seen>()
+    // Thread-safe: the sign-in model tests read it from the test thread while polling runs on another.
+    val seen: MutableList<Seen> = java.util.concurrent.CopyOnWriteArrayList()
 
     fun on(method: String, path: String, vararg replies: Canned) {
         routes.getOrPut("$method $path") { ArrayDeque() }.addAll(replies)
