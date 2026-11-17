@@ -269,7 +269,7 @@ private fun BoxScope.InfoBarContent(
                 ActionTile(OwnTVIcon.EPG, stringResource(R.string.common_nav_guide), accent, info.onOpenGuide, Modifier.focusRequester(firstFocus))
             }
             info.onOpenHistory?.let { open ->
-                item(key = -2L) { ActionTile(OwnTVIcon.HISTORY, stringResource(R.string.content_history), accent, open) }
+                item(key = -2L) { ActionTile(OwnTVIcon.HISTORY, stringResource(R.string.gambit_info_history), accent, open) }
             }
             items(info.recent, key = { it.id }) { ch ->
                 ChannelTile(ch, info.recentProgrammes[ch.id]?.takeIf { now < it.stopMs }, now, accent) { info.onTune(ch) }

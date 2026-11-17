@@ -23,6 +23,8 @@
 
     <!-- Live info bar: how far behind live a rewound channel is, "−12:05" -->
     <string name="gambit_behind_live" translatable="false">−%1$d:%2$02d</string>
+    <!-- Live info bar: the tile that opens recently watched channels (core dropped content_history in 1.0.69) -->
+    <string name="gambit_info_history" translatable="false">History</string>
 
     <!-- Exit pop-up and Settings exit row: overrides the core library's "Exit OwnTV?" -->
     <string name="content_exit_owntv" translatable="false">Exit Gambit?</string>
