@@ -7,16 +7,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 - Fork of the OwnTV Android TV app.
 - Goal: TiviMate-style look and feel, plus a Nuvio/Stremio-style element.
+- Repo: dazzler2012/Gambit (origin). Upstream ahXN00/OwnTV is fetch-only; never push to it. Pass `--repo dazzler2012/Gambit` on every gh command.
+- Private family-only app. applicationId `io.github.dazzler2012.gambit`; code namespace stays `tv.own.owntv`.
+- Gambit code lives in `tv.own.owntv.gambit.*`. Gambit strings live in `app/src/main/res/values/gambit_strings.xml`.
 
 ## How to work
-- Before starting a task, switch to main and pull first.
+- Before starting a task, switch to main and pull first, unless I said READ-ONLY or another session is using this folder.
 - For any change touching more than one file, propose a plan and wait for approval before editing.
 - One feature or fix per task. Keep changes small.
+- Don't edit existing OwnTV files. If an edit is unavoidable, stop and ask; approved edits stay minimal, are marked `// Gambit`, and I see the diff before the commit.
+- Don't add dependencies or change Gradle, AGP, Kotlin or SDK versions without asking.
+- `main` is the integration branch. Work on `feature/*` or `fix/*`. Merge with a merge commit (`--no-ff`): no squash, no force-push, no branch deletion. Don't open a PR unless asked; if you do, the base repo is dazzler2012/Gambit.
+- Leave untracked `GAMBIT_*.md` files alone: don't commit or edit them.
+- Addon URLs can contain debrid API keys. Never log or print them. Tests use fake `*.example` hosts only.
 
 ## Build and verify
 - Builds run on GitHub Actions after each push, not in this session. Do not install the Android SDK here.
 - After pushing, check the GitHub Actions run for that commit and report pass/fail with the exact error.
 - A task is not done until the GitHub build passes, or I confirm it's fine.
+- Before every commit that touches Kotlin, run the three i18n checks with `py -3 -X utf8` (see "Commands"). User-visible text goes in `gambit_strings.xml`, never in `safe_literals.txt`.
+- "Gambit CI" (`gambit-ci.yml`) runs on every push. "Android CI" and "i18n" run on main and PRs only; after a merge to main, report all three.
+- Don't use `[skip ci]` on a commit whose CI result I need.
 
 ## End of every task
 Give a short summary:
@@ -26,7 +37,7 @@ Give a short summary:
 
 ## Rules learned
 <!-- Add one-line rules here when Claude makes a mistake -->
-- On Windows, run the repo's Python tools in UTF-8 mode (`python -X utf8 ...`). Plain Windows Python misreads symbols like ▾ and ✕.
+- On Windows, run the repo's Python tools in UTF-8 mode (`py -3 -X utf8 ...`). Plain Windows Python misreads symbols like ▾ and ✕.
 
 # Upstream OwnTV reference
 
@@ -57,6 +68,7 @@ must stay D-pad / remote-first. `applicationId tv.own.owntv`, minSdk 26, targetS
   python3 tools/i18n/check_number_locale.py
   python3 tools/i18n/check_text_overflow.py
   ```
+  On this PC, run them as `py -3 -X utf8` instead.
 - `.envrc` sets `GRADLE_USER_HOME=$PWD/.gradle-cache` and derives `JAVA_HOME`. CI uses JDK 21.
 
 ## Architecture: two repositories
