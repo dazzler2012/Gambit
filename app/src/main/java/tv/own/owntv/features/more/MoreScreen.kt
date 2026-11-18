@@ -71,7 +71,7 @@ import tv.own.owntv.ui.theme.stageAccent
 import tv.own.owntv.ui.theme.stageText
 
 /** The sheet's items, top to bottom. [DEVELOPER] exists only in local builds (BuildConfig.DEV_TOOLS). */
-private enum class MoreItem { SETTINGS, FAVORITES, HISTORY, ADDONS /* Gambit */, BACKUP, LOCAL_SYNC, ERROR_LOG, ABOUT, DEVELOPER }
+private enum class MoreItem { SETTINGS, FAVORITES, HISTORY, ADDONS /* Gambit */, TRAKT /* Gambit */, BACKUP, LOCAL_SYNC, ERROR_LOG, ABOUT, DEVELOPER }
 
 /** The pages that ask for the Settings PIN when it is on. */
 private val PIN_PAGES = setOf(MoreItem.BACKUP, MoreItem.LOCAL_SYNC, MoreItem.DEVELOPER)
@@ -152,6 +152,11 @@ fun MoreScreen(
     val gambitKids by gambitAddons.kids.collectAsStateWithLifecycle()
     val gambitAddonList by gambitAddons.addons.collectAsStateWithLifecycle()
     LaunchedEffect(gambitKids) { if (gambitKids && selected == MoreItem.ADDONS) chosen = MoreItem.SETTINGS }
+    // Gambit: More → Trakt, not on kids profiles and not in a build without a Trakt Client ID.
+    val gambitTrakt: tv.own.owntv.gambit.ui.trakt.TraktSignInViewModel = koinViewModel()
+    val gambitTraktState by gambitTrakt.state.collectAsStateWithLifecycle()
+    val gambitTraktShown = !gambitKids && tv.own.owntv.gambit.trakt.GambitTraktBuild.isConfigured
+    LaunchedEffect(gambitTraktShown) { if (!gambitTraktShown && selected == MoreItem.TRAKT) chosen = MoreItem.SETTINGS }
     val history by vm.history.collectAsStateWithLifecycle()
     val sync by vm.sync.collectAsStateWithLifecycle()
     val lastBackup by vm.lastBackup.collectAsStateWithLifecycle()
@@ -191,6 +196,7 @@ fun MoreScreen(
             item(MoreItem.FAVORITES, OwnTVIcon.FAVORITE, stringResource(R.string.content_category_favorites), favorites.total.toString(), false)
             item(MoreItem.HISTORY, OwnTVIcon.HISTORY, stringResource(R.string.content_category_history), history.total.toString(), false)
             if (!gambitKids) item(MoreItem.ADDONS, OwnTVIcon.PLAYLIST, stringResource(R.string.gambit_addons_title), gambitAddonList.size.toString(), false) // Gambit
+            if (gambitTraktShown) item(MoreItem.TRAKT, OwnTVIcon.PERSON, stringResource(R.string.gambit_trakt_title), if (gambitTraktState == tv.own.owntv.gambit.ui.trakt.TraktSignInState.SignedIn) stringResource(R.string.gambit_trakt_item_signed_in) else null, false) // Gambit
             GroupLabel(stringResource(R.string.more_group_keep_safe))
             item(
                 MoreItem.BACKUP, OwnTVIcon.DOWNLOADS, stringResource(R.string.settings_backup_restore),
@@ -238,6 +244,7 @@ fun MoreScreen(
                     onPlayChannel = onPlayChannel, onPlayMovie = onPlayMovie, onPlayEpisode = onPlayEpisode, onOpenSeries = onOpenSeries,
                 )
                 MoreItem.ADDONS -> tv.own.owntv.gambit.ui.addons.GambitAddonsPage(entry = pageTarget, vm = gambitAddons) // Gambit
+                MoreItem.TRAKT -> tv.own.owntv.gambit.ui.trakt.GambitTraktPage(entry = pageTarget, vm = gambitTrakt) // Gambit
                 MoreItem.BACKUP -> BackupScreen(entry = pageTarget, modifier = Modifier.fillMaxSize())
                 MoreItem.LOCAL_SYNC -> LocalSyncScreen(entry = pageTarget, modifier = Modifier.fillMaxSize())
                 MoreItem.ERROR_LOG -> ErrorLogPage(setEntry = setEntry, onCountChanged = { logVersion++ })
