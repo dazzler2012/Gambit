@@ -8,7 +8,6 @@ import tv.own.owntv.gambit.trakt.GambitTraktBuild
 import tv.own.owntv.gambit.trakt.GambitTraktTokenStore
 import tv.own.owntv.gambit.trakt.GambitTraktVault
 import tv.own.owntv.gambit.trakt.TraktClient
-import tv.own.owntv.gambit.trakt.TraktRenewalCheck
 import tv.own.owntv.gambit.ui.trakt.TraktSignInViewModel
 
 /**
@@ -21,15 +20,10 @@ import tv.own.owntv.gambit.ui.trakt.TraktSignInViewModel
 val gambitTraktModule = module {
     single {
         val config = GambitTraktBuild.config()
-        val trakt = config?.let {
-            runCatching {
-                // One store, shared by the client and the renewal check, so both see the same tokens.
-                val store = GambitTraktTokenStore(GambitTraktVault(androidContext(), get()))
-                val client = TraktClient(it, store)
-                GambitTrakt(client, TraktRenewalCheck(client, store))
-            }.getOrNull()
+        val client = config?.let {
+            runCatching { TraktClient(it, GambitTraktTokenStore(GambitTraktVault(androidContext(), get()))) }.getOrNull()
         }
-        trakt ?: GambitTrakt(null)
+        GambitTrakt(client)
     }
     viewModelOf(::TraktSignInViewModel)
 }

@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import tv.own.owntv.gambit.trakt.TraktClient
 import tv.own.owntv.gambit.trakt.TraktError
-import tv.own.owntv.gambit.trakt.TraktRenewalCheck
 import tv.own.owntv.gambit.trakt.TraktResult
 
 /**
@@ -42,15 +41,6 @@ sealed interface TraktSignInState {
     data class Failed(val error: TraktError) : TraktSignInState
 }
 
-/** The temporary renewal check's progress. */
-sealed interface TraktRenewalState {
-    data object Idle : TraktRenewalState
-
-    data object Running : TraktRenewalState
-
-    data class Done(val result: TraktRenewalCheck.Result) : TraktRenewalState
-}
-
 /**
  * The sign-in state machine, free of Android so it runs in plain JVM tests. [scope] is the screen's
  * scope (viewModelScope): when it ends, polling stops. [cancel] is for Back. Polling itself (Trakt's
@@ -61,18 +51,12 @@ sealed interface TraktRenewalState {
 class TraktSignInModel(
     private val client: TraktClient?,
     private val scope: CoroutineScope,
-    private val renewalCheck: TraktRenewalCheck? = null,
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) {
     private val mutableState = MutableStateFlow<TraktSignInState>(
         if (client == null) TraktSignInState.NotConfigured else TraktSignInState.Checking,
     )
     val state: StateFlow<TraktSignInState> = mutableState.asStateFlow()
-
-    private val mutableRenewal = MutableStateFlow<TraktRenewalState>(TraktRenewalState.Idle)
-    /** The last renewal check, for the temporary debug button. */
-    val renewal: StateFlow<TraktRenewalState> = mutableRenewal.asStateFlow()
-    val canCheckRenewal: Boolean get() = client != null && renewalCheck != null
 
     private var job: Job? = null
 
@@ -93,7 +77,6 @@ class TraktSignInModel(
     fun start() {
         val trakt = client ?: return
         job?.cancel()
-        mutableRenewal.value = TraktRenewalState.Idle
         mutableState.value = TraktSignInState.Starting
         job = scope.launch {
             when (val got = trakt.deviceAuth.requestCode()) {
@@ -132,7 +115,6 @@ class TraktSignInModel(
         val trakt = client ?: return
         job?.cancel()
         job = null
-        mutableRenewal.value = TraktRenewalState.Idle
         scope.launch {
             mutableState.value = when (val out = trakt.session.signOut()) {
                 is TraktResult.Success -> TraktSignInState.SignedOut
@@ -156,22 +138,6 @@ class TraktSignInModel(
                 is TraktResult.Failure -> TraktSignInState.Failed(read.error)
             }
             mutableState.compareAndSet(before, found)
-        }
-    }
-
-    /** Runs the live renewal check (temporary debug button). Only while signed in, one at a time. */
-    fun checkRenewal() {
-        val trakt = client ?: return
-        val check = renewalCheck ?: return
-        if (mutableState.value != TraktSignInState.SignedIn || mutableRenewal.value == TraktRenewalState.Running) return
-        mutableRenewal.value = TraktRenewalState.Running
-        scope.launch {
-            mutableRenewal.value = TraktRenewalState.Done(check.run())
-            // A refused renewal clears the sign-in: show that.
-            when (val read = trakt.session.isSignedIn()) {
-                is TraktResult.Success -> if (!read.value) mutableState.compareAndSet(TraktSignInState.SignedIn, TraktSignInState.SignedOut)
-                is TraktResult.Failure -> mutableState.compareAndSet(TraktSignInState.SignedIn, TraktSignInState.Failed(read.error))
-            }
         }
     }
 
