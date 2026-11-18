@@ -24,6 +24,9 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      # Trakt Client ID for BuildConfig (empty when the secret is missing: the app then hides Trakt).
+      TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

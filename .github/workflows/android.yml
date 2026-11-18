@@ -89,6 +89,9 @@ jobs:
     # Core pin bumps carry no application code — verify-pin above covers them instead.
     if: ${{ !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'bump/core-')) }}
     runs-on: ubuntu-latest
+    env:
+      # Gambit: Trakt Client ID for BuildConfig (empty when the secret is missing: the app then hides Trakt).
+      TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -138,6 +141,8 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     env:
+      # Gambit: Trakt Client ID for BuildConfig (empty when the secret is missing: the app then hides Trakt).
+      TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
       IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
       # Set at runtime via $GITHUB_ENV in the "Name the APK" step. Declared here (empty) so static
       # linters don't flag the later ${{ env.APK_OUT }} references as "context access might be invalid".

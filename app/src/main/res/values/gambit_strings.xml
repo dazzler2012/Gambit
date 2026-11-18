@@ -138,4 +138,34 @@
     <!-- "host · v1.4.2 · movie, series · 3 catalogs" -->
     <string name="gambit_addons_separator" translatable="false">" · "</string>
     <string name="gambit_addons_list_separator" translatable="false">", "</string>
+
+    <!-- Trakt (Phase 3): More → Trakt, the sign-in with a QR code and a typed code. -->
+    <string name="gambit_trakt_title" translatable="false">Trakt</string>
+    <string name="gambit_trakt_item_signed_in" translatable="false">Signed in</string>
+    <string name="gambit_trakt_description" translatable="false">Sign in to Trakt from your phone. The sign-in stays encrypted on this TV and is shared by all adult profiles.</string>
+    <string name="gambit_trakt_sign_in" translatable="false">Sign in to Trakt</string>
+    <string name="gambit_trakt_cancel" translatable="false">Cancel</string>
+    <string name="gambit_trakt_retry" translatable="false">Try again</string>
+    <string name="gambit_trakt_sign_out" translatable="false">Sign out</string>
+    <string name="gambit_trakt_checking" translatable="false">Checking your sign-in…</string>
+    <string name="gambit_trakt_signed_out" translatable="false">You are not signed in to Trakt.</string>
+    <string name="gambit_trakt_getting_code" translatable="false">Getting a code from Trakt…</string>
+    <string name="gambit_trakt_scan" translatable="false">Scan the code with your phone, or open</string>
+    <string name="gambit_trakt_enter_code" translatable="false">and enter this code</string>
+    <string name="gambit_trakt_qr_description" translatable="false">QR code for the Trakt sign-in page</string>
+    <!-- "Expires in 9:41" -->
+    <string name="gambit_trakt_expires_in" translatable="false">Expires in %1$d:%2$02d</string>
+    <string name="gambit_trakt_signed_in_title" translatable="false">Signed in to Trakt</string>
+    <string name="gambit_trakt_signed_in_body" translatable="false">This TV is signed in to your Trakt account. Sign out here to remove it from this TV.</string>
+    <string name="gambit_trakt_failed_title" translatable="false">The sign-in did not finish</string>
+    <string name="gambit_trakt_err_expired" translatable="false">The code ran out of time. Try again to get a new one.</string>
+    <string name="gambit_trakt_err_denied" translatable="false">The sign-in was declined on Trakt.</string>
+    <string name="gambit_trakt_err_used" translatable="false">That code was already used. Try again to get a new one.</string>
+    <string name="gambit_trakt_err_invalid" translatable="false">Trakt did not recognise the code. Try again to get a new one.</string>
+    <string name="gambit_trakt_err_network" translatable="false">Could not reach Trakt. Check the internet connection, then try again.</string>
+    <string name="gambit_trakt_err_busy" translatable="false">Trakt is busy right now. Try again in a moment.</string>
+    <string name="gambit_trakt_err_refused" translatable="false">Trakt did not accept this app. The family build may need a new Trakt app set up.</string>
+    <string name="gambit_trakt_err_storage" translatable="false">Could not save the sign-in on this TV. Try again.</string>
+    <string name="gambit_trakt_err_expired_signin" translatable="false">Your Trakt sign-in ran out. Sign in again.</string>
+    <string name="gambit_trakt_err_other" translatable="false">Something went wrong talking to Trakt. Try again.</string>
 </resources>
