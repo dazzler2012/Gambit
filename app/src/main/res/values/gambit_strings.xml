@@ -153,8 +153,8 @@
     <string name="gambit_trakt_scan" translatable="false">Scan the code with your phone, or open</string>
     <string name="gambit_trakt_enter_code" translatable="false">and enter this code</string>
     <string name="gambit_trakt_qr_description" translatable="false">QR code for the Trakt sign-in page</string>
-    <!-- "Code works for 9:41 more" -->
-    <string name="gambit_trakt_expires_in" translatable="false">Code works for %1$d:%2$02d more</string>
+    <!-- "Expires in 9:41" -->
+    <string name="gambit_trakt_expires_in" translatable="false">Expires in %1$d:%2$02d</string>
     <string name="gambit_trakt_signed_in_title" translatable="false">Signed in to Trakt</string>
     <string name="gambit_trakt_signed_in_body" translatable="false">This TV is signed in to your Trakt account. Sign out here to remove it from this TV.</string>
     <string name="gambit_trakt_failed_title" translatable="false">The sign-in did not finish</string>
