@@ -1218,6 +1218,7 @@
 2	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktJson.kt	year
 1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktModels.kt	TraktDeviceCode(deviceCode=$REDACTED, userCode=$REDACTED, verificationUrl=$verificationUrl,
 1	log	app/src/main/java/tv/own/owntv/gambit/trakt/TraktModels.kt	expiresInSeconds=$expiresInSeconds, intervalSeconds=$intervalSeconds)
+1	technical	app/src/main/java/tv/own/owntv/gambit/trakt/TraktRenewalCheck.kt	gambit-renewal-check-not-a-token
 1	protocol	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	POST
 1	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	action
 4	json	app/src/main/java/tv/own/owntv/gambit/trakt/TraktScrobbler.kt	episode

@@ -27,6 +27,7 @@ import tv.own.owntv.gambit.trakt.FakeTraktHost
 import tv.own.owntv.gambit.trakt.MemoryTokenStore
 import tv.own.owntv.gambit.trakt.TraktClient
 import tv.own.owntv.gambit.trakt.TraktError
+import tv.own.owntv.gambit.trakt.TraktRenewalCheck
 
 /** The sign-in state machine against a fake Trakt host (trakt.fake.test). Nothing leaves the test. */
 class TraktSignInModelTest {
@@ -279,6 +280,42 @@ class TraktSignInModelTest {
         m.signOut()
         m.until { it is TraktSignInState.Failed }
         assertTrue(errorOf(m) is TraktError.Storage)
+    }
+
+    @Test
+    fun `opening the page again notices a sign in cleared in the background`() = runBlocking {
+        store.tokens = tokens()
+        val m = model()
+        m.until { it == TraktSignInState.SignedIn }
+        store.tokens = null
+        m.recheck()
+        assertEquals(TraktSignInState.SignedOut, m.until { it == TraktSignInState.SignedOut })
+    }
+
+    @Test
+    fun `a renewal check that Trakt refuses shows signed out and keeps the result`() = runBlocking {
+        store.tokens = tokens()
+        host.on("POST", "/oauth/token", Canned(status = 400))
+        val m = TraktSignInModel(client, scope, TraktRenewalCheck(client, store) { clock.nowMillis }) { clock.nowMillis }
+        assertTrue(m.canCheckRenewal)
+        m.until { it == TraktSignInState.SignedIn }
+
+        m.checkRenewal()
+
+        val done = withTimeout(5_000) { m.renewal.first { it is TraktRenewalState.Done } } as TraktRenewalState.Done
+        assertEquals(TraktError.SignInExpired, done.result.forced.error)
+        assertEquals(TraktSignInState.SignedOut, m.until { it == TraktSignInState.SignedOut })
+        assertNull(store.tokens)
+    }
+
+    @Test
+    fun `the renewal check does nothing unless signed in or without a check`() = runBlocking {
+        val m = TraktSignInModel(client, scope, TraktRenewalCheck(client, store) { clock.nowMillis }) { clock.nowMillis }
+        m.until { it == TraktSignInState.SignedOut }
+        m.checkRenewal()
+        assertEquals(TraktRenewalState.Idle, m.renewal.value)
+        assertFalse(model().canCheckRenewal)
+        assertTrue(host.seen.isEmpty())
     }
 
     private fun tokens() = tv.own.owntv.gambit.trakt.TraktTokens(Fake.ACCESS, Fake.REFRESH, 1_700_000_000L + 86_400L)

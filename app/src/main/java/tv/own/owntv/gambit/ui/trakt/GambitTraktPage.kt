@@ -1,5 +1,6 @@
 package tv.own.owntv.gambit.ui.trakt
 
+import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -30,6 +32,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,7 +41,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.Text
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
+import tv.own.owntv.BuildConfig
 import tv.own.owntv.R
+import tv.own.owntv.gambit.trakt.TraktRenewalCheck
 import tv.own.owntv.gambit.ui.theme.GambitColors
 import tv.own.owntv.gambit.ui.theme.gambitAccentLight
 import tv.own.owntv.ui.components.OwnTVIcon
@@ -58,11 +63,23 @@ import tv.own.owntv.ui.theme.stageText
 @Composable
 internal fun GambitTraktPage(entry: FocusRequester, vm: TraktSignInViewModel = koinViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val renewal by vm.renewal.collectAsStateWithLifecycle()
     if (state == TraktSignInState.NotConfigured) return
     val busy = state is TraktSignInState.Starting || state is TraktSignInState.Waiting
     // Registered after More's own Back, so it wins: Back stops the sign-in first, then leaves the page.
     BackHandler(enabled = busy) { vm.cancel() }
     DisposableEffect(vm) { onDispose { vm.cancel() } }
+    // A renewal refused in the background clears the sign-in: read it again each time the page opens.
+    LaunchedEffect(vm) { vm.recheck() }
+    // TEMPORARY (Stage 4): the renewal check button. If a check signs out, that button goes away; put
+    // focus back on the main button.
+    LaunchedEffect(renewal, state) {
+        if (renewal is TraktRenewalState.Done && state != TraktSignInState.SignedIn) {
+            withFrameNanos { }
+            withFrameNanos { }
+            runCatching { entry.requestFocus() }
+        }
+    }
 
     Column(Modifier.fillMaxSize().focusGroup().widthIn(max = 1100.mpx).verticalScroll(rememberScrollState())) {
         Text(stringResource(R.string.gambit_trakt_title), style = stageText(46, 800), color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -77,7 +94,10 @@ internal fun GambitTraktPage(entry: FocusRequester, vm: TraktSignInViewModel = k
                 .background(GambitColors.Rail, RoundedCornerShape(16.mpx))
                 .padding(28.mpx),
         ) {
-            Panel(state)
+            Column(verticalArrangement = Arrangement.spacedBy(20.mpx)) {
+                Panel(state)
+                RenewalLines(renewal) // TEMPORARY (Stage 4)
+            }
         }
         val label: Int
         val icon: OwnTVIcon
@@ -89,11 +109,19 @@ internal fun GambitTraktPage(entry: FocusRequester, vm: TraktSignInViewModel = k
             TraktSignInState.SignedIn -> { label = R.string.gambit_trakt_sign_out; icon = OwnTVIcon.CLOSE; action = { vm.signOut() } }
             is TraktSignInState.Failed -> { label = R.string.gambit_trakt_retry; icon = OwnTVIcon.REFRESH; action = { vm.start() } }
         }
-        Row(Modifier.padding(top = 24.mpx)) {
+        Row(Modifier.padding(top = 24.mpx), horizontalArrangement = Arrangement.spacedBy(16.mpx)) {
             StageTool(
                 stringResource(label), onClick = action,
                 icon = icon, boxed = true, modifier = Modifier.focusRequester(entry),
             )
+            // TEMPORARY (Stage 4): debug builds only; removed in its own commit after one Shield check.
+            if (BuildConfig.DEBUG && vm.canCheckRenewal && state == TraktSignInState.SignedIn) {
+                val running = renewal == TraktRenewalState.Running
+                StageTool(
+                    stringResource(if (running) R.string.gambit_trakt_checking_renewal else R.string.gambit_trakt_check_renewal),
+                    onClick = { vm.checkRenewal() }, icon = OwnTVIcon.REFRESH, boxed = true,
+                )
+            }
         }
     }
 }
@@ -116,6 +144,42 @@ private fun Panel(state: TraktSignInState) {
             Text(stringResource(state.error.messageRes()), style = stageText(20, 500), color = GambitColors.Muted)
         }
     }
+}
+
+/** TEMPORARY (Stage 4): the renewal check's three results. Never a token: only yes/no, a time and the error's text. */
+@Composable
+private fun RenewalLines(renewal: TraktRenewalState) {
+    when (renewal) {
+        TraktRenewalState.Idle -> Unit
+        TraktRenewalState.Running -> Line(R.string.gambit_trakt_checking_renewal)
+        is TraktRenewalState.Done -> Column(verticalArrangement = Arrangement.spacedBy(6.mpx)) {
+            Text(stringResource(R.string.gambit_trakt_renewal_title), style = stageText(24, 700), color = GambitColors.Text)
+            RenewalLine(R.string.gambit_trakt_renewal_forced, renewal.result.forced)
+            RenewalLine(R.string.gambit_trakt_renewal_automatic, renewal.result.automatic)
+            RenewalLine(R.string.gambit_trakt_renewal_rejected, renewal.result.afterRejected)
+        }
+    }
+}
+
+@Composable
+private fun RenewalLine(name: Int, step: TraktRenewalCheck.Step?) {
+    val context = LocalContext.current
+    val label = stringResource(name)
+    val ok = step != null && step.renewed && step.error == null
+    val text = when {
+        step == null -> stringResource(R.string.gambit_trakt_renewal_not_run, label)
+        ok -> stringResource(
+            R.string.gambit_trakt_renewal_ok, label,
+            DateUtils.formatDateTime(
+                context, (step!!.expiresAtEpochSeconds ?: 0L) * 1000,
+                DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_MONTH,
+            ),
+        )
+        step!!.renewed -> stringResource(R.string.gambit_trakt_renewal_call_failed, label, stringResource(step.error!!.messageRes()))
+        step.error != null -> stringResource(R.string.gambit_trakt_renewal_failed, label, stringResource(step.error.messageRes()))
+        else -> stringResource(R.string.gambit_trakt_renewal_not_renewed, label)
+    }
+    Text(text, style = stageText(20, 500), color = if (ok) gambitAccentLight(stageAccent.accent) else GambitColors.Text)
 }
 
 @Composable

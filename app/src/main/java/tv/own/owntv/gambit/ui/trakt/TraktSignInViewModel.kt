@@ -10,9 +10,12 @@ import tv.own.owntv.gambit.trakt.GambitTrakt
  * runs in [viewModelScope], so it also stops when the screen is gone; the screen calls [cancel] on Back.
  */
 class TraktSignInViewModel(trakt: GambitTrakt) : ViewModel() {
-    private val model = TraktSignInModel(trakt.client, viewModelScope)
+    private val model = TraktSignInModel(trakt.client, viewModelScope, trakt.renewalCheck)
 
     val state: StateFlow<TraktSignInState> = model.state
+
+    val renewal: StateFlow<TraktRenewalState> = model.renewal
+    val canCheckRenewal: Boolean get() = model.canCheckRenewal
 
     fun start() = model.start()
 
@@ -22,4 +25,10 @@ class TraktSignInViewModel(trakt: GambitTrakt) : ViewModel() {
     fun clearFailure() = model.clearFailure()
 
     fun signOut() = model.signOut()
+
+    /** The screen opened: read the saved sign-in again. */
+    fun recheck() = model.recheck()
+
+    /** Temporary debug button: prove renewal against the live Trakt service. */
+    fun checkRenewal() = model.checkRenewal()
 }
