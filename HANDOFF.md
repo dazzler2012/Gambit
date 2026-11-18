@@ -1,8 +1,15 @@
 # Handoff: main
 
-Last updated: 2026-11-17. Branch: `main` at `cd04a844`. Replaces the old `feature/addons-client` handoff.
+Last updated: 2026-11-18. Branch: `main` at `51b2a7c3`. Replaces the old `feature/addons-client` handoff.
 
 ## Done
+- **Trakt sign-in done (stages 1-4):** More → Trakt, next to Addons. Branch `feature/trakt-ui` (kept), merged to main with `--no-ff` in `51b2a7c3`. Plan and decisions: C:\Users\darre\reviews\gambit-trakt-ui-plan.md.
+  - Client ID: GitHub secret `TRAKT_CLIENT_ID` -> env -> `BuildConfig.TRAKT_CLIENT_ID`, passed in `gambit-ci.yml` and `android.yml` (`check` and `build`), not `i18n.yml`. A blank or missing ID never crashes: `TraktConfig` is not built and the Trakt item is hidden. New Trakt app "Gambit" (Development type, PKCE, no client secret, redirect `urn:ietf:wg:oauth:2.0:oob`).
+  - Tokens: Keystore-encrypted in `gambit_trakt` prefs, written with `commit()`. Koin module `gambitTraktModule` (one marked line in `OwnTVApp.kt`).
+  - Sign-in page: QR code for `https://auth.trakt.tv/activate` (own ZXing code), the 8-character code in large type, address, countdown; states for waiting, signed in (Sign out), and each error, all from `gambit_strings.xml`. Hidden on kids profiles. Back cancels. Trakt's activate page does not pre-fill a `?code=` link, so the code is typed on the phone (tested 2026-11-17).
+  - Renewal proven live: 7-day tokens with automatic renewal. `TraktRenewalCheck` passed on the Shield (forced, automatic before a call, and after a rejected token); the temporary button that ran it was removed in `94bb5095`. The check class and its tests stay. The Trakt page re-reads the saved sign-in each time it opens.
+  - CI on `51b2a7c3`: Gambit CI #49, Android CI #19 and i18n #22 all passed; Android CI's `check` and `build` saw the secret (masked).
+  - Shield (192.168.50.101:5555): Darren passed Stage 3 checks 1-6 and 9-11 (QR scanned from the sofa, code readable; 7, 8, 12 optional, skipped) and Stage 4 (all three renewals; still signed in after leaving the page and after force stop). CI #48 APK (`94bb5095`) installed with `adb install -r`; sign-in kept; only Sign out shows.
 - **Upstream sync complete (stages 1-3):** Gambit is now on OwnTV v5.2.2 (`42057337`), core 1.0.71, and CI builds with JDK 25 (Gradle 9.8.2).
   - **Stage 3 merged:** v5.2.1 -> v5.2.2 (203 commits), core 1.0.69 -> 1.0.71. Branch `sync/stage-3` (kept): merge `e34f6a0c`, then `1ade9b84` (Gambit CI on JDK 25, its own commit).
   - Merged to main with `--no-ff` in `cd04a844`. CI on `cd04a844`: Gambit CI, Android CI and i18n all passed.
@@ -25,22 +32,23 @@ Last updated: 2026-11-17. Branch: `main` at `cd04a844`. Replaces the old `featur
 - Shield (192.168.50.101:5555): CI #34 debug APK installed with `adb install -r` (signer matched the installed app). The app launches, no crash was logged, and the Movies page drew normally (rail, posters, clock). Trakt itself was not exercised: there is no UI for it yet.
 
 ## Open
-1. **Trakt has no UI, no Koin wiring and no token storage.** Next action: plan the wiring (`TraktClient(config, tokenStore, httpClient)`, a `TraktTokenStore` implementation, a sign-in screen) and get approval before editing.
-2. **Trakt keys are not supplied yet.** The plan was local.properties -> BuildConfig -> `TraktConfig`. That touches Gradle, so it needs Darren's OK first.
-3. **When the Trakt UI is built:** map each `TraktError` type to a `gambit_strings.xml` entry; never show `description`.
-4. **Trakt calls not proven by fixtures** (check against the live API once wired):
-   - `GET /sync/history` without a type;
+1. **Trakt scrobbling and sync are not wired to the player or any screen yet.** Sign-in is done; nothing calls `TraktScrobbler` or `TraktSync` in normal use. Next action: plan the wiring and get approval before editing.
+2. **Trakt calls not proven live** (fixtures only):
    - watchlist path `sync/watchlist/{type}/rank/asc`;
    - scrobbling an episode by show + season + number (`TraktScrobbleItem.EpisodeOfShow`).
-5. **Unmerged branches, status not checked:** `feature/addons-install` (WIP), `test/fixes-combined`, `claude/android-tv-family-setup-l2njf4`. Next action: review each and decide merge or leave.
+   - (`GET /sync/history` without a type is now proven live by the Stage 4 renewal check.)
+3. **Later option, not needed now: revoke on sign-out (plan Stage 5).** Sign out only forgets the sign-in on the TV; Trakt still lists Gambit under connected apps until removed there. Request shape without a client secret is unverified.
+4. **Unmerged branches, status not checked:** `feature/addons-install` (WIP), `test/fixes-combined`, `claude/android-tv-family-setup-l2njf4`. Next action: review each and decide merge or leave.
 
 ## Compiled and tested in CI, never run on a device
-- All Trakt code (there is no UI to reach it yet).
+- Trakt scrobbling and the sync calls other than history (nothing reaches them yet).
 
 ## Waiting on Darren
-- How Trakt keys are supplied (Gradle change, item 2).
-- What to do with the three unmerged branches (item 5).
+- What to do with the three unmerged branches (item 4).
+- Whether to start the Trakt scrobble/sync wiring (item 1).
 
 ## Notes
 - Commit `ac1c8340` (Trakt models) does not compile its tests on its own; the merged result is fine. Only matters for bisecting.
-- Trakt marks `client_secret` as deprecated for on-device apps; `TraktConfig.clientSecret` is optional and only sent when set.
+- Trakt marks `client_secret` as deprecated for on-device apps; `TraktConfig.clientSecret` is optional and only sent when set. Gambit sends none, and sign-in and renewal work without it.
+- `gh run list --commit <sha>` can lag a few minutes behind a push; `gh run list --branch <branch>` shows the run sooner.
+- CI builds are reproducible: a re-run on the same commit gave a byte-identical APK.
