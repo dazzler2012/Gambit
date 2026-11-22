@@ -10,6 +10,7 @@ import tv.own.owntv.gambit.addons.data.AddonRepository
 import tv.own.owntv.gambit.addons.data.AddonStore
 import tv.own.owntv.gambit.addons.net.AddonClient
 import tv.own.owntv.gambit.ui.addons.AddonsViewModel
+import tv.own.owntv.gambit.ui.discovery.DiscoveryViewModel
 
 /**
  * Gambit's Stremio addons (Phase 2): the encrypted store and More → Addons. The addon client gets its
@@ -18,6 +19,8 @@ import tv.own.owntv.gambit.ui.addons.AddonsViewModel
  */
 val gambitAddonModule = module {
     single { GambitSecretStore() }
-    single { AddonStore(AddonRepository(AddonClient(OkHttpClient())), GambitAddonVault(androidContext(), get())) }
+    single { AddonRepository(AddonClient(OkHttpClient())) }
+    single { AddonStore(get(), GambitAddonVault(androidContext(), get())) }
     viewModelOf(::AddonsViewModel)
+    viewModelOf(::DiscoveryViewModel)
 }
