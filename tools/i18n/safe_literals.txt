@@ -979,12 +979,15 @@
 1	technical	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	#2E5A2E
 1	technical	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	#66BB6A
 1	log	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	Gambit
+1	log	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	Gambit Home rows not updated; will retry on next start
 1	log	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	Gambit defaults not applied; will retry on next start
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	accent_v2
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	defaults_v1
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	gambit
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	nav_v1
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	update_check_off_v1
+1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitHomeRows.kt	gambit
+1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitHomeRows.kt	home_live_sports_hidden_v1
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitLastTuned.kt	gambit
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitLastTuned.kt	last_tuned_channel_v1
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonVault.kt	addons_v1
