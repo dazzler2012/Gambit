@@ -199,8 +199,8 @@
 
     <!-- Discovery title page (Stage 3) -->
     <string name="gambit_title_loading" translatable="false">Loading details…</string>
-    <string name="gambit_title_failed_title" translatable="false">Couldn't load the details</string>
-    <string name="gambit_title_err_unreadable" translatable="false">%1$s sent details Gambit can't read.</string>
+    <string name="gambit_title_failed_title" translatable="false">Couldn\'t load the details</string>
+    <string name="gambit_title_err_unreadable" translatable="false">%1$s sent details Gambit can\'t read.</string>
     <string name="gambit_title_err_not_found" translatable="false">%1$s has no details for this title.</string>
     <string name="gambit_title_err_no_addon" translatable="false">None of your addons has details for this title. Check More → Addons.</string>
     <string name="gambit_title_err_other" translatable="false">Something went wrong loading the details. Try again.</string>
