@@ -1,8 +1,14 @@
 # Handoff: main
 
-Last updated: 2026-11-22. Branch: `main` at `8b859829`. Replaces the old `feature/addons-client` handoff.
+Last updated: 2026-11-22. Branch: `main` at `c9b1c012`. Replaces the old `feature/addons-client` handoff.
 
 ## Done
+- **Addon playback fixes done.** Branch `fix/addon-playback` (kept), commit `ca49c747`, merged to main with `--no-ff` in `c9b1c012`. Gambit files only, no upstream edits.
+  - **Stuck plays end in an error, not a spinner** (`gambit/playback/AddonPlayWatch.kt`, `GambitAddonPlayer.kt`): after 20 s of buffering with no progress and no error, the same stream is played again through the same proxy session with `vodEngineOverride = EXO_ONLY`; Core then shows its own "Playback failed on both video engines" screen. If the ExoPlayer retry is stuck for 60 s, Gambit stops the player and the stream list says "Couldn't play this stream on this TV". The proxy session now survives a 5 s gap with no address during a player reset.
+  - **"May not play on this TV" tag** (`StreamRows.likelyDvProfile7` in `StreamBoard.kt`): REMUX + DV (or an explicit P7/FEL/DV MEL), not WEB, Movies Anywhere or P5/P8. Tagged rows move below the other streams of the same quality; nothing is hidden. Tests: `StreamRowsDvTest`, `AddonPlayWatchTest`.
+  - Diagnosis behind it (Shield, The End of Oak Street): a dual-layer Dolby Vision Profile 7 Blu-ray REMUX (4K HEVC Main 10 PQ base layer plus a 1080p enhancement-layer video track). mpv opened the second track, lost the surface (`configure failed with err 0xffffffea`); ExoPlayer selected no video track (`format=null`). The Shield lists no Dolby Vision decoder. The Odyssey 98 GB (Movies Anywhere hybrid, single track) plays on mpv in hardware. The proxy was not the cause.
+  - CI on `c9b1c012`: i18n #25 and Android CI #22 passed; Gambit CI #64 (45082923141) failed on the flaky `HomeRowBoardTest` (Open 0e) and passed on re-run (attempt 2). Branch run 45071172117 failed once on the flaky `GambitStreamProxyTest` port check (Open 3) and passed on re-run.
+  - Shield: CI run 45071172117 APK (`ca49c747`) installed with `adb install -r`. Darren's checks: 2-9 passed; 3/4 ended in a clean "Playback failed on both video engines" error (audio only, no spinner). Check 1 (tag on Oak Street DV REMUXes) could not be tested: the addons no longer return any REMUX+DV stream for that title (all 50 rows read from the screen are plain-ASCII labels; the matcher is fine).
 - **Home row in the Live sports slot done.** Branch `feature/home-row` (kept), commit `e899a123`, merged to main with `--no-ff` in `8b859829`.
   - The row shows "Discovery · <catalogue name>": up to 20 posters from the first Movies catalogue of the enabled addons, in addon order; if that one fails or is empty, the next is tried, 3 in all, else the row hides. Then a "See all" card. No new setting: reorder addons in More → Addons to change the feed.
   - A poster opens the same title page in Discovery (Back shows that catalogue's grid); "See all" opens Discovery on that catalogue. Gambit code in `gambit/discovery/HomeRowBoard.kt` and `gambit/ui/home/`.
@@ -55,7 +61,11 @@ Last updated: 2026-11-22. Branch: `main` at `8b859829`. Replaces the old `featur
 5. **The logos.**
 
 ## Open
-0. **HEVC decode failures on some addon streams (under investigation).** Some addon streams fail with the "couldn't be hardware-decoded" HEVC error, e.g. the movie "The End of Oak Street" (seen again during the Home row check 4 on the Shield; navigation was fine). Not caused by the Home row. Cause and fix not yet known.
+0a. **Tune the "may not play on this TV" rule** once we have more examples of failing files. The stream Darren played for check 3 was likely the `BDRemux 2160p` row, not labelled DV, and it failed the same way: unlabelled UHD REMUXes can also be Profile 7. Possibly flag all 2160p UHD BluRay REMUXes.
+0b. **Header shows MPV after the fallback to ExoPlayer** (seen in check 3). Small; not fixed.
+0c. **Flaky `GambitStreamProxyTest` port check** (`addresses die when the session closes, and the server stops`, line 207): asserts the freed port refuses a connection, but another socket can reuse it. Failed once on run 45071172117, passed on re-run.
+0e. **Flaky `HomeRowBoardTest > posters stay while a refresh is on its way`** (`TimeoutCancellationException`; failed on Gambit CI #64, passed on re-run). Suspicion, UNVERIFIED: `HomeRowBoard.refresh(force = false)` returns early while a refresh job is still active, so on a slow runner the test's second refresh is skipped and the new posters never arrive. That could be a real bug too: Home shown again during a slow refresh would not fetch fresh posters.
+0d. **OwnTV_Core fallback bug, reported upstream by Darren.** In `player-core` 1.0.71, `fallbackToExoVod(failure, hardResetFirst = true)` saves `loadGeneration`, then `hardReset()` bumps it again, so the ExoPlayer start 500 ms later sees a mismatch and silently returns (spinner, no error). Affects Movies/Series too. Gambit works around it for addon streams only (retry on EXO_ONLY).
 1. **Trakt scrobbling and sync are not wired to the player or any screen yet.** Sign-in is done; nothing calls `TraktScrobbler` or `TraktSync` in normal use. Next action: plan the wiring and get approval before editing.
 2. **Trakt calls not proven live** (fixtures only):
    - watchlist path `sync/watchlist/{type}/rank/asc`;
