@@ -221,10 +221,20 @@ class GambitStreamProxyTest {
         val probe = HlsProbe(client)
         assertTrue(probe.isHls("$base/hls/TOKEN-123/list", headers))
         assertTrue(probe.isHls("$base/hidden/TOKEN-123", headers))
+        assertTrue(probe.isHls("$base/bom/TOKEN-123", headers))
         assertFalse(probe.isHls(filmUrl, headers))
         assertFalse(probe.isHls("$base/missing/TOKEN-123", headers))
         assertTrue(StreamKind.isHlsUrl("https://cdn.example/a/b/master.m3u8?token=x"))
         assertFalse(StreamKind.isHlsUrl("https://cdn.example/a/film.mkv"))
+    }
+
+    @Test
+    fun `a UTF-8 byte-order mark before the marker is still HLS`() {
+        val bom = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte())
+        assertTrue(StreamKind.isHlsBody(bom + "#EXTM3U\n#EXT".toByteArray()))
+        assertTrue(StreamKind.isHlsBody("\r\n#EXTM3U\n".toByteArray()))
+        assertFalse(StreamKind.isHlsBody(bom + "1\n00:00:01,000".toByteArray()))
+        assertFalse(StreamKind.isHlsBody(ByteArray(16)))
     }
 
     @Test
@@ -322,6 +332,11 @@ private class FakeCdn : AutoCloseable {
             path.startsWith("/go/") -> send(302, "Found", mapOf("Location" to "http://cdn.example:$port/dl/TOKEN-123/film.mkv"), ByteArray(0))
             path.startsWith("/hls/") -> send(200, "OK", mapOf("Content-Type" to "application/vnd.apple.mpegurl"), "#EXTM3U\n".toByteArray())
             path.startsWith("/hidden/") -> send(200, "OK", mapOf("Content-Type" to "application/octet-stream"), "#EXTM3U\n#EXT-X-VERSION:3\n".toByteArray())
+            // A UTF-8 byte-order mark (EF BB BF) before the marker, sent as a plain file.
+            path.startsWith("/bom/") -> send(
+                200, "OK", mapOf("Content-Type" to "application/octet-stream"),
+                byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + "#EXTM3U\n#EXT-X-VERSION:3\n".toByteArray(),
+            )
             path.startsWith("/subs/") -> send(200, "OK", mapOf("Content-Type" to "text/plain"), SRT.toByteArray())
             path.startsWith("/slow/") -> {
                 out.write("HTTP/1.1 200 OK\r\nContent-Length: 100000000\r\nConnection: close\r\n\r\n".toByteArray())

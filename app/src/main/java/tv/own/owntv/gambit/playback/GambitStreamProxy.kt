@@ -276,8 +276,8 @@ object StreamKind {
 
     fun isHlsContentType(contentType: String?): Boolean = contentType?.contains(MPEGURL, ignoreCase = true) == true
 
-    /** The first bytes of a response are an M3U playlist. */
-    fun isHlsBody(start: ByteArray): Boolean = String(start, Charsets.ISO_8859_1).trimStart('﻿', ' ', '\r', '\n').startsWith(HLS_MARKER)
+    /** The first bytes hold an M3U playlist marker, anywhere in them (a byte-order mark or blank lines may come first). */
+    fun isHlsBody(start: ByteArray): Boolean = String(start, Charsets.ISO_8859_1).contains(HLS_MARKER)
 
     /** File extension for the player's benefit, from a file name or the address's path; null if none fits. */
     fun extension(filename: String?, url: String): String? {
