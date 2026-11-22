@@ -1,8 +1,15 @@
 # Handoff: main
 
-Last updated: 2026-11-22. Branch: `main` at `5e15c34a`. Replaces the old `feature/addons-client` handoff.
+Last updated: 2026-11-22. Branch: `main` at `8b859829`. Replaces the old `feature/addons-client` handoff.
 
 ## Done
+- **Home row in the Live sports slot done.** Branch `feature/home-row` (kept), commit `e899a123`, merged to main with `--no-ff` in `8b859829`.
+  - The row shows "Discovery · <catalogue name>": up to 20 posters from the first Movies catalogue of the enabled addons, in addon order; if that one fails or is empty, the next is tried, 3 in all, else the row hides. Then a "See all" card. No new setting: reorder addons in More → Addons to change the feed.
+  - A poster opens the same title page in Discovery (Back shows that catalogue's grid); "See all" opens Discovery on that catalogue. Gambit code in `gambit/discovery/HomeRowBoard.kt` and `gambit/ui/home/`.
+  - One-time migration moved to key `home_live_sports_shown_v2` (`GambitHomeRows`): the row is shown again on every adult profile and stays hidden on kids profiles; the row never loads or draws on a kids profile. The v1 key is left as it was.
+  - Upstream edits, all marked `// Gambit`, diff approved by Darren: `HomeScreen.kt` (row data, row, `onOpenDiscovery` parameter), `OwnTVShell.kt` (1 line), `HomeRowText.kt` (Settings names the row "Discovery"). `onOpenMatch` and `sportsVm` in `HomeScreen` are now unused but kept to keep the diff small.
+  - CI on `8b859829`: Gambit CI #62, Android CI #21 and i18n #24 all passed.
+  - Shield (192.168.50.101:5555): CI run 45064661775 APK (`e899a123`) installed with `adb install -r`; Darren passed on-screen checks 1-10.
 - **Phase 2 done: addon content and playback.** Branch `feature/addons-board` (kept), merged to main with `--no-ff` in `5e15c34a`. Plan and decisions: C:\Users\darre\reviews\gambit-sports-addons-plan.md.
   - **Discovery in the Sports rail slot** (`30918611`): Type / Catalogue / Genre drop-downs over the addons' catalogues, poster grid with paging. Hidden on kids profiles. Upstream hooks marked `// Gambit` in `StageRail.kt` and `OwnTVShell.kt`; Sports' background score update untouched.
   - **Home "Live sports" row hidden by default** on every profile, existing and new (`3b8b6502`, `GambitHomeRows`; once per profile, remembered in Gambit's prefs so showing it again sticks).
@@ -41,13 +48,14 @@ Last updated: 2026-11-22. Branch: `main` at `5e15c34a`. Replaces the old `featur
 - Shield (192.168.50.101:5555): CI #34 debug APK installed with `adb install -r` (signer matched the installed app). The app launches, no crash was logged, and the Movies page drew normally (rail, posters, clock). Trakt itself was not exercised: there is no UI for it yet.
 
 ## Next (Darren's order, 2026-11-22)
-1. **Home row in the Live sports slot:** addon posters, with "See all" opening Discovery. Update the one-time migration (`GambitHomeRows`, key `home_live_sports_hidden_v1`) so the row shows again with the new content.
+1. ~~Home row in the Live sports slot~~ (done, see above).
 2. **Kids access with parent-approved catalogues:** first confirm whether addons are shared by all adult profiles; then a parent-controlled setting per kids profile that enables addons but limits Discovery to approved catalogues.
 3. **Stremio account import**, typed on the phone.
 4. **Trakt scrobble and sync** wired to the player and screens (see Open 1 and 2).
 5. **The logos.**
 
 ## Open
+0. **HEVC decode failures on some addon streams (under investigation).** Some addon streams fail with the "couldn't be hardware-decoded" HEVC error, e.g. the movie "The End of Oak Street" (seen again during the Home row check 4 on the Shield; navigation was fine). Not caused by the Home row. Cause and fix not yet known.
 1. **Trakt scrobbling and sync are not wired to the player or any screen yet.** Sign-in is done; nothing calls `TraktScrobbler` or `TraktSync` in normal use. Next action: plan the wiring and get approval before editing.
 2. **Trakt calls not proven live** (fixtures only):
    - watchlist path `sync/watchlist/{type}/rank/asc`;
