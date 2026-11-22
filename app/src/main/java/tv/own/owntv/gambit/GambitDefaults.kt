@@ -42,8 +42,9 @@ object GambitDefaults {
     const val GUIDE_CHANNEL_SHARE = 26
 
     /**
-     * Applies the defaults once per install, then keeps Home's Live sports row hidden on every profile
-     * ([GambitHomeRows]; that step runs for the life of the app). A failure is logged as a warning and
+     * Applies the defaults once per install, then sets Home's Live sports row slot (addon posters) once per
+     * profile: shown on adult profiles, hidden on kids ones ([GambitHomeRows]; that step runs for the life
+     * of the app). A failure is logged as a warning and
      * retried on the next start.
      */
     suspend fun applyOnce(context: Context, settings: SettingsRepository) {
@@ -55,7 +56,7 @@ object GambitDefaults {
             Log.w(TAG, "Gambit defaults not applied; will retry on next start", e)
         }
         try {
-            GambitHomeRows.keepHidden(context, settings, GlobalContext.get().get<ProfileDao>())
+            GambitHomeRows.keepSet(context, settings, GlobalContext.get().get<ProfileDao>())
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

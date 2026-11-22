@@ -274,4 +274,30 @@ class DiscoveryBoardTest {
         assertNotNull(text)
         assertFalse(text, text.contains("KEY-"))
     }
+
+    @Test
+    fun `open can start on a given type and catalogue, Home's row`() = runBlocking {
+        registry = AddonRegistry(listOf(
+            addon(a, "a", cat("movie", "top"), cat("series", "shows")),
+            addon(b, "b", cat("movie", "pop")),
+        ))
+        server.onJson("$a/catalog/series/shows.json", metas("s1"))
+        server.onJson("$b/catalog/movie/pop.json", metas("p1"))
+        board.selectType(DiscoveryType.SERIES)
+        val popKey = registry.browseCatalogs("movie").first { it.catalog.id == "pop" }.key
+        board.open(DiscoveryType.MOVIE, popKey)
+        assertEquals(DiscoveryType.MOVIE, board.state.value.type)
+        assertEquals("pop", board.state.value.selected?.ref?.catalog?.id)
+        assertEquals(listOf("p1"), ids(awaitLoaded()))
+        assertFalse(server.requested.any { "/catalog/movie/top" in it })
+    }
+
+    @Test
+    fun `open with a catalogue no addon offers keeps the usual choice`() = runBlocking {
+        registry = AddonRegistry(listOf(addon(a, "a", cat("movie", "top"))))
+        server.onJson("$a/catalog/movie/top.json", metas("t1"))
+        board.open(DiscoveryType.MOVIE, "gone|nowhere.example|movie|x")
+        assertEquals("top", board.state.value.selected?.ref?.catalog?.id)
+        assertEquals(listOf("t1"), ids(awaitLoaded()))
+    }
 }

@@ -11,6 +11,7 @@ import tv.own.owntv.gambit.playback.AddonPlayResult
 import tv.own.owntv.gambit.playback.GambitAddonPlayer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flatMapLatest
@@ -24,6 +25,7 @@ import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.gambit.addons.data.AddonRepository
 import tv.own.owntv.gambit.addons.data.AddonStore
 import tv.own.owntv.gambit.discovery.DiscoveryBoard
+import tv.own.owntv.gambit.discovery.DiscoveryCatalog
 import tv.own.owntv.gambit.discovery.DiscoveryState
 import tv.own.owntv.gambit.discovery.DiscoveryType
 import tv.own.owntv.gambit.discovery.StreamBoard
@@ -79,21 +81,12 @@ class DiscoveryViewModel(
     private var playJob: Job? = null
 
     /** [DiscoveryAccess.OPEN] only once the active profile has been read and is not a kids profile. */
-    val access: StateFlow<DiscoveryAccess> = settings.activeProfileId
-        .flatMapLatest { id ->
-            if (id < 0) {
-                flowOf(DiscoveryAccess.UNKNOWN)
-            } else {
-                profileDao.observeById(id).map { p ->
-                    when {
-                        p == null -> DiscoveryAccess.UNKNOWN
-                        p.isKids -> DiscoveryAccess.KIDS
-                        else -> DiscoveryAccess.OPEN
-                    }
-                }
-            }
-        }
+    val access: StateFlow<DiscoveryAccess> = discoveryAccess(settings, profileDao)
         .stateIn(viewModelScope, SharingStarted.Eagerly, DiscoveryAccess.UNKNOWN)
+
+    /** What Home's addon row asked Discovery to open on; taken by the next [open]. */
+    private class HomeRequest(val type: DiscoveryType?, val catalogKey: String)
+    private var fromHome: HomeRequest? = null
 
     init {
         // The first value is the registry as it is now; open() reads it itself.
@@ -115,9 +108,29 @@ class DiscoveryViewModel(
         }
         lastPlayedKey = null
         _playNote.value = null
+        val request = fromHome
+        fromHome = null
+        // A title picked on Home is already open (see openFromHome); everything else starts on the grid.
+        if (request == null) {
+            streamBoard.close()
+            titles.close()
+        }
+        if (access.value == DiscoveryAccess.OPEN) board.open(request?.type, request?.catalogKey)
+    }
+
+    /**
+     * Home's addon row, before the shell shows Discovery: open on [catalog], and with [preview] open its
+     * title page at once (the same page a poster in Discovery opens; Back then shows that catalogue's grid).
+     * "See all" passes no preview. Does nothing unless the profile is an adult one.
+     */
+    fun openFromHome(catalog: DiscoveryCatalog, preview: MetaPreview? = null) {
+        if (access.value != DiscoveryAccess.OPEN) return
+        playJob?.cancel()
+        returningFromPlayer = false
         streamBoard.close()
         titles.close()
-        if (access.value == DiscoveryAccess.OPEN) board.open()
+        if (preview != null) titles.open(preview, catalog.ref.addon.url)
+        fromHome = HomeRequest(DiscoveryType.entries.firstOrNull { it.id == catalog.ref.catalog.type }, catalog.key)
     }
 
     /** After a failed first page: forget results and ask again. */
@@ -214,6 +227,23 @@ class DiscoveryViewModel(
     }
     fun retryStreams() = streamBoard.retry()
 }
+
+/** The active profile's access to addon content, as it changes. Shared by Discovery and Home's addon row. */
+@OptIn(ExperimentalCoroutinesApi::class)
+internal fun discoveryAccess(settings: SettingsRepository, profileDao: ProfileDao): Flow<DiscoveryAccess> =
+    settings.activeProfileId.flatMapLatest { id ->
+        if (id < 0) {
+            flowOf(DiscoveryAccess.UNKNOWN)
+        } else {
+            profileDao.observeById(id).map { p ->
+                when {
+                    p == null -> DiscoveryAccess.UNKNOWN
+                    p.isKids -> DiscoveryAccess.KIDS
+                    else -> DiscoveryAccess.OPEN
+                }
+            }
+        }
+    }
 
 /** What the stream list says about the last stream picked. */
 enum class PlayNote { STARTING, HLS, NOT_PLAYABLE }

@@ -14,6 +14,7 @@ import tv.own.owntv.gambit.playback.GambitStreamProxy
 import tv.own.owntv.R
 import tv.own.owntv.gambit.ui.addons.AddonsViewModel
 import tv.own.owntv.gambit.ui.discovery.DiscoveryViewModel
+import tv.own.owntv.gambit.ui.home.HomeAddonRowViewModel
 
 /**
  * Gambit's Stremio addons (Phase 2): the encrypted store and More → Addons. The addon client gets its
@@ -37,4 +38,5 @@ val gambitAddonModule = module {
     }
     viewModelOf(::AddonsViewModel)
     viewModelOf(::DiscoveryViewModel)
+    viewModelOf(::HomeAddonRowViewModel)
 }

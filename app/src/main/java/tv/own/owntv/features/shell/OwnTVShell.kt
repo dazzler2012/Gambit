@@ -1348,6 +1348,7 @@ fun OwnTVShell(
                                 sportsMatchRequests.pendingMatch.value = m to null
                                 onSelectSection(MainSection.SPORTS)
                             },
+                            onOpenDiscovery = { restoreFocus = false; onSelectSection(MainSection.SPORTS) }, // Gambit: Home's addon row into Discovery
                             contentStart = if (navStyle == tv.own.owntv.core.settings.SettingsRepository.NavStyle.DOCKED) 64.mpx else 150.mpx,
                             modifier = Modifier.fillMaxSize(),
                         )

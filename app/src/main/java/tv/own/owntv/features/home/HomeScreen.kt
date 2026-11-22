@@ -160,13 +160,14 @@ fun HomeScreen(
     onEntryHook: (((() -> Boolean)?) -> Unit)? = null,
     /** Sports Hub: ▶ on a Live sports card opens its match page. */
     onOpenMatch: (tv.own.owntv.core.sports.model.Match) -> Unit = {},
+    onOpenDiscovery: () -> Unit = {}, // Gambit: the addon row's poster or See all opens Discovery
     modifier: Modifier = Modifier,
     sportsVm: tv.own.owntv.features.sports.SportsViewModel = org.koin.androidx.compose.koinViewModel(),
 ) {
     val state by vm.uiState.collectAsStateWithLifecycle()
     // Asked for only while the row is switched on (Layout → Home rows); off costs nothing.
     val sportsCards = if (HomeRow.LIVE_SPORTS in state.config.visibleOrder) {
-        sportsVm.homeRow.collectAsStateWithLifecycle().value
+        tv.own.owntv.gambit.ui.home.gambitHomeRowItems() // Gambit: addon posters in the Live sports slot (was sportsVm.homeRow)
     } else emptyList()
     val trendingUnavailableMessage = stringResource(R.string.home_trending_unavailable)
     val heroPreviewEngine = koinInject<HeroPreviewEngine>()
@@ -554,11 +555,9 @@ fun HomeScreen(
                                 )
                             }
 
-                            HomeRow.LIVE_SPORTS -> tv.own.owntv.features.sports.LiveSportsRow(
-                                cards = sportsCards,
-                                config = sportsVm.sportsConfig.collectAsStateWithLifecycle().value,
+                            HomeRow.LIVE_SPORTS -> tv.own.owntv.gambit.ui.home.GambitHomeAddonRow( // Gambit: addon posters (was LiveSportsRow)
                                 start = contentStart,
-                                onOpenMatch = onOpenMatch,
+                                onOpenDiscovery = onOpenDiscovery, // Gambit
                                 onFocus = onNonHeroFocused,
                                 firstItemFocusRequester = firstItemFocusRequester,
                                 track = track,
