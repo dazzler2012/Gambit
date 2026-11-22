@@ -169,6 +169,13 @@
     <string name="gambit_trakt_err_expired_signin" translatable="false">Your Trakt sign-in ran out. Sign in again.</string>
     <string name="gambit_trakt_err_other" translatable="false">Something went wrong talking to Trakt. Try again.</string>
 
+    <!-- Home's addon row, in the Live sports slot. Title: "Discovery · Popular", the catalogue's own name. -->
+    <string name="gambit_home_row_title" translatable="false">Discovery · %1$s</string>
+    <string name="gambit_home_row_see_all" translatable="false">See all</string>
+    <!-- The row's name and description in Settings › Layout › Home screen › Sections. -->
+    <string name="gambit_home_row_label" translatable="false">Discovery</string>
+    <string name="gambit_home_row_description" translatable="false">Posters from your addons\' first movie catalogue. See all opens Discovery.</string>
+
     <!-- Discovery (Phase 2, Stage 2): the addons' catalogues as a poster grid, in the rail's Sports slot. -->
     <string name="gambit_discovery_title" translatable="false">Discovery</string>
     <string name="gambit_discovery_type" translatable="false">Type</string>

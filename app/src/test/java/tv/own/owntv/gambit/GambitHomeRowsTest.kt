@@ -9,35 +9,55 @@ import tv.own.owntv.core.model.HomeConfig
 import tv.own.owntv.core.model.HomeRow
 
 /**
- * Hiding Home's Live sports row once per profile. keepHidden itself needs a Context, the DataStore-backed
- * SettingsRepository and Room, so the pieces it is built from are checked here.
+ * Setting Home's Live sports row slot once per profile: shown on adult profiles, hidden on kids ones.
+ * keepSet itself needs a Context, the DataStore-backed SettingsRepository and Room, so the pieces it is
+ * built from are checked here.
  */
 class GambitHomeRowsTest {
 
+    private val hiddenBefore = HomeConfig().let { it.copy(hidden = it.hidden + HomeRow.LIVE_SPORTS + HomeRow.TRENDING) }
+
     @Test
-    fun `the hidden row is Live sports`() {
-        assertEquals(HomeRow.LIVE_SPORTS, GambitHomeRows.HIDDEN_ROW)
+    fun `the row slot is Live sports`() {
+        assertEquals(HomeRow.LIVE_SPORTS, GambitHomeRows.ROW)
     }
 
     @Test
-    fun `hiding adds Live sports and keeps every other choice`() {
+    fun `an adult profile hidden by the first version gets the row back, other choices kept`() {
+        val after = GambitHomeRows.change(isKids = false, hiddenBefore)
+        assertFalse(HomeRow.LIVE_SPORTS in after.hidden)
+        assertTrue(HomeRow.TRENDING in after.hidden)
+        assertEquals(hiddenBefore.copy(hidden = after.hidden), after)
+    }
+
+    @Test
+    fun `a kids profile keeps the row hidden`() {
+        assertSame(hiddenBefore, GambitHomeRows.change(isKids = true, hiddenBefore))
+    }
+
+    @Test
+    fun `a new kids profile gets the row hidden, other choices kept`() {
         val before = HomeConfig().let { it.copy(hidden = it.hidden + HomeRow.TRENDING) }
-        val after = GambitHomeRows.hideLiveSports(before)
+        val after = GambitHomeRows.change(isKids = true, before)
         assertTrue(HomeRow.LIVE_SPORTS in after.hidden)
         assertTrue(HomeRow.TRENDING in after.hidden)
         assertEquals(before.copy(hidden = after.hidden), after)
     }
 
     @Test
-    fun `hiding twice changes nothing`() {
-        val once = GambitHomeRows.hideLiveSports(HomeConfig())
-        assertSame(once, GambitHomeRows.hideLiveSports(once))
+    fun `showing or hiding twice changes nothing`() {
+        val shown = GambitHomeRows.showRow(hiddenBefore)
+        assertSame(shown, GambitHomeRows.showRow(shown))
+        val hidden = GambitHomeRows.hideRow(HomeConfig())
+        assertSame(hidden, GambitHomeRows.hideRow(hidden))
     }
 
     @Test
-    fun `the default config shows Live sports until hidden`() {
-        // If core ever hides it by default, this migration is no longer needed.
+    fun `the default config shows Live sports`() {
+        // A new adult profile needs no change; if core ever hides the row by default, showRow handles it.
         assertFalse(HomeRow.LIVE_SPORTS in HomeConfig().hidden)
+        val fresh = HomeConfig()
+        assertSame(fresh, GambitHomeRows.change(isKids = false, fresh))
     }
 
     @Test

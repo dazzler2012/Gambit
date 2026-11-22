@@ -41,10 +41,21 @@ class DiscoveryBoard(
     @Volatile private var generation = 0
     private var opened = false
 
-    /** Call when Discovery is shown: forgets earlier results and loads the chosen catalogue again. */
-    fun open() {
+    /**
+     * Call when Discovery is shown: forgets earlier results and loads the chosen catalogue again. [type]
+     * and [catalogKey] choose what it opens on (Home's row asks for its own catalogue); a key no enabled
+     * addon offers any more is ignored and the usual choice stays.
+     */
+    fun open(type: DiscoveryType? = null, catalogKey: String? = null) {
         opened = true
         cache.clear()
+        if (type != null && type != _state.value.type) {
+            _state.update { it.copy(type = type, selected = null, genre = null) }
+        }
+        if (catalogKey != null && catalogKey != _state.value.selected?.key) {
+            val wanted = registry().browseCatalogs(_state.value.type.id).map(::DiscoveryCatalog).firstOrNull { it.key == catalogKey }
+            if (wanted != null) _state.update { it.copy(selected = wanted, genre = null) }
+        }
         syncCatalogs(forceReload = true)
     }
 
