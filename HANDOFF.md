@@ -1,8 +1,17 @@
 # Handoff: main
 
-Last updated: 2026-11-18. Branch: `main` at `51b2a7c3`. Replaces the old `feature/addons-client` handoff.
+Last updated: 2026-11-22. Branch: `main` at `5e15c34a`. Replaces the old `feature/addons-client` handoff.
 
 ## Done
+- **Phase 2 done: addon content and playback.** Branch `feature/addons-board` (kept), merged to main with `--no-ff` in `5e15c34a`. Plan and decisions: C:\Users\darre\reviews\gambit-sports-addons-plan.md.
+  - **Discovery in the Sports rail slot** (`30918611`): Type / Catalogue / Genre drop-downs over the addons' catalogues, poster grid with paging. Hidden on kids profiles. Upstream hooks marked `// Gambit` in `StageRail.kt` and `OwnTVShell.kt`; Sports' background score update untouched.
+  - **Home "Live sports" row hidden by default** on every profile, existing and new (`3b8b6502`, `GambitHomeRows`; once per profile, remembered in Gambit's prefs so showing it again sticks).
+  - **Title page** (`9526bb9e`): backdrop, logo or title, year, rating, runtime, genres, description; season picker and episodes for series. Details are asked first from the addon whose catalogue is showing.
+  - **Stream list** (`e9090392`): every enabled stream addon in addon order; name and detail lines, quality, size, addon name; unplayable streams counted; per-addon errors by name and host only. Stream addresses and headers stay out of every `toString` (tested).
+  - **Playback through a private localhost proxy** (`e4e8c838`, fixes `6872298d` and `b79179bd`): the player only gets a one-time `http://127.0.0.1:<port>/s/<token>/...` address. The proxy fetches the real stream with the addon's headers, passes Range through for seeking, follows redirects, refuses HLS with a message, carries the addon's subtitles, and closes when playback stops. 3 marked lines in `OwnTVShell.kt` (open the player; focus back on the same stream). Kids profiles are refused in the ViewModel.
+  - Bug found on the Shield, fixed in `b79179bd`: on Android `InetAddress.getLoopbackAddress()` is `::1`, so the proxy binds to 127.0.0.1 by its literal address.
+  - CI on `5e15c34a`: Gambit CI #60, Android CI #20 and i18n #23 all passed.
+  - Shield (192.168.50.101:5555): Darren passed all Stage 2-5 checks, including a 98 GB 4K REMUX with seeking, Stream info showing only 127.0.0.1, and a clean error log after a network drop. Installed APK: CI run 45055959795 (`b79179bd`).
 - **Trakt sign-in done (stages 1-4):** More → Trakt, next to Addons. Branch `feature/trakt-ui` (kept), merged to main with `--no-ff` in `51b2a7c3`. Plan and decisions: C:\Users\darre\reviews\gambit-trakt-ui-plan.md.
   - Client ID: GitHub secret `TRAKT_CLIENT_ID` -> env -> `BuildConfig.TRAKT_CLIENT_ID`, passed in `gambit-ci.yml` and `android.yml` (`check` and `build`), not `i18n.yml`. A blank or missing ID never crashes: `TraktConfig` is not built and the Trakt item is hidden. New Trakt app "Gambit" (Development type, PKCE, no client secret, redirect `urn:ietf:wg:oauth:2.0:oob`).
   - Tokens: Keystore-encrypted in `gambit_trakt` prefs, written with `commit()`. Koin module `gambitTraktModule` (one marked line in `OwnTVApp.kt`).
@@ -31,6 +40,13 @@ Last updated: 2026-11-18. Branch: `main` at `51b2a7c3`. Replaces the old `featur
 - CI on `f4c1454f`: Gambit CI #34, Android CI #14 and i18n #17 all passed.
 - Shield (192.168.50.101:5555): CI #34 debug APK installed with `adb install -r` (signer matched the installed app). The app launches, no crash was logged, and the Movies page drew normally (rail, posters, clock). Trakt itself was not exercised: there is no UI for it yet.
 
+## Next (Darren's order, 2026-11-22)
+1. **Home row in the Live sports slot:** addon posters, with "See all" opening Discovery. Update the one-time migration (`GambitHomeRows`, key `home_live_sports_hidden_v1`) so the row shows again with the new content.
+2. **Kids access with parent-approved catalogues:** first confirm whether addons are shared by all adult profiles; then a parent-controlled setting per kids profile that enables addons but limits Discovery to approved catalogues.
+3. **Stremio account import**, typed on the phone.
+4. **Trakt scrobble and sync** wired to the player and screens (see Open 1 and 2).
+5. **The logos.**
+
 ## Open
 1. **Trakt scrobbling and sync are not wired to the player or any screen yet.** Sign-in is done; nothing calls `TraktScrobbler` or `TraktSync` in normal use. Next action: plan the wiring and get approval before editing.
 2. **Trakt calls not proven live** (fixtures only):
@@ -42,6 +58,10 @@ Last updated: 2026-11-18. Branch: `main` at `51b2a7c3`. Replaces the old `featur
 
 ## Compiled and tested in CI, never run on a device
 - Trakt scrobbling and the sync calls other than history (nothing reaches them yet).
+- Addon subtitles when ExoPlayer owns playback (listed through the proxy; designed against mpv's track list).
+
+## Not in Phase 2 (decided)
+- Resume position and watch history for addon titles (no Gambit Room table yet), auto-next episode, HLS streams.
 
 ## Waiting on Darren
 - What to do with the three unmerged branches (item 4).
