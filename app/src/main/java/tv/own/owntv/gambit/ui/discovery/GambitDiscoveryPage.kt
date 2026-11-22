@@ -252,12 +252,13 @@ private fun DiscoveryBody(
                 modifier = Modifier.fillMaxSize().focusRequester(gridFocus).focusRestorer().focusGroup(),
             ) {
                 itemsIndexed(feed.items, key = { _, m -> m.id }) { index, meta ->
+                    val posterRequester = remember(meta.id) { posterFocus.getOrPut(meta.id) { FocusRequester() } }
                     StagePoster(
                         title = meta.name.orEmpty(),
                         onClick = { onOpen(meta) },
                         width = 196.mpx,
                         height = 294.mpx,
-                        modifier = Modifier.focusRequester(posterFocus.getOrPut(meta.id) { FocusRequester() }).onFocusChanged {
+                        modifier = Modifier.focusRequester(posterRequester).onFocusChanged {
                             if (it.isFocused && index >= feed.items.size - LOAD_MORE_AHEAD &&
                                 feed.canLoadMore && !feed.loadingMore && feed.moreError == null
                             ) vm.loadMore()
