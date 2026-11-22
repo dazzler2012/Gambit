@@ -76,11 +76,16 @@ fun GambitDiscoveryPage(
     onEntryHook: (((() -> Boolean)?) -> Unit)?,
     contentStart: Dp,
     modifier: Modifier = Modifier,
+    /** Opens the full-screen player once a stream has started (the shell owns that). */
+    onPlay: () -> Unit = {},
+    /** The shell asks for focus back after the player closes; the stream list takes it itself. */
+    restoreFocus: Boolean = false,
+    onRestored: () -> Unit = {},
     vm: DiscoveryViewModel = koinViewModel(),
 ) {
     val access by vm.access.collectAsStateWithLifecycle()
     if (access != DiscoveryAccess.OPEN) return
-    DiscoveryContent(vm, onChildFocused, onEntryHook, contentStart, modifier)
+    DiscoveryContent(vm, onChildFocused, onEntryHook, contentStart, modifier, onPlay, restoreFocus, onRestored)
 }
 
 @Composable
@@ -90,12 +95,18 @@ private fun DiscoveryContent(
     onEntryHook: (((() -> Boolean)?) -> Unit)?,
     contentStart: Dp,
     modifier: Modifier,
+    onPlay: () -> Unit,
+    restoreFocus: Boolean,
+    onRestored: () -> Unit,
 ) {
+    // Back from the player: the stream list focuses the stream that was playing (see GambitStreamPage).
+    LaunchedEffect(restoreFocus) { if (restoreFocus) onRestored() }
     // Only composed once the profile is known to be an adult one: each visit fetches fresh lists.
     LaunchedEffect(Unit) { vm.open() }
     val state by vm.state.collectAsStateWithLifecycle()
     val title by vm.title.collectAsStateWithLifecycle()
     val streams by vm.streams.collectAsStateWithLifecycle()
+    val playNote by vm.playNote.collectAsStateWithLifecycle()
 
     val typeFocus = remember { FocusRequester() }
     val catalogFocus = remember { FocusRequester() }
@@ -175,6 +186,9 @@ private fun DiscoveryContent(
         GambitStreamPage(
             list = list,
             mainFocus = streamFocus,
+            playNote = playNote,
+            initialKey = vm.lastPlayedKey,
+            onPlay = { key -> vm.playStream(key, onPlay) },
             onRetry = vm::retryStreams,
             onChildFocused = onChildFocused,
             contentStart = contentStart,

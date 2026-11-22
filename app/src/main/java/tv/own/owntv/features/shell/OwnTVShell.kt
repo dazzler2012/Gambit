@@ -1448,6 +1448,9 @@ fun OwnTVShell(
                         selectedSection == MainSection.SPORTS -> tv.own.owntv.gambit.ui.discovery.GambitDiscoveryPage( // Gambit: Discovery in the Sports slot (was SportsScreen)
                             onChildFocused = { focusedLayer = ShellLayer.CONTENT },
                             onEntryHook = { sportsEntry = it },
+                            onPlay = { openFullscreen(MainSection.SPORTS) }, // Gambit: an addon stream into the player
+                            restoreFocus = restoreFocus, // Gambit: back from the player, focus the same stream
+                            onRestored = { restoreFocus = false }, // Gambit
                             contentStart = if (navStyle == tv.own.owntv.core.settings.SettingsRepository.NavStyle.DOCKED) 64.mpx else 150.mpx,
                             modifier = Modifier.fillMaxSize(),
                         )

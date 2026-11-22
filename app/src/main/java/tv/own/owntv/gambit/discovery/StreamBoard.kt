@@ -23,6 +23,9 @@ data class StreamTarget(
     val season: Int? = null,
     val episode: Int? = null,
     val episodeTitle: String? = null,
+    /** The title's own id (the show's, for an episode). */
+    val metaId: String = videoId,
+    val year: String? = null,
 )
 
 /** A quality read from a stream's name or filename. The screen words it. */

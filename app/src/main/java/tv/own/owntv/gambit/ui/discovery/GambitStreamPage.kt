@@ -13,12 +13,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,13 +61,16 @@ private const val MAX_DETAIL_LINES = 4
 internal fun GambitStreamPage(
     list: StreamListState,
     mainFocus: FocusRequester,
+    playNote: PlayNote?,
+    /** The row that takes focus: the stream last played (after Back from the player), else the first. */
+    initialKey: Int?,
+    onPlay: (Int) -> Unit,
     onRetry: () -> Unit,
     onChildFocused: () -> Unit,
     contentStart: Dp,
     modifier: Modifier = Modifier,
 ) {
     val feed = list.feed
-    var playNote by remember(list.target) { mutableStateOf(false) }
 
     LaunchedEffect(list.target, feed::class) {
         if (feed == StreamFeed.Loading) return@LaunchedEffect
@@ -91,8 +91,8 @@ internal fun GambitStreamPage(
             list.target.subtitle(), style = stageText(22, 600), color = GambitColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 6.mpx),
         )
-        if (playNote) {
-            Text(stringResource(R.string.gambit_streams_play_soon), style = stageText(19, 500), color = GambitColors.Muted, modifier = Modifier.padding(top = 10.mpx))
+        if (playNote != null) {
+            Text(playNote.message(), style = stageText(19, 600), color = GambitColors.Text, modifier = Modifier.padding(top = 10.mpx))
         }
 
         when (feed) {
@@ -109,16 +109,19 @@ internal fun GambitStreamPage(
                 feed.errors.forEach { ErrorLine(it) }
                 RetryRow(mainFocus, onRetry)
             } else {
+                val focusKey = initialKey?.takeIf { k -> feed.rows.any { it.key == k } } ?: feed.rows.first().key
+                val startIndex = feed.rows.indexOfFirst { it.key == focusKey }.coerceAtLeast(0)
                 LazyColumn(
+                    state = rememberLazyListState(initialFirstVisibleItemIndex = startIndex),
                     verticalArrangement = Arrangement.spacedBy(12.mpx),
                     contentPadding = PaddingValues(top = 22.mpx, bottom = 40.mpx),
                     modifier = Modifier.fillMaxSize().focusRestorer().focusGroup(),
                 ) {
-                    itemsIndexed(feed.rows, key = { _, row -> row.key }) { index, row ->
+                    itemsIndexed(feed.rows, key = { _, row -> row.key }) { _, row ->
                         StreamRowView(
                             row = row,
-                            onClick = { playNote = true },
-                            modifier = if (index == 0) Modifier.focusRequester(mainFocus) else Modifier,
+                            onClick = { onPlay(row.key) },
+                            modifier = if (row.key == focusKey) Modifier.focusRequester(mainFocus) else Modifier,
                         )
                     }
                     item(key = -1) {
@@ -205,6 +208,15 @@ private fun StreamTarget.subtitle(): String {
     return episodeTitle?.let { stringResource(R.string.gambit_streams_episode_titled, sn, en, it) }
         ?: stringResource(R.string.gambit_streams_episode, sn, en)
 }
+
+@Composable
+private fun PlayNote.message(): String = stringResource(
+    when (this) {
+        PlayNote.STARTING -> R.string.gambit_play_starting
+        PlayNote.HLS -> R.string.gambit_play_hls
+        PlayNote.NOT_PLAYABLE -> R.string.gambit_play_not_playable
+    },
+)
 
 @Composable
 private fun StreamQuality.label(): String = stringResource(

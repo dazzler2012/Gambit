@@ -2,6 +2,13 @@ package tv.own.owntv.gambit.ui.discovery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import tv.own.owntv.gambit.playback.AddonPlayRequest
+import tv.own.owntv.gambit.playback.AddonPlayResult
+import tv.own.owntv.gambit.playback.GambitAddonPlayer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +48,7 @@ class DiscoveryViewModel(
     repository: AddonRepository,
     settings: SettingsRepository,
     profileDao: ProfileDao,
+    private val addonPlayer: GambitAddonPlayer,
 ) : ViewModel() {
 
     private val board = DiscoveryBoard(repository, { store.registry.value }, viewModelScope)
@@ -56,6 +64,19 @@ class DiscoveryViewModel(
 
     /** The stream list, while one is open over the title page; null shows the title page. */
     val streams: StateFlow<StreamListState?> = streamBoard.state
+
+    private val _playNote = MutableStateFlow<PlayNote?>(null)
+
+    /** A line on the stream list about the last OK: starting, or why it can't play. */
+    val playNote: StateFlow<PlayNote?> = _playNote.asStateFlow()
+
+    /** The stream row last sent to the player; focus returns to it after Back from the player. */
+    var lastPlayedKey: Int? = null
+        private set
+
+    // Set when a stream starts: the page is rebuilt after the player closes, and must come back as it was.
+    private var returningFromPlayer = false
+    private var playJob: Job? = null
 
     /** [DiscoveryAccess.OPEN] only once the active profile has been read and is not a kids profile. */
     val access: StateFlow<DiscoveryAccess> = settings.activeProfileId
@@ -88,6 +109,12 @@ class DiscoveryViewModel(
 
     /** Call when the page is shown: fetches fresh lists. Does nothing until [access] is OPEN. */
     fun open() {
+        if (returningFromPlayer) {
+            returningFromPlayer = false
+            if (streamBoard.state.value != null) return
+        }
+        lastPlayedKey = null
+        _playNote.value = null
         streamBoard.close()
         titles.close()
         if (access.value == DiscoveryAccess.OPEN) board.open()
@@ -121,7 +148,10 @@ class DiscoveryViewModel(
         if (access.value != DiscoveryAccess.OPEN) return
         val detail = (open.feed as? TitleFeed.Loaded)?.detail
         val name = detail?.name?.takeIf { it.isNotBlank() } ?: open.preview.name.orEmpty()
-        streamBoard.open(StreamTarget(open.preview.type, detail?.id ?: open.preview.id, name))
+        val id = detail?.id ?: open.preview.id
+        _playNote.value = null
+        lastPlayedKey = null
+        streamBoard.open(StreamTarget(open.preview.type, id, name, metaId = id, year = detail?.releaseInfo ?: open.preview.releaseInfo))
     }
 
     /** OK on an episode: streams for that episode's video id. */
@@ -130,9 +160,63 @@ class DiscoveryViewModel(
         if (access.value != DiscoveryAccess.OPEN) return
         val detail = (open.feed as? TitleFeed.Loaded)?.detail
         val name = detail?.name?.takeIf { it.isNotBlank() } ?: open.preview.name.orEmpty()
-        streamBoard.open(StreamTarget(open.preview.type, video.id, name, video.season, video.episode, video.title?.takeIf { it.isNotBlank() }))
+        _playNote.value = null
+        lastPlayedKey = null
+        streamBoard.open(
+            StreamTarget(
+                open.preview.type, video.id, name, video.season, video.episode, video.title?.takeIf { it.isNotBlank() },
+                metaId = detail?.id ?: open.preview.id,
+            ),
+        )
     }
 
-    fun closeStreams() = streamBoard.close()
+    /**
+     * OK on a stream row: plays it through the localhost proxy, then [onStarted] opens the full-screen
+     * player. Refused on a kids profile (or before the profile is known) and for HLS.
+     */
+    fun playStream(key: Int, onStarted: () -> Unit) {
+        if (!canPlay(access.value)) return
+        val target = streamBoard.state.value?.target ?: return
+        val sourced = streamBoard.streamFor(key) ?: return
+        playJob?.cancel()
+        _playNote.value = PlayNote.STARTING
+        playJob = viewModelScope.launch {
+            val request = AddonPlayRequest(
+                stream = sourced.stream,
+                addonName = sourced.addonName,
+                type = target.type,
+                videoId = target.videoId,
+                metaId = target.metaId,
+                title = target.title,
+                year = target.year,
+                season = target.season,
+                episode = target.episode,
+                episodeTitle = target.episodeTitle,
+            )
+            when (addonPlayer.play(request)) {
+                AddonPlayResult.STARTED -> {
+                    _playNote.value = null
+                    lastPlayedKey = key
+                    returningFromPlayer = true
+                    onStarted()
+                }
+                AddonPlayResult.HLS -> _playNote.value = PlayNote.HLS
+                AddonPlayResult.NOT_PLAYABLE -> _playNote.value = PlayNote.NOT_PLAYABLE
+            }
+        }
+    }
+
+    fun closeStreams() {
+        playJob?.cancel()
+        _playNote.value = null
+        lastPlayedKey = null
+        streamBoard.close()
+    }
     fun retryStreams() = streamBoard.retry()
 }
+
+/** What the stream list says about the last stream picked. */
+enum class PlayNote { STARTING, HLS, NOT_PLAYABLE }
+
+/** Only an adult profile that has been read may play an addon stream. */
+internal fun canPlay(access: DiscoveryAccess): Boolean = access == DiscoveryAccess.OPEN

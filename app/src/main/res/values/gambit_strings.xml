@@ -224,7 +224,6 @@
     <string name="gambit_streams_err_not_found" translatable="false">%1$s has no streams for this.</string>
     <string name="gambit_streams_err_no_addon" translatable="false">None of your addons offers streams. Add one in More → Addons.</string>
     <string name="gambit_streams_err_other" translatable="false">Something went wrong looking for streams. Try again.</string>
-    <string name="gambit_streams_play_soon" translatable="false">Playing streams comes in the next update.</string>
     <string name="gambit_streams_quality_uhd" translatable="false">4K</string>
     <string name="gambit_streams_quality_fhd" translatable="false">1080p</string>
     <string name="gambit_streams_quality_hd" translatable="false">720p</string>
@@ -233,4 +232,10 @@
         <item quantity="one">%1$s more stream Gambit can\'t play</item>
         <item quantity="other">%1$s more streams Gambit can\'t play</item>
     </plurals>
+    <!-- Addon playback (Stage 5) -->
+    <string name="gambit_play_starting" translatable="false">Starting…</string>
+    <string name="gambit_play_hls" translatable="false">This stream is HLS, which Gambit can\'t play privately yet. Pick another one.</string>
+    <string name="gambit_play_not_playable" translatable="false">Gambit can\'t play this stream. Pick another one.</string>
+    <string name="gambit_play_sub_label" translatable="false">%2$s (%1$s)</string>
+    <string name="gambit_play_sub_label_lang" translatable="false">%2$s · %3$s (%1$s)</string>
 </resources>
