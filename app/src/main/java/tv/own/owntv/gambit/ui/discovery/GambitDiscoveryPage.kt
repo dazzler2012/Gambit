@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -94,6 +95,7 @@ private fun DiscoveryContent(
     LaunchedEffect(Unit) { vm.open() }
     val state by vm.state.collectAsStateWithLifecycle()
     val title by vm.title.collectAsStateWithLifecycle()
+    val streams by vm.streams.collectAsStateWithLifecycle()
 
     val typeFocus = remember { FocusRequester() }
     val catalogFocus = remember { FocusRequester() }
@@ -105,6 +107,15 @@ private fun DiscoveryContent(
     val gridState = rememberLazyGridState()
     val posterFocus = remember { HashMap<String, FocusRequester>() }
     var lastPoster by remember { mutableStateOf<String?>(null) }
+    val streamFocus = remember { FocusRequester() }
+    // The title page's episode cards and rows, kept here so Back from the stream list finds them again.
+    val episodeFocus = remember { HashMap<String, FocusRequester>() }
+    val episodeRows = remember { HashMap<Int, LazyListState>() }
+    val episodeFocusFor: (String) -> FocusRequester = remember { { id -> episodeFocus.getOrPut(id) { FocusRequester() } } }
+    val episodeRowFor: (Int) -> LazyListState = remember { { season -> episodeRows.getOrPut(season) { LazyListState() } } }
+    // Where focus goes back to when the stream list closes: an episode id, or null for "Find streams".
+    var streamsFrom by remember { mutableStateOf<String?>(null) }
+    var titleFocusOnOpen by remember { mutableStateOf(true) }
     // A new catalogue, genre or type starts at the top.
     LaunchedEffect(state.type, state.selected?.key, state.genre) { gridState.scrollToItem(0) }
     var menu by remember { mutableStateOf<DiscoveryMenu?>(null) }
@@ -120,7 +131,21 @@ private fun DiscoveryContent(
         refocus = null
     }
     val closeMenu: (FocusRequester) -> Unit = { f -> menu = null; refocus = f; refocusTick++ }
-    val openTitle: (tv.own.owntv.gambit.addons.model.MetaPreview) -> Unit = { meta -> menu = null; lastPoster = meta.id; vm.openTitle(meta) }
+    val openTitle: (tv.own.owntv.gambit.addons.model.MetaPreview) -> Unit = { meta ->
+        menu = null
+        lastPoster = meta.id
+        episodeFocus.clear()
+        episodeRows.clear()
+        titleFocusOnOpen = true
+        vm.openTitle(meta)
+    }
+    // Back from the stream list: the title page again, focus on what opened the list.
+    val closeStreams: () -> Unit = {
+        vm.closeStreams()
+        titleFocusOnOpen = false
+        refocus = streamsFrom?.let { episodeFocus[it] } ?: titleFocus
+        refocusTick++
+    }
     // Back from the title page: Discovery again, focus on the poster that opened it.
     val closeTitle: () -> Unit = {
         vm.closeTitle()
@@ -132,7 +157,8 @@ private fun DiscoveryContent(
     val enter: () -> Boolean = {
         val feed = vm.state.value.feed
         val tryFocus: (FocusRequester) -> Boolean = { f -> runCatching { f.requestFocus() }.getOrDefault(false) }
-        if (vm.title.value != null) tryFocus(titleFocus) else when (feed) {
+        if (vm.streams.value != null) tryFocus(streamFocus) || tryFocus(titleFocus)
+        else if (vm.title.value != null) tryFocus(titleFocus) else when (feed) {
             is DiscoveryFeed.Loaded -> tryFocus(gridFocus) || tryFocus(typeFocus)
             is DiscoveryFeed.Failed -> tryFocus(retryFocus) || tryFocus(typeFocus)
             else -> tryFocus(typeFocus)
@@ -143,6 +169,20 @@ private fun DiscoveryContent(
         onDispose { onEntryHook?.invoke(null) }
     }
 
+    val list = streams
+    if (list != null) {
+        BackHandler(onBack = closeStreams)
+        GambitStreamPage(
+            list = list,
+            mainFocus = streamFocus,
+            onRetry = vm::retryStreams,
+            onChildFocused = onChildFocused,
+            contentStart = contentStart,
+            modifier = modifier,
+        )
+        return
+    }
+
     val open = title
     if (open != null) {
         BackHandler(onBack = closeTitle)
@@ -151,6 +191,11 @@ private fun DiscoveryContent(
             mainFocus = titleFocus,
             onRetry = vm::retryTitle,
             onSelectSeason = vm::selectSeason,
+            onFindStreams = { streamsFrom = null; vm.findStreams() },
+            onOpenEpisode = { video -> streamsFrom = video.id; vm.findEpisodeStreams(video) },
+            episodeFocus = episodeFocusFor,
+            episodeRow = episodeRowFor,
+            focusOnOpen = titleFocusOnOpen,
             onChildFocused = onChildFocused,
             contentStart = contentStart,
             modifier = modifier,

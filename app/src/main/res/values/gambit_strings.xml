@@ -205,11 +205,32 @@
     <string name="gambit_title_err_no_addon" translatable="false">None of your addons has details for this title. Check More → Addons.</string>
     <string name="gambit_title_err_other" translatable="false">Something went wrong loading the details. Try again.</string>
     <string name="gambit_title_find_streams" translatable="false">Find streams</string>
-    <string name="gambit_title_streams_soon" translatable="false">Finding streams comes in the next update.</string>
     <string name="gambit_title_season" translatable="false">Season</string>
     <string name="gambit_title_season_number" translatable="false">Season %1$s</string>
     <string name="gambit_title_specials" translatable="false">Specials</string>
     <string name="gambit_title_other_episodes" translatable="false">Other episodes</string>
     <string name="gambit_title_episode_number" translatable="false">Episode %1$s</string>
     <string name="gambit_title_no_episodes" translatable="false">No episodes listed yet.</string>
+    <!-- Discovery stream list (Stage 4) -->
+    <string name="gambit_streams_episode" translatable="false">Season %1$s · Episode %2$s</string>
+    <string name="gambit_streams_episode_titled" translatable="false">Season %1$s · Episode %2$s · %3$s</string>
+    <string name="gambit_streams_heading" translatable="false">Streams</string>
+    <string name="gambit_streams_loading" translatable="false">Looking for streams…</string>
+    <string name="gambit_streams_empty" translatable="false">No streams found</string>
+    <string name="gambit_streams_empty_body" translatable="false">None of your addons has a stream for this right now.</string>
+    <string name="gambit_streams_empty_unplayable" translatable="false">Your addons only found streams Gambit can\'t play (torrents, YouTube or website links).</string>
+    <string name="gambit_streams_failed_title" translatable="false">Couldn\'t look for streams</string>
+    <string name="gambit_streams_err_unreadable" translatable="false">%1$s sent streams Gambit can\'t read.</string>
+    <string name="gambit_streams_err_not_found" translatable="false">%1$s has no streams for this.</string>
+    <string name="gambit_streams_err_no_addon" translatable="false">None of your addons offers streams. Add one in More → Addons.</string>
+    <string name="gambit_streams_err_other" translatable="false">Something went wrong looking for streams. Try again.</string>
+    <string name="gambit_streams_play_soon" translatable="false">Playing streams comes in the next update.</string>
+    <string name="gambit_streams_quality_uhd" translatable="false">4K</string>
+    <string name="gambit_streams_quality_fhd" translatable="false">1080p</string>
+    <string name="gambit_streams_quality_hd" translatable="false">720p</string>
+    <string name="gambit_streams_quality_sd" translatable="false">SD</string>
+    <plurals name="gambit_streams_unplayable" translatable="false">
+        <item quantity="one">%1$s more stream Gambit can\'t play</item>
+        <item quantity="other">%1$s more streams Gambit can\'t play</item>
+    </plurals>
 </resources>

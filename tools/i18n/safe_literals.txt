@@ -1030,6 +1030,7 @@
 1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonManifest.kt	subtitles
 1	log	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonStream.kt	AddonStream(name=$name, title=$title, support=$support, filename=${behaviorHints.filename})
 1	log	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonStream.kt	AddonSubtitle(id=$id, lang=$lang)
+1	log	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonStream.kt	StreamBehaviorHints(notWebReady=$notWebReady, bingeGroup=$bingeGroup, filename=$filename, videoSize=$videoSize, requestHeaders=${requestHeaders.keys})
 1	url	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonStream.kt	http://
 1	url	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonStream.kt	https://
 1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonClient.kt	Accept
@@ -1114,6 +1115,10 @@
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	movie
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	series
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	skip
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b(2160p|4k|uhd)\\b
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b(480p|576p|360p)\\b
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b1080[pi]\\b
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b720p\\b
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	"
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	#
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	#X

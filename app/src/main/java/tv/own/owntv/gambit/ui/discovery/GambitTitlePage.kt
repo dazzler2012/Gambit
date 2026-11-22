@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -77,9 +78,17 @@ internal fun GambitTitlePage(
     mainFocus: FocusRequester,
     onRetry: () -> Unit,
     onSelectSeason: (Int) -> Unit,
+    onFindStreams: () -> Unit,
+    onOpenEpisode: (AddonVideo) -> Unit,
+    /** A focus target per episode id, kept by the caller so Back from the stream list can return to it. */
+    episodeFocus: (String) -> FocusRequester,
+    /** The episode row's scroll position per season, kept by the caller for the same reason. */
+    episodeRow: (Int) -> LazyListState,
     onChildFocused: () -> Unit,
     contentStart: Dp,
     modifier: Modifier = Modifier,
+    /** False when coming back from the stream list: the caller puts focus back itself. */
+    focusOnOpen: Boolean = true,
 ) {
     val preview = title.preview
     val feed = title.feed
@@ -96,12 +105,12 @@ internal fun GambitTitlePage(
     val page = LocalStagePalette.current.page
 
     var logoFailed by remember(logo) { mutableStateOf(false) }
-    var streamsNote by remember(preview.id) { mutableStateOf(false) }
     var seasonMenu by remember(preview.id) { mutableStateOf(false) }
     val seasonFocus = remember { FocusRequester() }
 
     // Focus the main button when the page opens, and again when it changes between Try again and Find streams.
     LaunchedEffect(preview.id, feed is TitleFeed.Failed) {
+        if (!focusOnOpen && feed !is TitleFeed.Failed) return@LaunchedEffect
         for (attempt in 0 until 10) {
             withFrameNanos { }
             if (runCatching { mainFocus.requestFocus() }.getOrDefault(false)) break
@@ -162,12 +171,18 @@ internal fun GambitTitlePage(
                     Row(Modifier.padding(top = 26.mpx), horizontalArrangement = Arrangement.spacedBy(20.mpx), verticalAlignment = Alignment.CenterVertically) {
                         StageButton(
                             text = stringResource(R.string.gambit_title_find_streams),
-                            onClick = { streamsNote = true },
+                            // A series is played by episode: its button moves focus down to them.
+                            onClick = {
+                                if (loaded != null && loaded.seasons.isNotEmpty()) {
+                                    loaded.seasons[loaded.season].episodes.firstOrNull()?.let { runCatching { episodeFocus(it.id).requestFocus() } }
+                                } else if (loaded != null) {
+                                    onFindStreams()
+                                }
+                            },
                             icon = OwnTVIcon.PLAY,
                             iconFilled = true,
                             modifier = Modifier.focusRequester(mainFocus),
                         )
-                        if (streamsNote) Text(stringResource(R.string.gambit_title_streams_soon), style = stageText(19, 500), color = GambitColors.Muted)
                     }
                     if (feed == TitleFeed.Loading) {
                         Text(stringResource(R.string.gambit_title_loading), style = stageText(20, 500), color = GambitColors.Dim, modifier = Modifier.padding(top = 22.mpx))
@@ -184,7 +199,7 @@ internal fun GambitTitlePage(
                         onClick = { seasonMenu = true }, modifier = Modifier.focusRequester(seasonFocus),
                     )
                 }
-                Episodes(season, loaded.season)
+                Episodes(season, episodeRow(loaded.season), episodeFocus, onOpenEpisode)
             } else if (loaded != null && preview.type == tv.own.owntv.gambit.discovery.DiscoveryType.SERIES.id) {
                 Text(stringResource(R.string.gambit_title_no_episodes), style = stageText(20, 500), color = GambitColors.Dim, modifier = Modifier.padding(top = 26.mpx))
             }
@@ -206,8 +221,12 @@ internal fun GambitTitlePage(
 }
 
 @Composable
-private fun Episodes(season: TitleSeason, seasonIndex: Int) {
-    val listState = remember(seasonIndex) { androidx.compose.foundation.lazy.LazyListState() }
+private fun Episodes(
+    season: TitleSeason,
+    listState: LazyListState,
+    episodeFocus: (String) -> FocusRequester,
+    onOpenEpisode: (AddonVideo) -> Unit,
+) {
     val locale = LocalConfiguration.current.locales[0]
     val dates = remember(locale) { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale) }
     LazyRow(
@@ -217,15 +236,17 @@ private fun Episodes(season: TitleSeason, seasonIndex: Int) {
         modifier = Modifier.fillMaxWidth().focusRestorer().focusGroup(),
     ) {
         itemsIndexed(season.episodes, key = { _, v -> v.id }) { _, video ->
+            val requester = remember(video.id) { episodeFocus(video.id) }
             StageEpisode(
                 title = video.title?.takeIf { it.isNotBlank() } ?: video.episodeLabel(),
                 line = TitleSeasons.airDate(video.released)?.format(dates),
                 number = video.episode?.let { localizedInteger(it, grouping = false) }.orEmpty(),
                 watched = false,
                 progress = null,
-                onClick = {},
+                onClick = { onOpenEpisode(video) },
                 width = 336.mpx,
                 height = 189.mpx,
+                modifier = Modifier.focusRequester(requester),
             ) { filter ->
                 Box(Modifier.fillMaxSize().background(GambitColors.Cell), contentAlignment = Alignment.Center) {
                     if (!video.thumbnail.isNullOrBlank()) {
