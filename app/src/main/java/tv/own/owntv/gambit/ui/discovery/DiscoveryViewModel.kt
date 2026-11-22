@@ -20,9 +20,12 @@ import tv.own.owntv.gambit.discovery.DiscoveryBoard
 import tv.own.owntv.gambit.discovery.DiscoveryState
 import tv.own.owntv.gambit.discovery.DiscoveryType
 
+/** Whether Discovery may show for the active profile. Until the profile is read it is [UNKNOWN]. */
+enum class DiscoveryAccess { UNKNOWN, KIDS, OPEN }
+
 /**
  * Discovery: the addons' catalogues as a poster grid with a type and a catalogue/genre choice. A thin
- * wrapper over [DiscoveryBoard]. Nothing is requested on a kids profile. No screen uses it yet.
+ * wrapper over [DiscoveryBoard]. Nothing is requested until the profile is known to be an adult one.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class DiscoveryViewModel(
@@ -36,21 +39,35 @@ class DiscoveryViewModel(
 
     val state: StateFlow<DiscoveryState> = board.state
 
-    /** True on a kids profile: Discovery is hidden there and never loads. */
-    val kids: StateFlow<Boolean> = settings.activeProfileId
-        .flatMapLatest { id -> if (id < 0) flowOf(null) else profileDao.observeById(id) }
-        .map { it?.isKids == true }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+    /** [DiscoveryAccess.OPEN] only once the active profile has been read and is not a kids profile. */
+    val access: StateFlow<DiscoveryAccess> = settings.activeProfileId
+        .flatMapLatest { id ->
+            if (id < 0) {
+                flowOf(DiscoveryAccess.UNKNOWN)
+            } else {
+                profileDao.observeById(id).map { p ->
+                    when {
+                        p == null -> DiscoveryAccess.UNKNOWN
+                        p.isKids -> DiscoveryAccess.KIDS
+                        else -> DiscoveryAccess.OPEN
+                    }
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, DiscoveryAccess.UNKNOWN)
 
     init {
         // The first value is the registry as it is now; open() reads it itself.
         store.registry.drop(1).onEach { board.onRegistryChanged() }.launchIn(viewModelScope)
     }
 
-    /** Call when the page is shown: fetches fresh lists. */
+    /** Call when the page is shown: fetches fresh lists. Does nothing until [access] is OPEN. */
     fun open() {
-        if (!kids.value) board.open()
+        if (access.value == DiscoveryAccess.OPEN) board.open()
     }
+
+    /** After a failed first page: forget results and ask again. */
+    fun retry() = open()
 
     fun selectType(type: DiscoveryType) = board.selectType(type)
     fun selectCatalog(key: String) = board.selectCatalog(key)

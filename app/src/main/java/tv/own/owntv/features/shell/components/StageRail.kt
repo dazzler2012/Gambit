@@ -285,8 +285,8 @@ fun StageRail(
             items.forEach { section ->
                 tv.own.owntv.gambit.ui.rail.GambitRailItem( // Gambit: was RailItem
                     icon = section.stageIcon,
-                    label = stringResource(section.labelRes),
-                    trailing = if (counts) count(section)?.let { NumberFormat.getIntegerInstance(LocalConfiguration.current.locales[0]).format(it) } else null,
+                    label = if (section == tv.own.owntv.gambit.ui.discovery.GambitDiscoverySection) tv.own.owntv.gambit.ui.discovery.gambitDiscoveryLabel() else stringResource(section.labelRes), // Gambit: Discovery in the Sports slot
+                    trailing = if (counts && section != tv.own.owntv.gambit.ui.discovery.GambitDiscoverySection) count(section)?.let { NumberFormat.getIntegerInstance(LocalConfiguration.current.locales[0]).format(it) } else null, // Gambit: no Sports count on Discovery
                     detail = if (details) detail(section) else null,
                     open = open,
                     active = section == selected ||
@@ -309,7 +309,7 @@ private val MainSection.stageIcon: OwnTVIcon
         MainSection.HOME -> OwnTVIcon.HOME
         MainSection.LIVE_TV -> OwnTVIcon.LIVE_TV
         MainSection.EPG -> OwnTVIcon.EPG
-        MainSection.SPORTS -> OwnTVIcon.SPORTS
+        MainSection.SPORTS -> tv.own.owntv.gambit.ui.discovery.GambitDiscoveryIcon // Gambit: Discovery in the Sports slot (was OwnTVIcon.SPORTS)
         MainSection.MOVIES -> OwnTVIcon.MOVIES
         MainSection.SERIES -> OwnTVIcon.SERIES
         MainSection.DOWNLOADS -> OwnTVIcon.DOWNLOADS
