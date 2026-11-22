@@ -168,4 +168,74 @@
     <string name="gambit_trakt_err_storage" translatable="false">Could not save the sign-in on this TV. Try again.</string>
     <string name="gambit_trakt_err_expired_signin" translatable="false">Your Trakt sign-in ran out. Sign in again.</string>
     <string name="gambit_trakt_err_other" translatable="false">Something went wrong talking to Trakt. Try again.</string>
+
+    <!-- Discovery (Phase 2, Stage 2): the addons' catalogues as a poster grid, in the rail's Sports slot. -->
+    <string name="gambit_discovery_title" translatable="false">Discovery</string>
+    <string name="gambit_discovery_type" translatable="false">Type</string>
+    <string name="gambit_discovery_movies" translatable="false">Movies</string>
+    <string name="gambit_discovery_series" translatable="false">Series</string>
+    <string name="gambit_discovery_catalog" translatable="false">Catalogue</string>
+    <string name="gambit_discovery_genre" translatable="false">Genre</string>
+    <string name="gambit_discovery_genre_all" translatable="false">All</string>
+    <!-- A catalogue in the drop-down: "Popular · Cinemeta" -->
+    <string name="gambit_discovery_catalog_name" translatable="false">%1$s · %2$s</string>
+    <string name="gambit_discovery_loading" translatable="false">Loading…</string>
+    <string name="gambit_discovery_loading_more" translatable="false">Loading more…</string>
+    <string name="gambit_discovery_no_catalogs_title" translatable="false">No catalogues to show</string>
+    <string name="gambit_discovery_no_catalogs_movies" translatable="false">None of your addons has a movie catalogue. Add one, or turn one on, in More → Addons.</string>
+    <string name="gambit_discovery_no_catalogs_series" translatable="false">None of your addons has a series catalogue. Add one, or turn one on, in More → Addons.</string>
+    <string name="gambit_discovery_empty" translatable="false">This catalogue has nothing to show right now.</string>
+    <string name="gambit_discovery_failed_title" translatable="false">Couldn\'t load this catalogue</string>
+    <string name="gambit_discovery_more_failed" translatable="false">Couldn\'t load more titles.</string>
+    <string name="gambit_discovery_retry" translatable="false">Try again</string>
+    <!-- %1$s is the addon, "Cinemeta (v3-cinemeta.example)": its name and host only. -->
+    <string name="gambit_discovery_err_timeout" translatable="false">%1$s took too long to answer. Try again in a moment.</string>
+    <string name="gambit_discovery_err_network" translatable="false">Couldn\'t reach %1$s. Check the internet connection.</string>
+    <string name="gambit_discovery_err_status" translatable="false">%1$s answered with an error (%2$d).</string>
+    <string name="gambit_discovery_err_unreadable" translatable="false">%1$s sent a catalogue Gambit can\'t read.</string>
+    <string name="gambit_discovery_err_not_found" translatable="false">%1$s has nothing in this catalogue.</string>
+    <string name="gambit_discovery_err_no_addon" translatable="false">No addon offers this catalogue any more. Check More → Addons.</string>
+    <string name="gambit_discovery_err_other" translatable="false">Something went wrong loading this catalogue. Try again.</string>
+
+    <!-- Discovery title page (Stage 3) -->
+    <string name="gambit_title_loading" translatable="false">Loading details…</string>
+    <string name="gambit_title_failed_title" translatable="false">Couldn\'t load the details</string>
+    <string name="gambit_title_err_unreadable" translatable="false">%1$s sent details Gambit can\'t read.</string>
+    <string name="gambit_title_err_not_found" translatable="false">%1$s has no details for this title.</string>
+    <string name="gambit_title_err_no_addon" translatable="false">None of your addons has details for this title. Check More → Addons.</string>
+    <string name="gambit_title_err_other" translatable="false">Something went wrong loading the details. Try again.</string>
+    <string name="gambit_title_find_streams" translatable="false">Find streams</string>
+    <string name="gambit_title_season" translatable="false">Season</string>
+    <string name="gambit_title_season_number" translatable="false">Season %1$s</string>
+    <string name="gambit_title_specials" translatable="false">Specials</string>
+    <string name="gambit_title_other_episodes" translatable="false">Other episodes</string>
+    <string name="gambit_title_episode_number" translatable="false">Episode %1$s</string>
+    <string name="gambit_title_no_episodes" translatable="false">No episodes listed yet.</string>
+    <!-- Discovery stream list (Stage 4) -->
+    <string name="gambit_streams_episode" translatable="false">Season %1$s · Episode %2$s</string>
+    <string name="gambit_streams_episode_titled" translatable="false">Season %1$s · Episode %2$s · %3$s</string>
+    <string name="gambit_streams_heading" translatable="false">Streams</string>
+    <string name="gambit_streams_loading" translatable="false">Looking for streams…</string>
+    <string name="gambit_streams_empty" translatable="false">No streams found</string>
+    <string name="gambit_streams_empty_body" translatable="false">None of your addons has a stream for this right now.</string>
+    <string name="gambit_streams_empty_unplayable" translatable="false">Your addons only found streams Gambit can\'t play (torrents, YouTube or website links).</string>
+    <string name="gambit_streams_failed_title" translatable="false">Couldn\'t look for streams</string>
+    <string name="gambit_streams_err_unreadable" translatable="false">%1$s sent streams Gambit can\'t read.</string>
+    <string name="gambit_streams_err_not_found" translatable="false">%1$s has no streams for this.</string>
+    <string name="gambit_streams_err_no_addon" translatable="false">None of your addons offers streams. Add one in More → Addons.</string>
+    <string name="gambit_streams_err_other" translatable="false">Something went wrong looking for streams. Try again.</string>
+    <string name="gambit_streams_quality_uhd" translatable="false">4K</string>
+    <string name="gambit_streams_quality_fhd" translatable="false">1080p</string>
+    <string name="gambit_streams_quality_hd" translatable="false">720p</string>
+    <string name="gambit_streams_quality_sd" translatable="false">SD</string>
+    <plurals name="gambit_streams_unplayable" translatable="false">
+        <item quantity="one">%1$s more stream Gambit can\'t play</item>
+        <item quantity="other">%1$s more streams Gambit can\'t play</item>
+    </plurals>
+    <!-- Addon playback (Stage 5) -->
+    <string name="gambit_play_starting" translatable="false">Starting…</string>
+    <string name="gambit_play_hls" translatable="false">This stream is HLS, which Gambit can\'t play privately yet. Pick another one.</string>
+    <string name="gambit_play_not_playable" translatable="false">Gambit can\'t play this stream. Pick another one.</string>
+    <string name="gambit_play_sub_label" translatable="false">%2$s (%1$s)</string>
+    <string name="gambit_play_sub_label_lang" translatable="false">%2$s · %3$s (%1$s)</string>
 </resources>

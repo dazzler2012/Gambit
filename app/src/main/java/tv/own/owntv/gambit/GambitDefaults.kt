@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
+import org.koin.core.context.GlobalContext
+import tv.own.owntv.core.database.dao.ProfileDao
 import tv.own.owntv.core.settings.GuideWidthShares
 import tv.own.owntv.core.settings.GuideWidthLimits
 import tv.own.owntv.core.settings.SettingsRepository
@@ -39,7 +41,11 @@ object GambitDefaults {
     /** Channel column share of the guide, in percent of the two columns. */
     const val GUIDE_CHANNEL_SHARE = 26
 
-    /** Applies the defaults once per install. A failure is logged as a warning and retried on the next start. */
+    /**
+     * Applies the defaults once per install, then keeps Home's Live sports row hidden on every profile
+     * ([GambitHomeRows]; that step runs for the life of the app). A failure is logged as a warning and
+     * retried on the next start.
+     */
     suspend fun applyOnce(context: Context, settings: SettingsRepository) {
         try {
             apply(context, settings)
@@ -47,6 +53,13 @@ object GambitDefaults {
             throw e
         } catch (e: Exception) {
             Log.w(TAG, "Gambit defaults not applied; will retry on next start", e)
+        }
+        try {
+            GambitHomeRows.keepHidden(context, settings, GlobalContext.get().get<ProfileDao>())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "Gambit Home rows not updated; will retry on next start", e)
         }
     }
 

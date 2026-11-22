@@ -979,12 +979,15 @@
 1	technical	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	#2E5A2E
 1	technical	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	#66BB6A
 1	log	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	Gambit
+1	log	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	Gambit Home rows not updated; will retry on next start
 1	log	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	Gambit defaults not applied; will retry on next start
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	accent_v2
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	defaults_v1
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	gambit
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	nav_v1
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitDefaults.kt	update_check_off_v1
+1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitHomeRows.kt	gambit
+1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitHomeRows.kt	home_live_sports_hidden_v1
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitLastTuned.kt	gambit
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/GambitLastTuned.kt	last_tuned_channel_v1
 1	preference-key	app/src/main/java/tv/own/owntv/gambit/addons/GambitAddonVault.kt	addons_v1
@@ -1027,6 +1030,7 @@
 1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonManifest.kt	subtitles
 1	log	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonStream.kt	AddonStream(name=$name, title=$title, support=$support, filename=${behaviorHints.filename})
 1	log	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonStream.kt	AddonSubtitle(id=$id, lang=$lang)
+1	log	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonStream.kt	StreamBehaviorHints(notWebReady=$notWebReady, bingeGroup=$bingeGroup, filename=$filename, videoSize=$videoSize, requestHeaders=${requestHeaders.keys})
 1	url	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonStream.kt	http://
 1	url	app/src/main/java/tv/own/owntv/gambit/addons/model/AddonStream.kt	https://
 1	protocol	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonClient.kt	Accept
@@ -1107,6 +1111,66 @@
 1	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	stream/${encode(type)}/${encode(videoId)}
 2	url	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	stremio://
 1	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	subtitles/${encode(type)}/${encode(id)}
+1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	genre
+1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	movie
+1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	series
+1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	skip
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b(2160p|4k|uhd)\\b
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b(480p|576p|360p)\\b
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b1080[pi]\\b
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b720p\\b
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$KEY_PREFIX:$SERIES:$metaId
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$KEY_PREFIX:$type:$videoId
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$SUB_NAME$i.$subExt
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$VIDEO_NAME.$it
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	gambit-addon
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	series
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	srt
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	sub
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	video
+6	empty	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	\0
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	#EXTM3U
+1	regex	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	(?i)\\.m3u8?$
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	/${safeSuffix(it)}
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	/s/
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	0123456789abcdef
+2	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	:
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Accept-Encoding
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Accept-Ranges
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Bad Gateway
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Connection: close
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Content-Length
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Content-Length: 0
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Content-Range
+2	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Content-Type
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	ETag
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	GET
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	HEAD
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	HTTP/1.1
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Last-Modified
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Method Not Allowed
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Not Found
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	OK
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Partial Content
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Range
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Range Not Satisfiable
+1	log	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Session(open=$isOpen, addresses=${tokens.size})
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Status
+1	log	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Target(redacted)
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Unsupported Media Type
+1	regex	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	[^A-Za-z0-9._-]
+1	regex	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	bytes=\\d*-\\d*(,\\s*\\d*-\\d*)*
+1	log	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	gambit-stream-proxy
+1	url	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	http://
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	identity
+1	file-path	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	media
+1	mime	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	mpegurl
+1	assertion	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	session closed
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/HlsProbe.kt	Accept-Encoding
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/HlsProbe.kt	Content-Type
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/HlsProbe.kt	Range
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/HlsProbe.kt	bytes=0-15
+1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/HlsProbe.kt	identity
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	"
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	#
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	#X

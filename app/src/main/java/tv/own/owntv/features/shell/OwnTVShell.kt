@@ -1445,12 +1445,12 @@ fun OwnTVShell(
                             modifier = Modifier.fillMaxSize(),
                         )
 
-                        selectedSection == MainSection.SPORTS -> tv.own.owntv.features.sports.SportsScreen(
-                            onPlayChannel = { ch, zap -> scope.launch { if (liveVm.ensurePlayingByIdAsync(ch.id, zap)) openFullscreen(MainSection.LIVE_TV) } },
-                            onAddPlaylist = { onSelectSection(MainSection.SETTINGS) },
+                        selectedSection == MainSection.SPORTS -> tv.own.owntv.gambit.ui.discovery.GambitDiscoveryPage( // Gambit: Discovery in the Sports slot (was SportsScreen)
                             onChildFocused = { focusedLayer = ShellLayer.CONTENT },
                             onEntryHook = { sportsEntry = it },
-                            active = playerMode == PlayerMode.NONE,
+                            onPlay = { openFullscreen(MainSection.SPORTS) }, // Gambit: an addon stream into the player
+                            restoreFocus = restoreFocus, // Gambit: back from the player, focus the same stream
+                            onRestored = { restoreFocus = false }, // Gambit
                             contentStart = if (navStyle == tv.own.owntv.core.settings.SettingsRepository.NavStyle.DOCKED) 64.mpx else 150.mpx,
                             modifier = Modifier.fillMaxSize(),
                         )
@@ -1510,7 +1510,7 @@ fun OwnTVShell(
                 size = railSize,
                 length = navLength,
                 selected = selectedSection,
-                visibleSections = visibleSections,
+                visibleSections = tv.own.owntv.gambit.ui.discovery.gambitDiscoveryRail(visibleSections), // Gambit: Discovery only on adult profiles
                 onSelect = selectFromNav,
                 count = { section -> railCounts[section]?.takeIf { it > 0 } },
                 detail = { section -> railDetail(section, railDetails) },

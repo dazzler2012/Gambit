@@ -55,9 +55,13 @@ data class StreamBehaviorHints(
     val bingeGroup: String? = null,
     val filename: String? = null,
     val videoSize: Long? = null,
-    /** Headers the player must send with the request (`proxyHeaders.request`). */
+    /** Headers the player must send with the request (`proxyHeaders.request`). Values may hold tokens. */
     val requestHeaders: Map<String, String> = emptyMap(),
-)
+) {
+    /** Header values can carry tokens, so only their names are shown. */
+    override fun toString(): String =
+        "StreamBehaviorHints(notWebReady=$notWebReady, bingeGroup=$bingeGroup, filename=$filename, videoSize=$videoSize, requestHeaders=${requestHeaders.keys})"
+}
 
 /** A subtitle track, embedded in a stream or from a subtitles addon. */
 data class AddonSubtitle(
