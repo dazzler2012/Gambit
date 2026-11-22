@@ -89,6 +89,47 @@ class GambitStreamProxyTest {
         session.close()
     }
 
+    private fun boundSocket(): ServerSocket =
+        GambitStreamProxy::class.java.getDeclaredField("server").apply { isAccessible = true }.get(proxy) as ServerSocket
+
+    @Test
+    fun `the server is bound to IPv4 127_0_0_1, not just any loopback`() {
+        val session = proxy.openSession()
+        session.add(filmUrl, headers)
+        val bound = boundSocket().inetAddress
+        assertTrue("bound to ${bound.hostAddress}", bound is java.net.Inet4Address)
+        assertEquals("127.0.0.1", bound.hostAddress)
+        session.close()
+    }
+
+    @Test
+    fun `every handed-out address names the bound socket's host and port`() {
+        val session = proxy.openSession()
+        val addresses = listOf(session.add(filmUrl, headers, "video.mkv"), session.add("$base/subs/KEY-789/en.srt", emptyMap(), "sub0.srt"))
+        val socket = boundSocket()
+        for (a in addresses) {
+            val u = URL(a)
+            assertEquals(socket.inetAddress.hostAddress, u.host)
+            assertEquals(socket.localPort, u.port)
+        }
+        session.close()
+    }
+
+    @Test
+    fun `a connection to exactly the handed-out host and port is answered`() {
+        val session = proxy.openSession()
+        val u = URL(session.add(filmUrl, headers))
+        // Resolve the address's own host literally, as a player would; no fallback to another loopback.
+        Socket(InetAddress.getByName(u.host), u.port).use { s ->
+            s.soTimeout = 5_000
+            s.getOutputStream().write("GET ${u.path} HTTP/1.1\r\nHost: ${u.host}\r\nRange: bytes=0-9\r\n\r\n".toByteArray())
+            s.getOutputStream().flush()
+            val status = BufferedInputStream(s.getInputStream()).bufferedReader(Charsets.ISO_8859_1).readLine()
+            assertEquals("HTTP/1.1 206 Partial Content", status)
+        }
+        session.close()
+    }
+
     @Test
     fun `a whole file passes through with the addon's headers`() {
         val session = proxy.openSession()

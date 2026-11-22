@@ -1134,7 +1134,7 @@
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	/${safeSuffix(it)}
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	/s/
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	0123456789abcdef
-1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	:
+2	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	:
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Accept-Encoding
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Accept-Ranges
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	Bad Gateway
@@ -1161,7 +1161,7 @@
 1	regex	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	[^A-Za-z0-9._-]
 1	regex	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	bytes=\\d*-\\d*(,\\s*\\d*-\\d*)*
 1	log	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	gambit-stream-proxy
-1	url	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	http://127.0.0.1:$port/s/$token
+1	url	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	http://
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	identity
 1	file-path	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	media
 1	mime	app/src/main/java/tv/own/owntv/gambit/playback/GambitStreamProxy.kt	mpegurl

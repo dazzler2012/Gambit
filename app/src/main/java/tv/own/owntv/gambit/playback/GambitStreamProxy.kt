@@ -54,8 +54,8 @@ class GambitStreamProxy(http: OkHttpClient) {
             val token = newToken()
             targets[token] = Target(url, headers)
             tokens += token
-            val port = ensureServer()
-            return "http://127.0.0.1:$port/s/$token" + (suffix?.let { "/${safeSuffix(it)}" }.orEmpty())
+            // Built from the socket the server is bound to, so the address can't point anywhere else.
+            return ensureServer() + PATH_PREFIX + token + (suffix?.let { "/${safeSuffix(it)}" }.orEmpty())
         }
 
         fun close() {
@@ -86,15 +86,20 @@ class GambitStreamProxy(http: OkHttpClient) {
         if (sessions.isEmpty()) shutDown()
     }
 
-    private fun ensureServer(): Int = synchronized(lock) {
-        server?.let { return it.localPort }
-        val socket = ServerSocket(0, BACKLOG, InetAddress.getLoopbackAddress())
+    /** `http://127.0.0.1:<port>` of the running server, starting it if needed. */
+    private fun ensureServer(): String = synchronized(lock) {
+        server?.let { return baseOf(it) }
+        // IPv4 loopback by its literal address. Not InetAddress.getLoopbackAddress(): on Android that is
+        // ::1, so a server bound there refuses every connection to 127.0.0.1.
+        val socket = ServerSocket(0, BACKLOG, LOOPBACK_V4)
         val executor = Executors.newCachedThreadPool { r -> Thread(r, THREAD_NAME).apply { isDaemon = true } }
         server = socket
         pool = executor
         executor.execute { acceptLoop(socket, executor) }
-        socket.localPort
+        baseOf(socket)
     }
+
+    private fun baseOf(socket: ServerSocket): String = SCHEME + socket.inetAddress.hostAddress + ":" + socket.localPort
 
     private fun shutDown() = synchronized(lock) {
         if (sessions.isNotEmpty()) return@synchronized
@@ -233,6 +238,10 @@ class GambitStreamProxy(http: OkHttpClient) {
         private const val HEX = "0123456789abcdef"
         private const val THREAD_NAME = "gambit-stream-proxy"
         private const val PATH_PREFIX = "/s/"
+        private const val SCHEME = "http://"
+
+        /** 127.0.0.1, given as bytes so no name lookup is ever made. */
+        internal val LOOPBACK_V4: InetAddress = InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1))
         private const val GET = "GET"
         private const val HEAD = "HEAD"
         private const val RANGE = "Range"
