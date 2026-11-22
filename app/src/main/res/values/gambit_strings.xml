@@ -196,4 +196,20 @@
     <string name="gambit_discovery_err_not_found" translatable="false">%1$s has nothing in this catalogue.</string>
     <string name="gambit_discovery_err_no_addon" translatable="false">No addon offers this catalogue any more. Check More → Addons.</string>
     <string name="gambit_discovery_err_other" translatable="false">Something went wrong loading this catalogue. Try again.</string>
+
+    <!-- Discovery title page (Stage 3) -->
+    <string name="gambit_title_loading" translatable="false">Loading details…</string>
+    <string name="gambit_title_failed_title" translatable="false">Couldn't load the details</string>
+    <string name="gambit_title_err_unreadable" translatable="false">%1$s sent details Gambit can't read.</string>
+    <string name="gambit_title_err_not_found" translatable="false">%1$s has no details for this title.</string>
+    <string name="gambit_title_err_no_addon" translatable="false">None of your addons has details for this title. Check More → Addons.</string>
+    <string name="gambit_title_err_other" translatable="false">Something went wrong loading the details. Try again.</string>
+    <string name="gambit_title_find_streams" translatable="false">Find streams</string>
+    <string name="gambit_title_streams_soon" translatable="false">Finding streams comes in the next update.</string>
+    <string name="gambit_title_season" translatable="false">Season</string>
+    <string name="gambit_title_season_number" translatable="false">Season %1$s</string>
+    <string name="gambit_title_specials" translatable="false">Specials</string>
+    <string name="gambit_title_other_episodes" translatable="false">Other episodes</string>
+    <string name="gambit_title_episode_number" translatable="false">Episode %1$s</string>
+    <string name="gambit_title_no_episodes" translatable="false">No episodes listed yet.</string>
 </resources>

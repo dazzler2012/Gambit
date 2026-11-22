@@ -36,9 +36,12 @@ class AddonRepository(private val client: AddonClient) {
     /**
      * Meta from the first enabled addon that serves this type and id. If that addon fails or has
      * nothing, the next matching addon is asked; when all fail, the first addon's error is returned.
+     *
+     * [preferred] (the addon a catalogue item came from) is asked first when it serves this meta, since
+     * its ids may be ones only it knows; the others follow in addon order.
      */
-    suspend fun meta(registry: AddonRegistry, type: String, id: String): AddonResult<MetaDetail> {
-        val candidates = registry.metaAddons(type, id)
+    suspend fun meta(registry: AddonRegistry, type: String, id: String, preferred: AddonUrl? = null): AddonResult<MetaDetail> {
+        val candidates = registry.metaAddons(type, id).sortedBy { if (it.url == preferred) 0 else 1 }
         if (candidates.isEmpty()) return AddonResult.Err(AddonError.NoAddon(AddonResources.META, type))
         var firstError: AddonResult.Err? = null
         for (addon in candidates) {

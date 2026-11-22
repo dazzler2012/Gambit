@@ -1,5 +1,6 @@
 package tv.own.owntv.gambit.ui.discovery
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -91,12 +93,20 @@ private fun DiscoveryContent(
     // Only composed once the profile is known to be an adult one: each visit fetches fresh lists.
     LaunchedEffect(Unit) { vm.open() }
     val state by vm.state.collectAsStateWithLifecycle()
+    val title by vm.title.collectAsStateWithLifecycle()
 
     val typeFocus = remember { FocusRequester() }
     val catalogFocus = remember { FocusRequester() }
     val genreFocus = remember { FocusRequester() }
     val gridFocus = remember { FocusRequester() }
     val retryFocus = remember { FocusRequester() }
+    val titleFocus = remember { FocusRequester() }
+    // Kept here, not in the grid, so the grid comes back where it was after the title page closes.
+    val gridState = rememberLazyGridState()
+    val posterFocus = remember { HashMap<String, FocusRequester>() }
+    var lastPoster by remember { mutableStateOf<String?>(null) }
+    // A new catalogue, genre or type starts at the top.
+    LaunchedEffect(state.type, state.selected?.key, state.genre) { gridState.scrollToItem(0) }
     var menu by remember { mutableStateOf<DiscoveryMenu?>(null) }
     // After a drop-down closes, focus goes back to the tool that opened it.
     var refocus by remember { mutableStateOf<FocusRequester?>(null) }
@@ -110,12 +120,19 @@ private fun DiscoveryContent(
         refocus = null
     }
     val closeMenu: (FocusRequester) -> Unit = { f -> menu = null; refocus = f; refocusTick++ }
+    val openTitle: (tv.own.owntv.gambit.addons.model.MetaPreview) -> Unit = { meta -> menu = null; lastPoster = meta.id; vm.openTitle(meta) }
+    // Back from the title page: Discovery again, focus on the poster that opened it.
+    val closeTitle: () -> Unit = {
+        vm.closeTitle()
+        refocus = lastPoster?.let { posterFocus[it] } ?: gridFocus
+        refocusTick++
+    }
 
     // ▶ from the rail: the poster last focused (or the first), else Try again, else the Type drop-down.
     val enter: () -> Boolean = {
         val feed = vm.state.value.feed
         val tryFocus: (FocusRequester) -> Boolean = { f -> runCatching { f.requestFocus() }.getOrDefault(false) }
-        when (feed) {
+        if (vm.title.value != null) tryFocus(titleFocus) else when (feed) {
             is DiscoveryFeed.Loaded -> tryFocus(gridFocus) || tryFocus(typeFocus)
             is DiscoveryFeed.Failed -> tryFocus(retryFocus) || tryFocus(typeFocus)
             else -> tryFocus(typeFocus)
@@ -124,6 +141,21 @@ private fun DiscoveryContent(
     DisposableEffect(onEntryHook) {
         onEntryHook?.invoke(enter)
         onDispose { onEntryHook?.invoke(null) }
+    }
+
+    val open = title
+    if (open != null) {
+        BackHandler(onBack = closeTitle)
+        GambitTitlePage(
+            title = open,
+            mainFocus = titleFocus,
+            onRetry = vm::retryTitle,
+            onSelectSeason = vm::selectSeason,
+            onChildFocused = onChildFocused,
+            contentStart = contentStart,
+            modifier = modifier,
+        )
+        return
     }
 
     Column(
@@ -159,7 +191,7 @@ private fun DiscoveryContent(
             }
         }
         Column(Modifier.padding(top = 22.mpx).fillMaxSize()) {
-            DiscoveryBody(state, vm, gridFocus, retryFocus)
+            DiscoveryBody(state, vm, gridState, gridFocus, retryFocus, posterFocus, openTitle)
         }
     }
 
@@ -185,7 +217,15 @@ private fun DiscoveryContent(
 }
 
 @Composable
-private fun DiscoveryBody(state: DiscoveryState, vm: DiscoveryViewModel, gridFocus: FocusRequester, retryFocus: FocusRequester) {
+private fun DiscoveryBody(
+    state: DiscoveryState,
+    vm: DiscoveryViewModel,
+    gridState: LazyGridState,
+    gridFocus: FocusRequester,
+    retryFocus: FocusRequester,
+    posterFocus: MutableMap<String, FocusRequester>,
+    onOpen: (tv.own.owntv.gambit.addons.model.MetaPreview) -> Unit,
+) {
     when (val feed = state.feed) {
         DiscoveryFeed.Idle, DiscoveryFeed.Loading -> Message(stringResource(R.string.gambit_discovery_loading))
         DiscoveryFeed.Empty -> if (state.catalogs.isEmpty()) {
@@ -203,9 +243,6 @@ private fun DiscoveryBody(state: DiscoveryState, vm: DiscoveryViewModel, gridFoc
             }
         }
         is DiscoveryFeed.Loaded -> {
-            val gridState = rememberLazyGridState()
-            // A new catalogue, genre or type starts at the top.
-            LaunchedEffect(state.type, state.selected?.key, state.genre) { gridState.scrollToItem(0) }
             LazyVerticalGrid(
                 state = gridState,
                 columns = GridCells.FixedSize(196.mpx),
@@ -217,10 +254,10 @@ private fun DiscoveryBody(state: DiscoveryState, vm: DiscoveryViewModel, gridFoc
                 itemsIndexed(feed.items, key = { _, m -> m.id }) { index, meta ->
                     StagePoster(
                         title = meta.name.orEmpty(),
-                        onClick = {},
+                        onClick = { onOpen(meta) },
                         width = 196.mpx,
                         height = 294.mpx,
-                        modifier = Modifier.onFocusChanged {
+                        modifier = Modifier.focusRequester(posterFocus.getOrPut(meta.id) { FocusRequester() }).onFocusChanged {
                             if (it.isFocused && index >= feed.items.size - LOAD_MORE_AHEAD &&
                                 feed.canLoadMore && !feed.loadingMore && feed.moreError == null
                             ) vm.loadMore()

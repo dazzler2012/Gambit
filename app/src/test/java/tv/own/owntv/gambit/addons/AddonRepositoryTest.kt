@@ -93,6 +93,39 @@ class AddonRepositoryTest {
     }
 
     @Test
+    fun `meta asks the preferred addon first`() = runBlocking {
+        val second = InstalledAddon(
+            AddonUrl.parse("https://meta2.example/x")!!,
+            AddonManifest(id = "m2", name = "Meta Two", version = "1", resources = listOf(AddonResource("meta")), types = listOf("series")),
+        )
+        server.onFixture("$META_BASE/meta/series/tt0000100.json", "meta_series.json")
+        server.onJson("https://meta2.example/x/meta/series/tt0000100.json", """{"meta":{"id":"tt0000100","name":"Preferred"}}""")
+        val meta = (repo.meta(registry.withAdded(second), "series", "tt0000100", preferred = second.url) as AddonResult.Ok).value
+        assertEquals("Preferred", meta.name)
+        assertEquals(listOf("https://meta2.example/x/meta/series/tt0000100.json"), server.requested)
+    }
+
+    @Test
+    fun `meta falls back from a failing preferred addon to addon order`() = runBlocking {
+        val second = InstalledAddon(
+            AddonUrl.parse("https://meta2.example/x")!!,
+            AddonManifest(id = "m2", name = "Meta Two", version = "1", resources = listOf(AddonResource("meta")), types = listOf("series")),
+        )
+        server.on("https://meta2.example/x/meta/series/tt0000100.json", Reply.Fail(SocketTimeoutException()))
+        server.onFixture("$META_BASE/meta/series/tt0000100.json", "meta_series.json")
+        val meta = (repo.meta(registry.withAdded(second), "series", "tt0000100", preferred = second.url) as AddonResult.Ok).value
+        assertEquals("Example Show", meta.name)
+    }
+
+    @Test
+    fun `a preferred addon that has no meta for the id is skipped`() = runBlocking {
+        server.onFixture("$META_BASE/meta/series/tt0000100.json", "meta_series.json")
+        val meta = (repo.meta(registry, "series", "tt0000100", preferred = lists.url) as AddonResult.Ok).value
+        assertEquals("Example Show", meta.name)
+        assertEquals(listOf("$META_BASE/meta/series/tt0000100.json"), server.requested)
+    }
+
+    @Test
     fun `meta falls through to the next addon when the first fails`() = runBlocking {
         val second = InstalledAddon(
             AddonUrl.parse("https://meta2.example/x")!!,
