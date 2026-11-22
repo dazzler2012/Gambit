@@ -4,12 +4,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import android.os.SystemClock
+import android.util.Log
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
+import tv.own.owntv.core.player.EnginePreference
 import tv.own.owntv.gambit.addons.model.AddonStream
 import tv.own.owntv.player.ExternalSubtitleSource
 import tv.own.owntv.player.OwnTVPlayer
@@ -63,6 +69,10 @@ class GambitAddonPlayer(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var session: GambitStreamProxy.Session? = null
     private var watch: Job? = null
+    private val _failures = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** Emits when Gambit had to stop a play that stayed stuck on both engines. */
+    val failures: SharedFlow<Unit> = _failures.asSharedFlow()
 
     /** Must be called on the main thread (the player's own rule for play()). */
     suspend fun play(request: AddonPlayRequest): AddonPlayResult {
@@ -86,6 +96,13 @@ class GambitAddonPlayer(
                 source = ExternalSubtitleSource.LOCAL,
             )
         }
+        start(request, video, engine = null)
+        watch(opened, request, video, subs)
+        return AddonPlayResult.STARTED
+    }
+
+    /** Hands [video] to the player; [engine] null follows the user's Movies & Series player setting. */
+    private fun start(request: AddonPlayRequest, video: String, engine: EnginePreference?) {
         val episode = request.season != null && request.episode != null
         player.play(
             url = video,
@@ -93,20 +110,22 @@ class GambitAddonPlayer(
             subtitle = if (episode) request.title else null,
             year = request.year,
             isLive = false,
+            vodEngineOverride = engine,
             contentKey = AddonPlayMeta.contentKey(request.type, request.videoId),
             seasonNumber = request.season,
             episodeNumber = request.episode,
             trackKey = AddonPlayMeta.trackKey(request.type, request.metaId, request.videoId),
         )
-        watch(opened, video, subs)
-        return AddonPlayResult.STARTED
     }
 
     /**
-     * Closes the session once the player is on anything else (another item, or stopped). Subtitles are
-     * listed, not selected, once the file has loaded.
+     * Keeps the session open while the player is on [video] (a short gap during a player reset is
+     * allowed) and closes it once the player is on anything else or stopped. Lists the subtitles once the
+     * file has loaded. Watches for a stuck play: after [AddonPlayWatch.FIRST_LIMIT_MS] it plays the same
+     * address again on ExoPlayer only (Core then ends a failure with its own error screen); if that retry
+     * is stuck too for [AddonPlayWatch.BACKSTOP_MS], the player is stopped and [failures] is told.
      */
-    private fun watch(opened: GambitStreamProxy.Session, video: String, subs: List<OwnTVPlayer.ExternalSub>) {
+    private fun watch(opened: GambitStreamProxy.Session, request: AddonPlayRequest, video: String, subs: List<OwnTVPlayer.ExternalSub>) {
         watch?.cancel()
         watch = scope.launch {
             // play() sets the address at once; allow a moment in case a queued load replaces it later.
@@ -115,14 +134,47 @@ class GambitAddonPlayer(
                 true
             } ?: false
             if (!started) return@launch close(opened)
-            if (subs.isNotEmpty()) {
-                launch {
-                    // Set only after this load's own FILE_LOADED, and cleared by every load.
-                    val loaded = withTimeoutOrNull(LOAD_WAIT_MS) { player.playbackStarted.first { it } } != null
-                    if (loaded && player.currentMediaUrl == video) player.restoreExternalSubtitles(subs)
+            val listSubs = {
+                if (subs.isNotEmpty()) {
+                    launch {
+                        // Set only after this load's own FILE_LOADED, and cleared by every load.
+                        val loaded = withTimeoutOrNull(LOAD_WAIT_MS) { player.playbackStarted.first { it } } != null
+                        if (loaded && player.currentMediaUrl == video) player.restoreExternalSubtitles(subs)
+                    }
                 }
             }
-            while (player.currentMediaUrl == video) delay(POLL_MS)
+            listSubs()
+            var retried = false
+            var stuck = AddonPlayWatch(AddonPlayWatch.FIRST_LIMIT_MS, ignoreWhileExo = true)
+            var noUrlSince: Long? = null
+            while (true) {
+                delay(POLL_MS)
+                val now = SystemClock.elapsedRealtime()
+                val current = player.currentMediaUrl
+                noUrlSince = if (current == null) noUrlSince ?: now else null
+                if (AddonSessionRule.shouldClose(current, video, noUrlSince, now)) break
+                if (current != video) continue
+                val sample = PlaySample(
+                    atMs = now,
+                    positionMs = player.position.value,
+                    buffering = player.buffering.value,
+                    hasError = player.error.value != null,
+                    exoActive = player.exoActiveState.value,
+                )
+                if (!stuck.update(sample)) continue
+                if (!retried) {
+                    Log.w(TAG, "addon play stuck; retrying on ExoPlayer only")
+                    retried = true
+                    stuck = AddonPlayWatch(AddonPlayWatch.BACKSTOP_MS, ignoreWhileExo = false)
+                    start(request, video, EnginePreference.EXO_ONLY)
+                    listSubs()
+                } else {
+                    Log.w(TAG, "addon play still stuck on ExoPlayer; stopping")
+                    player.stop()
+                    _failures.tryEmit(Unit)
+                    break
+                }
+            }
             close(opened)
         }
     }
@@ -140,6 +192,7 @@ class GambitAddonPlayer(
     }
 
     companion object {
+        private const val TAG = "GambitAddonPlayer"
         private const val VIDEO_NAME = "video"
         private const val SUB_NAME = "sub"
         private const val SUB_EXT = "srt"

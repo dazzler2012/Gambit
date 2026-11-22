@@ -1115,14 +1115,23 @@
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	movie
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	series
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	skip
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)(?<![A-Za-z0-9])(?:(?:dv[ ._-]?)?(?:p|profile[ ._-]?)7|fel|(?:dv|dovi)[ ._-]?mel)(?![A-Za-z0-9])
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)(?<![A-Za-z0-9])(?:dv[ ._-]?)?(?:p|profile[ ._-]?)[58](?![A-Za-z0-9])
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)(?<![A-Za-z0-9])(dv|dovi|dolby[ ._-]?vision)(?![A-Za-z0-9])
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)(?<![A-Za-z0-9])web(?:[ ._-]?(?:dl|rip))?(?![A-Za-z0-9])
 1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b(2160p|4k|uhd)\\b
 1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b(480p|576p|360p)\\b
 1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b1080[pi]\\b
 1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b720p\\b
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)movies[ ._-]?anywhere
+1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)remux
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$KEY_PREFIX:$SERIES:$metaId
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$KEY_PREFIX:$type:$videoId
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$SUB_NAME$i.$subExt
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$VIDEO_NAME.$it
+1	log	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	GambitAddonPlayer
+1	log	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	addon play still stuck on ExoPlayer; stopping
+1	log	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	addon play stuck; retrying on ExoPlayer only
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	gambit-addon
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	series
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	srt

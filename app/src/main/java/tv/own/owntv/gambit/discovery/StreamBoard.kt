@@ -42,6 +42,8 @@ data class StreamRow(
     val quality: StreamQuality?,
     val sizeBytes: Long?,
     val addonName: String,
+    /** Looks like Dolby Vision Profile 7 ([StreamRows.likelyDvProfile7]): shown with a warning, listed lower. */
+    val mayNotPlay: Boolean = false,
 )
 
 sealed interface StreamFeed {
@@ -60,17 +62,66 @@ sealed interface StreamFeed {
 data class StreamListState(val target: StreamTarget, val feed: StreamFeed = StreamFeed.Loading)
 
 object StreamRows {
-    /** Display rows for the playable streams, numbered in order. Nothing from the address is kept. */
-    fun rows(playable: List<SourcedStream>): List<StreamRow> = playable.mapIndexed { index, sourced ->
-        val s = sourced.stream
-        StreamRow(
-            key = index,
-            nameLines = lines(s.name),
-            detailLines = lines(s.title ?: s.description),
-            quality = quality(listOfNotNull(s.name, s.title, s.description, s.behaviorHints.filename)),
-            sizeBytes = s.behaviorHints.videoSize?.takeIf { it > 0 },
-            addonName = sourced.addonName,
-        )
+    /**
+     * Display rows for the playable streams, keyed by their place in [playable]. Rows that look like Dolby
+     * Vision Profile 7 are moved below the other streams of their quality ([demoteMayNotPlay]). Nothing
+     * from the address is kept.
+     */
+    fun rows(playable: List<SourcedStream>): List<StreamRow> = demoteMayNotPlay(
+        playable.mapIndexed { index, sourced ->
+            val s = sourced.stream
+            val texts = listOfNotNull(s.name, s.title, s.description, s.behaviorHints.filename)
+            StreamRow(
+                key = index,
+                nameLines = lines(s.name),
+                detailLines = lines(s.title ?: s.description),
+                quality = quality(texts),
+                sizeBytes = s.behaviorHints.videoSize?.takeIf { it > 0 },
+                addonName = sourced.addonName,
+                mayNotPlay = likelyDvProfile7(texts),
+            )
+        },
+    )
+
+    /**
+     * Each flagged row goes right after the last unflagged row of the same quality (after earlier flagged
+     * ones already moved there); a quality with no unflagged row keeps its flagged rows where they were.
+     * Every other row keeps its order.
+     */
+    fun demoteMayNotPlay(rows: List<StreamRow>): List<StreamRow> {
+        if (rows.none { it.mayNotPlay }) return rows
+        val lastClean = HashMap<StreamQuality?, Int>()
+        rows.forEachIndexed { i, r -> if (!r.mayNotPlay) lastClean[r.quality] = i }
+        val after = HashMap<Int, MutableList<StreamRow>>()
+        val out = ArrayList<StreamRow>(rows.size)
+        rows.forEachIndexed { i, r ->
+            val anchor = lastClean[r.quality]
+            if (r.mayNotPlay && anchor != null && anchor > i) after.getOrPut(anchor) { ArrayList() } += r else out += r
+            after[i]?.let { out += it }
+        }
+        return out
+    }
+
+    private val REMUX = Regex("""(?i)remux""")
+    private val DOLBY_VISION = Regex("""(?i)(?<![A-Za-z0-9])(dv|dovi|dolby[ ._-]?vision)(?![A-Za-z0-9])""")
+    private val WEB = Regex("""(?i)(?<![A-Za-z0-9])web(?:[ ._-]?(?:dl|rip))?(?![A-Za-z0-9])""")
+    private val MOVIES_ANYWHERE = Regex("""(?i)movies[ ._-]?anywhere""")
+    private val SINGLE_LAYER = Regex("""(?i)(?<![A-Za-z0-9])(?:dv[ ._-]?)?(?:p|profile[ ._-]?)[58](?![A-Za-z0-9])""")
+    // MEL only next to DV/DoVi: on its own it is a common name ("Mel").
+    private val DUAL_LAYER = Regex("""(?i)(?<![A-Za-z0-9])(?:(?:dv[ ._-]?)?(?:p|profile[ ._-]?)7|fel|(?:dv|dovi)[ ._-]?mel)(?![A-Za-z0-9])""")
+
+    /**
+     * True when the stream looks like Dolby Vision Profile 7 (a Blu-ray REMUX with DV), which TVs without
+     * a Profile 7 decoder can't show. An explicit Profile 7 (P7, FEL, MEL) counts; WEB sources, Movies
+     * Anywhere hybrids and an explicit Profile 5 or 8 don't. A guess from the addon's text, never a check
+     * of the file.
+     */
+    fun likelyDvProfile7(texts: List<String>): Boolean {
+        fun has(r: Regex) = texts.any { r.containsMatchIn(it) }
+        if (!has(DOLBY_VISION)) return false
+        if (has(DUAL_LAYER)) return true
+        if (has(SINGLE_LAYER) || has(WEB) || has(MOVIES_ANYWHERE)) return false
+        return has(REMUX)
     }
 
     fun lines(text: String?): List<String> =

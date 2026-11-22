@@ -168,6 +168,7 @@ private fun StreamRowView(row: StreamRow, onClick: () -> Unit, modifier: Modifie
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.mpx)) {
                 row.quality?.let { StageTag(it.label(), onAccent = on) }
+                if (row.mayNotPlay) StageTag(stringResource(R.string.gambit_streams_may_not_play), onAccent = on)
                 row.sizeBytes?.let {
                     Text(Formatter.formatShortFileSize(context, it), style = stageText(17, 600), color = on ?: GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
@@ -215,6 +216,7 @@ private fun PlayNote.message(): String = stringResource(
         PlayNote.STARTING -> R.string.gambit_play_starting
         PlayNote.HLS -> R.string.gambit_play_hls
         PlayNote.NOT_PLAYABLE -> R.string.gambit_play_not_playable
+        PlayNote.FAILED -> R.string.gambit_play_failed
     },
 )
 

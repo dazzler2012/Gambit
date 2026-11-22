@@ -91,6 +91,8 @@ class DiscoveryViewModel(
     init {
         // The first value is the registry as it is now; open() reads it itself.
         store.registry.drop(1).onEach { board.onRegistryChanged() }.launchIn(viewModelScope)
+        // A play Gambit had to stop (stuck on both engines): say so on the stream list.
+        addonPlayer.failures.onEach { _playNote.value = PlayNote.FAILED }.launchIn(viewModelScope)
         // A kids profile (or one not read yet) never keeps a title page open.
         access.onEach {
             if (it != DiscoveryAccess.OPEN) {
@@ -246,7 +248,7 @@ internal fun discoveryAccess(settings: SettingsRepository, profileDao: ProfileDa
     }
 
 /** What the stream list says about the last stream picked. */
-enum class PlayNote { STARTING, HLS, NOT_PLAYABLE }
+enum class PlayNote { STARTING, HLS, NOT_PLAYABLE, FAILED }
 
 /** Only an adult profile that has been read may play an addon stream. */
 internal fun canPlay(access: DiscoveryAccess): Boolean = access == DiscoveryAccess.OPEN

@@ -235,6 +235,8 @@
     <string name="gambit_streams_quality_fhd" translatable="false">1080p</string>
     <string name="gambit_streams_quality_hd" translatable="false">720p</string>
     <string name="gambit_streams_quality_sd" translatable="false">SD</string>
+    <!-- A stream that looks like Dolby Vision Profile 7 (Blu-ray REMUX with DV), which this TV may not show. -->
+    <string name="gambit_streams_may_not_play" translatable="false">May not play on this TV</string>
     <plurals name="gambit_streams_unplayable" translatable="false">
         <item quantity="one">%1$s more stream Gambit can\'t play</item>
         <item quantity="other">%1$s more streams Gambit can\'t play</item>
@@ -243,6 +245,7 @@
     <string name="gambit_play_starting" translatable="false">Starting…</string>
     <string name="gambit_play_hls" translatable="false">This stream is HLS, which Gambit can\'t play privately yet. Pick another one.</string>
     <string name="gambit_play_not_playable" translatable="false">Gambit can\'t play this stream. Pick another one.</string>
+    <string name="gambit_play_failed" translatable="false">Couldn\'t play this stream on this TV. Pick another one.</string>
     <string name="gambit_play_sub_label" translatable="false">%2$s (%1$s)</string>
     <string name="gambit_play_sub_label_lang" translatable="false">%2$s · %3$s (%1$s)</string>
 </resources>
