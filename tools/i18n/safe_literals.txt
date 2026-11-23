@@ -1200,6 +1200,13 @@
 1	url	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	https://link.stremio.com
 3	uri	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	type
 1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	update
+1	url	app/src/main/java/tv/own/owntv/gambit/stremio/StremioImportRules.kt	127.
+1	url	app/src/main/java/tv/own/owntv/gambit/stremio/StremioImportRules.kt	::1
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioImportRules.kt	ImportCandidate($name, ${url.host}, $kind)
+1	uri	app/src/main/java/tv/own/owntv/gambit/stremio/StremioImportRules.kt	[
+1	uri	app/src/main/java/tv/own/owntv/gambit/stremio/StremioImportRules.kt	]
+1	url	app/src/main/java/tv/own/owntv/gambit/stremio/StremioImportRules.kt	localhost
+1	uri	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	/manifest.json
 1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	addons
 1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	authKey
 3	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	code
@@ -1220,7 +1227,7 @@
 1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	transportUrl
 1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	unexpected shape
 1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioModels.kt	Linked(<hidden>)
-1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioModels.kt	StremioAccountAddon($name, ${url.host}, official=$official, protected=$protected)
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioModels.kt	StremioAccountAddon($name, ${url.host}, official=$official, protected=$protected, legacy=$legacy)
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	"
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	#
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	#X

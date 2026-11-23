@@ -27,14 +27,19 @@ sealed interface StremioLinkStatus {
  * [official] and [protected] are Stremio's own flags: official marks Stremio's built-in addons
  * (Cinemeta, Local Files, OpenSubtitles and others); protected marks ones the Stremio apps won't let
  * the user remove.
+ *
+ * [legacy] is true when the address doesn't end in `/manifest.json`: an addon on Stremio's old
+ * protocol (OpenSubtitles v1 is one), which Gambit can't talk to.
  */
 data class StremioAccountAddon(
     val name: String?,
     val url: AddonUrl,
     val official: Boolean,
     val protected: Boolean,
+    val legacy: Boolean = false,
 ) {
-    override fun toString(): String = "StremioAccountAddon($name, ${url.host}, official=$official, protected=$protected)"
+    override fun toString(): String =
+        "StremioAccountAddon($name, ${url.host}, official=$official, protected=$protected, legacy=$legacy)"
 }
 
 /**

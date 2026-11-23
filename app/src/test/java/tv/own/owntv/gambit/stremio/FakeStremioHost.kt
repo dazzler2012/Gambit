@@ -27,16 +27,23 @@ internal data class SeenRequest(val method: String, val url: String, val headers
 
 /**
  * Answers every request itself as an OkHttp interceptor, so nothing leaves the JVM. Replies are
- * matched by "METHOD path" (no query); anything unrouted gets a 404.
+ * matched by "METHOD path" (no query); anything unrouted gets a 404. A route given several replies
+ * uses them in turn, and the last one repeats.
  */
 internal class FakeStremioHost : Interceptor {
     class Reply(val code: Int = 200, val body: String = "", val failure: IOException? = null)
 
-    private val routes = mutableMapOf<String, Reply>()
+    private val routes = mutableMapOf<String, ArrayDeque<Reply>>()
     val seen: MutableList<SeenRequest> = Collections.synchronizedList(mutableListOf())
 
-    fun on(method: String, path: String, reply: Reply) = apply { routes["$method $path"] = reply }
+    fun on(method: String, path: String, vararg replies: Reply) = apply { routes["$method $path"] = ArrayDeque(replies.toList()) }
     fun onJson(method: String, path: String, body: String, code: Int = 200) = on(method, path, Reply(code, body))
+
+    @Synchronized
+    private fun next(route: String): Reply? {
+        val queue = routes[route] ?: return null
+        return if (queue.size > 1) queue.removeFirst() else queue.firstOrNull()
+    }
 
     val client: OkHttpClient = OkHttpClient.Builder().addInterceptor(this).build()
 
@@ -44,7 +51,7 @@ internal class FakeStremioHost : Interceptor {
         val request = chain.request()
         val body = request.body?.let { Buffer().also(it::writeTo).readUtf8() } ?: ""
         seen += SeenRequest(request.method, request.url.toString(), request.headers, body)
-        val reply = routes["${request.method} ${request.url.encodedPath}"] ?: Reply(404, """{"error":"not routed"}""")
+        val reply = next("${request.method} ${request.url.encodedPath}") ?: Reply(404, """{"error":"not routed"}""")
         reply.failure?.let { throw it }
         return Response.Builder()
             .request(request)

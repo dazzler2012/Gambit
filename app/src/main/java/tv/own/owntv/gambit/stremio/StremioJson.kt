@@ -36,8 +36,9 @@ internal object StremioJson {
         var unreadable = 0
         for (i in 0 until list.length()) {
             val entry = list.optJSONObject(i)
-            val url = entry?.str("transportUrl")?.let(AddonUrl::parse)
-            if (entry == null || url == null) {
+            val transport = entry?.str("transportUrl")
+            val url = transport?.let(AddonUrl::parse)
+            if (entry == null || transport == null || url == null) {
                 unreadable++
                 continue
             }
@@ -47,10 +48,15 @@ internal object StremioJson {
                 url = url,
                 official = flags?.optBoolean("official", false) ?: false,
                 protected = flags?.optBoolean("protected", false) ?: false,
+                legacy = !isManifestAddress(transport),
             )
         }
         StremioResult.Ok(StremioAddonCollection(addons, unreadable))
     }
+
+    /** True when [transportUrl] names a `manifest.json` (Stremio's current addon protocol). */
+    private fun isManifestAddress(transportUrl: String): Boolean =
+        transportUrl.substringBefore('#').substringBefore('?').trimEnd('/').endsWith("/manifest.json", ignoreCase = true)
 
     /** Unwraps `result`, turning `error` into [StremioError.Api] and any parse problem into [StremioError.Malformed]. */
     private inline fun <T> parse(body: String, block: (JSONObject) -> StremioResult<T>): StremioResult<T> {

@@ -16,6 +16,18 @@ sealed interface AddonAddResult {
 }
 
 /**
+ * What a bulk import did, as counts only (no names or addresses). [heldForKids] counts addons left out
+ * because one of their catalogues has the key of a catalogue a parent approved for a kids profile, so
+ * adding them would have put them on that profile without anyone approving it.
+ */
+data class AddonImportReport(
+    val added: Int = 0,
+    val alreadyAdded: Int = 0,
+    val failed: Int = 0,
+    val heldForKids: Int = 0,
+)
+
+/**
  * What the add screens can say about a failed install. A 4xx means the server answered but has no
  * addon at that address; a 5xx, like a timeout or a network error, means it couldn't be reached.
  */
@@ -77,6 +89,41 @@ class AddonStore(
                 AddonAddResult.Added(fresh.manifest.name)
             }
         }
+
+    /**
+     * Adds [urls] in the given order after every addon already in the list, so the first addon (the
+     * metadata one) stays first. Each is checked like [add], but an addon already in the list (same
+     * address) is never fetched, replaced or moved. An addon is held back when any of its catalogue
+     * keys is in [kidsApproved], so an import can never make a catalogue appear on a kids profile.
+     * The list is saved once, at the end.
+     */
+    suspend fun importAll(urls: List<AddonUrl>, kidsApproved: Set<String>): AddonImportReport {
+        val fresh = mutableListOf<InstalledAddon>()
+        var already = 0
+        var failed = 0
+        var held = 0
+        for (url in urls.distinct()) {
+            if (_registry.value.all.any { it.url == url }) {
+                already++
+                continue
+            }
+            when (val result = repository.install(url.manifestUrl)) {
+                is AddonResult.Err -> failed++
+                is AddonResult.Ok -> {
+                    val addon = result.value
+                    val keys = addon.manifest.catalogs.map { CatalogRef(addon, it).key }
+                    if (keys.any { it in kidsApproved }) held++ else fresh += addon
+                }
+            }
+        }
+        var added = 0
+        update { registry ->
+            fresh.fold(registry) { next, addon ->
+                if (next.all.any { it.url == addon.url }) next else next.withAdded(addon).also { added++ }
+            }
+        }
+        return AddonImportReport(added, already + fresh.size - added, failed, held)
+    }
 
     fun remove(url: AddonUrl) = update { it.withRemoved(url) }
 
