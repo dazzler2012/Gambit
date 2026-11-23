@@ -25,8 +25,13 @@ import tv.own.owntv.gambit.addons.model.MetaPreview
  * @param baseClient the app's shared client (connection pool, User-Agent); a copy with [timeoutMs] as
  *   the whole-call limit is used, so a slow addon can't hold up the others.
  */
-class AddonClient(baseClient: OkHttpClient, timeoutMs: Long = DEFAULT_TIMEOUT_MS) {
+class AddonClient(
+    baseClient: OkHttpClient,
+    timeoutMs: Long = DEFAULT_TIMEOUT_MS,
+    catalogTimeoutMs: Long = CATALOG_TIMEOUT_MS, // Gambit: hosted addons can be slow on a cold start
+) {
     private val http = baseClient.newBuilder().callTimeout(timeoutMs, TimeUnit.MILLISECONDS).build()
+    private val catalogHttp = baseClient.newBuilder().callTimeout(catalogTimeoutMs, TimeUnit.MILLISECONDS).build()
 
     suspend fun manifest(url: AddonUrl, source: AddonSource = AddonSource(null, url.host)): AddonResult<AddonManifest> =
         get(url.manifestUrl, source).flatMap { AddonJson.manifest(it, source) }
@@ -38,7 +43,7 @@ class AddonClient(baseClient: OkHttpClient, timeoutMs: Long = DEFAULT_TIMEOUT_MS
         extra: CatalogExtraArgs = CatalogExtraArgs(),
         source: AddonSource = AddonSource(null, url.host),
     ): AddonResult<List<MetaPreview>> =
-        get(url.catalogUrl(type, catalogId, extra), source).flatMap { AddonJson.catalog(it, source, type) }
+        getWithOneRetry(url.catalogUrl(type, catalogId, extra), source).flatMap { AddonJson.catalog(it, source, type) }
 
     suspend fun meta(url: AddonUrl, type: String, id: String, source: AddonSource = AddonSource(null, url.host)): AddonResult<MetaDetail> =
         get(url.metaUrl(type, id), source).flatMap { AddonJson.meta(it, source, type) }
@@ -46,7 +51,23 @@ class AddonClient(baseClient: OkHttpClient, timeoutMs: Long = DEFAULT_TIMEOUT_MS
     suspend fun streams(url: AddonUrl, type: String, videoId: String, source: AddonSource = AddonSource(null, url.host)): AddonResult<List<AddonStream>> =
         get(url.streamUrl(type, videoId), source).flatMap { AddonJson.streams(it, source) }
 
-    private suspend fun get(requestUrl: String, source: AddonSource): AddonResult<String> {
+    /**
+     * Catalogue calls only: a timeout, a network failure or a 502/503/504 (a waking or overloaded host)
+     * is tried once more with the identical URL. Any other error, or a bad body, is not retried.
+     */
+    private suspend fun getWithOneRetry(requestUrl: String, source: AddonSource): AddonResult<String> {
+        val first = get(requestUrl, source, catalogHttp)
+        val error = (first as? AddonResult.Err)?.error ?: return first
+        return if (error.isTransient()) get(requestUrl, source, catalogHttp) else first
+    }
+
+    private fun AddonError.isTransient(): Boolean = when (this) {
+        is AddonError.Timeout, is AddonError.Network -> true
+        is AddonError.HttpStatus -> code == 502 || code == 503 || code == 504
+        else -> false
+    }
+
+    private suspend fun get(requestUrl: String, source: AddonSource, http: OkHttpClient = this.http): AddonResult<String> {
         val request = try {
             Request.Builder().url(requestUrl).header("Accept", "application/json").build()
         } catch (_: IllegalArgumentException) {
@@ -82,6 +103,9 @@ class AddonClient(baseClient: OkHttpClient, timeoutMs: Long = DEFAULT_TIMEOUT_MS
 
     companion object {
         const val DEFAULT_TIMEOUT_MS = 15_000L
+
+        /** Per attempt, for catalogue calls (which get one retry). */
+        const val CATALOG_TIMEOUT_MS = 25_000L
     }
 }
 
