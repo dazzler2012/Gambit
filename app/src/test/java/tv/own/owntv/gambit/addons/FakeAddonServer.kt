@@ -29,6 +29,14 @@ class FakeAddonServer {
             val entered = CountDownLatch(1)
             val release = CountDownLatch(1)
         }
+
+        /** One reply per request to the same URL, in order; the last one repeats. */
+        class Sequence(val replies: List<Reply>) : Reply {
+            private var next = 0
+
+            @Synchronized
+            fun take(): Reply = replies[minOf(next++, replies.size - 1)]
+        }
     }
 
     private val routes = mutableMapOf<String, Reply>()
@@ -43,11 +51,13 @@ class FakeAddonServer {
     private fun answer(chain: Interceptor.Chain): Response {
         val url = chain.request().url.toString()
         requested += url
-        val reply = routes[url] ?: Reply.Body("""{"err":"not found"}""", 404)
+        var reply = routes[url] ?: Reply.Body("""{"err":"not found"}""", 404)
+        if (reply is Reply.Sequence) reply = reply.take()
         val (code, json) = when (reply) {
             is Reply.Body -> reply.code to reply.json
             is Reply.Fail -> throw reply.error
             is Reply.Slow -> { Thread.sleep(reply.delayMs); 200 to reply.json }
+            is Reply.Sequence -> error("nested sequence")
             is Reply.Gate -> {
                 reply.entered.countDown()
                 if (!reply.release.await(GATE_TIMEOUT_S, TimeUnit.SECONDS)) throw IOException("gate not released")
