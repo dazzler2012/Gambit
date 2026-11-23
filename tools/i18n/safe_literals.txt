@@ -1185,6 +1185,42 @@
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/HlsProbe.kt	bytes=0-15
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/HlsProbe.kt	identity
 3	empty	app/src/main/java/tv/own/owntv/gambit/profiles/AdultPinGate.kt	\0
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioAuthKey.kt	StremioAuthKey(<hidden>)
+1	protocol	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	Accept
+1	protocol	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	AddonCollectionGet
+1	protocol	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	Create
+1	protocol	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	Read
+1	uri	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	api/addonCollectionGet
+1	uri	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	api/v2/create
+1	uri	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	api/v2/read
+2	mime	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	application/json
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	authKey
+1	uri	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	code
+1	url	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	https://api.strem.io
+1	url	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	https://link.stremio.com
+3	uri	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	type
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioClient.kt	update
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	addons
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	authKey
+3	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	code
+2	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	error
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	flags
+2	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	invalid JSON
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	link
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	manifest
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	missing addons
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	missing authKey
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	missing code
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	missing link
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	missing result
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	name
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	official
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	protected
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	result
+1	json	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	transportUrl
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioJson.kt	unexpected shape
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioModels.kt	Linked(<hidden>)
+1	log	app/src/main/java/tv/own/owntv/gambit/stremio/StremioModels.kt	StremioAccountAddon($name, ${url.host}, official=$official, protected=$protected)
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	"
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	#
 1	technical	app/src/main/java/tv/own/owntv/gambit/text/GambitText.kt	#X
