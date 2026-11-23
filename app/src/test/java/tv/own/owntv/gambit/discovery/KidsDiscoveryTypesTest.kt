@@ -50,6 +50,7 @@ class KidsDiscoveryTypesTest {
                     cat("Trakt", "trakt.bygenre", listOf(CatalogExtra("genre", isRequired = true, options = genres))),
                 ),
             ),
+            setupId = tv.own.owntv.gambit.addons.TestAddons.setupId("k"),
         ),
     ))
 

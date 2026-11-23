@@ -12,6 +12,11 @@ data class InstalledAddon(
     val url: AddonUrl,
     val manifest: AddonManifest,
     val enabled: Boolean = true,
+    /**
+     * This install's [AddonSetupId]. Kept when the addon is turned on or off or moved; new whenever it is
+     * installed or its manifest is fetched again. Not secret, but left out of [toString] like the rest.
+     */
+    val setupId: String,
 ) {
     /** What errors carry to name this addon: its name and host, never the URL. The screen words it. */
     val source: AddonSource get() = AddonSource(manifest.name, url.host)

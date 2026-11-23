@@ -4,6 +4,7 @@ import java.net.SocketTimeoutException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import tv.own.owntv.gambit.addons.FakeAddonServer.Reply
@@ -17,6 +18,7 @@ import tv.own.owntv.gambit.addons.TestAddons.streamsA
 import tv.own.owntv.gambit.addons.TestAddons.streamsB
 import tv.own.owntv.gambit.addons.data.AddonRegistry
 import tv.own.owntv.gambit.addons.data.AddonRepository
+import tv.own.owntv.gambit.addons.data.AddonSetupId
 import tv.own.owntv.gambit.addons.data.InstalledAddon
 import tv.own.owntv.gambit.addons.model.AddonManifest
 import tv.own.owntv.gambit.addons.model.AddonResource
@@ -40,6 +42,20 @@ class AddonRepositoryTest {
         assertEquals("org.example.meta", installed.manifest.id)
         assertEquals(AddonUrl.parse("$META_BASE/manifest.json"), installed.url)
         assertTrue(installed.enabled)
+        assertTrue(AddonSetupId.isValid(installed.setupId))
+    }
+
+    @Test
+    fun `every install of the same address is a new setup, and the id holds nothing of the address`() = runBlocking {
+        server.onFixture("$META_BASE/manifest.json", "manifest_meta.json")
+        val first = (repo.install("$META_BASE/manifest.json") as AddonResult.Ok).value
+        val second = (repo.install("$META_BASE/manifest.json") as AddonResult.Ok).value
+        assertEquals(first.url, second.url)
+        assertNotEquals(first.setupId, second.setupId)
+        listOf(first.setupId, second.setupId).forEach { id ->
+            listOf("KEY", "meta", "example", "manifest", "http").forEach { assertFalse("setup id holds $it", id.contains(it, ignoreCase = true)) }
+        }
+        assertFalse(first.toString().contains(first.setupId))
     }
 
     @Test
@@ -55,13 +71,15 @@ class AddonRepositoryTest {
     }
 
     @Test
-    fun `refresh keeps url and enabled state`() = runBlocking {
+    fun `refresh keeps url and enabled state, with a new setup id`() = runBlocking {
         server.onFixture("$STREAMS_A_BASE/manifest.json", "manifest_meta.json")
         val off = streamsA.copy(enabled = false)
         val refreshed = (repo.refresh(off) as AddonResult.Ok).value
         assertEquals(off.url, refreshed.url)
         assertFalse(refreshed.enabled)
         assertEquals("org.example.meta", refreshed.manifest.id)
+        assertNotEquals("a fetched-again manifest is a new setup", off.setupId, refreshed.setupId)
+        assertTrue(AddonSetupId.isValid(refreshed.setupId))
     }
 
     @Test
@@ -84,6 +102,7 @@ class AddonRepositoryTest {
         val second = InstalledAddon(
             AddonUrl.parse("https://meta2.example/x")!!,
             AddonManifest(id = "m2", name = "Meta Two", version = "1", resources = listOf(AddonResource("meta")), types = listOf("series")),
+            setupId = TestAddons.setupId("meta2"),
         )
         server.onFixture("$META_BASE/meta/series/tt0000100.json", "meta_series.json")
         server.onJson("https://meta2.example/x/meta/series/tt0000100.json", """{"meta":{"id":"tt0000100","name":"Wrong"}}""")
@@ -97,6 +116,7 @@ class AddonRepositoryTest {
         val second = InstalledAddon(
             AddonUrl.parse("https://meta2.example/x")!!,
             AddonManifest(id = "m2", name = "Meta Two", version = "1", resources = listOf(AddonResource("meta")), types = listOf("series")),
+            setupId = TestAddons.setupId("meta2"),
         )
         server.onFixture("$META_BASE/meta/series/tt0000100.json", "meta_series.json")
         server.onJson("https://meta2.example/x/meta/series/tt0000100.json", """{"meta":{"id":"tt0000100","name":"Preferred"}}""")
@@ -110,6 +130,7 @@ class AddonRepositoryTest {
         val second = InstalledAddon(
             AddonUrl.parse("https://meta2.example/x")!!,
             AddonManifest(id = "m2", name = "Meta Two", version = "1", resources = listOf(AddonResource("meta")), types = listOf("series")),
+            setupId = TestAddons.setupId("meta2"),
         )
         server.on("https://meta2.example/x/meta/series/tt0000100.json", Reply.Fail(SocketTimeoutException()))
         server.onFixture("$META_BASE/meta/series/tt0000100.json", "meta_series.json")
@@ -130,6 +151,7 @@ class AddonRepositoryTest {
         val second = InstalledAddon(
             AddonUrl.parse("https://meta2.example/x")!!,
             AddonManifest(id = "m2", name = "Meta Two", version = "1", resources = listOf(AddonResource("meta")), types = listOf("series")),
+            setupId = TestAddons.setupId("meta2"),
         )
         server.on("$META_BASE/meta/series/tt0000100.json", Reply.Fail(SocketTimeoutException()))
         server.onFixture("https://meta2.example/x/meta/series/tt0000100.json", "meta_series.json")

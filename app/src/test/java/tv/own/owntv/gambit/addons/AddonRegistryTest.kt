@@ -53,6 +53,7 @@ class AddonRegistryTest {
         val second = InstalledAddon(
             AddonUrl.parse("https://meta2.example/x")!!,
             AddonManifest(id = "m2", name = "Meta Two", version = "1", resources = listOf(AddonResource("meta")), types = listOf("movie")),
+            setupId = TestAddons.setupId("meta2"),
         )
         val r = registry.withAdded(second)
         assertEquals(listOf("Example Meta", "Meta Two"), r.metaAddons("movie", "tt1").map { it.manifest.name })
@@ -65,6 +66,7 @@ class AddonRegistryTest {
         val other = InstalledAddon(
             AddonUrl.parse("https://meta2.example/x")!!,
             AddonManifest(id = "m2", name = "Meta Two", version = "1", resources = listOf(AddonResource("meta")), types = listOf("movie")),
+            setupId = TestAddons.setupId("meta2"),
         )
         val r = registry.withAdded(other).moved(other.url, 0)
         assertEquals("Meta Two", r.metaAddons("movie", "tt1").first().manifest.name)

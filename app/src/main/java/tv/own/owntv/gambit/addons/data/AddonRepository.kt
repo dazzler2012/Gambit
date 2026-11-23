@@ -18,17 +18,23 @@ import tv.own.owntv.gambit.addons.net.map
  * Asks the right addons for content. Stateless: the caller passes the current [AddonRegistry], so
  * storage, profiles and UI stay outside this class.
  */
-class AddonRepository(private val client: AddonClient) {
+class AddonRepository(
+    private val client: AddonClient,
+    private val mintSetupId: () -> String = AddonSetupId::mint,
+) {
 
-    /** Normalizes [rawUrl] and fetches its manifest. The result isn't added to any registry. */
+    /** Normalizes [rawUrl] and fetches its manifest, as a new setup. The result isn't added to any registry. */
     suspend fun install(rawUrl: String): AddonResult<InstalledAddon> {
         val url = AddonUrl.parse(rawUrl) ?: return AddonResult.Err(AddonError.InvalidUrl)
-        return client.manifest(url).map { InstalledAddon(url, it) }
+        return client.manifest(url).map { InstalledAddon(url, it, setupId = mintSetupId()) }
     }
 
-    /** Fetches [addon]'s manifest again, keeping its URL and enabled state. */
+    /**
+     * Fetches [addon]'s manifest again, keeping its URL and enabled state. It is a new setup (new
+     * [AddonSetupId]), so kids approvals given for the old manifest no longer apply.
+     */
     suspend fun refresh(addon: InstalledAddon): AddonResult<InstalledAddon> =
-        client.manifest(addon.url, addon.source).map { addon.copy(manifest = it) }
+        client.manifest(addon.url, addon.source).map { addon.copy(manifest = it, setupId = mintSetupId()) }
 
     suspend fun catalog(ref: CatalogRef, extra: CatalogExtraArgs = CatalogExtraArgs()): AddonResult<List<MetaPreview>> =
         client.catalog(ref.addon.url, ref.catalog.type, ref.catalog.id, extra, ref.addon.source)

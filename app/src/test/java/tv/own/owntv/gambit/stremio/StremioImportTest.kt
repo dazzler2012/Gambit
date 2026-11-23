@@ -193,7 +193,7 @@ class StremioImportTest {
 
     @Test
     fun `an addon added with raw pipes is already added when Stremio has it escaped`() = runBlocking {
-        val installed = InstalledAddon(pipeRaw, TestAddons.manifest("manifest_streams.json"))
+        val installed = InstalledAddon(pipeRaw, TestAddons.manifest("manifest_streams.json"), setupId = TestAddons.setupId("pipe"))
         val (store, vault) = store(TestAddons.meta, installed)
 
         val report = store.importAll(requests(pipeEscaped), kidsApproved = emptySet())
@@ -206,7 +206,7 @@ class StremioImportTest {
 
     @Test
     fun `the preview greys out the escaped form of an addon added with raw pipes`() {
-        val installed = InstalledAddon(pipeRaw, TestAddons.manifest("manifest_streams.json"))
+        val installed = InstalledAddon(pipeRaw, TestAddons.manifest("manifest_streams.json"), setupId = TestAddons.setupId("pipe"))
         val collection = StremioAddonCollection(listOf(StremioAccountAddon("Torrent", pipeEscaped, false, false)), 0)
         val preview = StremioImportRules.preview(collection, listOf(installed))
         assertEquals(listOf(ImportKind.ALREADY_ADDED), preview.candidates.map { it.kind })

@@ -1024,6 +1024,7 @@
 1	json	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStoreCodec.kt	optionsLimit
 1	json	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStoreCodec.kt	p2p
 1	json	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStoreCodec.kt	resources
+2	json	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStoreCodec.kt	setup
 1	json	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStoreCodec.kt	type
 2	json	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStoreCodec.kt	types
 2	json	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStoreCodec.kt	url

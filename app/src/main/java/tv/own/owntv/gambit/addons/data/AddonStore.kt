@@ -92,8 +92,17 @@ interface AddonVault {
 class AddonStore(
     private val repository: AddonRepository,
     private val vault: AddonVault,
+    mintSetupId: () -> String = AddonSetupId::mint,
 ) {
-    private val saved: List<InstalledAddon>? = vault.read()?.let(AddonStoreCodec::decode)
+    private val decoded: AddonStoreCodec.Decoded? = vault.read()?.let { AddonStoreCodec.decodeAll(it, mintSetupId) }
+    private val saved: List<InstalledAddon>? = decoded?.addons
+
+    init {
+        // Setup ids given at load (a list saved before they existed, or a damaged id) are saved at once, so
+        // they are the same after a restart and kids approvals tied to them keep matching.
+        if (decoded != null && decoded.minted) vault.write(AddonStoreCodec.encode(decoded.addons))
+    }
+
     private val _registry = MutableStateFlow(AddonRegistry(saved.orEmpty()))
     val registry: StateFlow<AddonRegistry> = _registry.asStateFlow()
 
@@ -106,7 +115,8 @@ class AddonStore(
 
     /**
      * Checks [raw] is an addon (its manifest loads and parses), then adds it at the end, or replaces the
-     * addon with the same address in place, keeping its on/off state.
+     * addon with the same address in place, keeping its on/off state. Either way it is a new setup (see
+     * [AddonSetupId]).
      */
     suspend fun add(raw: String): AddonAddResult =
         when (val result = repository.install(raw)) {
