@@ -119,6 +119,14 @@ class KidsAddonAccessTest {
     }
 
     @Test
+    fun `a limited registry offers no search catalogues and an unlimited one is unchanged`() {
+        assertEquals(listOf("search", "list.trending"), registry.searchCatalogs().map { it.catalog.id })
+        assertTrue(registry.limitedTo(keys.toSet()).searchCatalogs().isEmpty())
+        assertTrue(registry.limitedTo(setOf(keys[0])).searchCatalogs("series").isEmpty())
+        assertTrue(registry.limitedTo(emptySet()).searchCatalogs().isEmpty())
+    }
+
+    @Test
     fun `the limit survives registry changes and limiting twice only narrows`() {
         val limited = registry.limitedTo(setOf(keys[0], keys[1]))
         assertEquals(listOf(keys[0], keys[1]), limited.withEnabled(streamsA.url, false).browseCatalogs().map { it.key })

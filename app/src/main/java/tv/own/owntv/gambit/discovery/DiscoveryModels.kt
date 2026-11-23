@@ -16,11 +16,11 @@ enum class DiscoveryType(val id: String) {
  * be null, the screen then falls back); [genres] are the genre values the addon offers, if any.
  * Holds no address: [CatalogRef] reaches the addon only through its redacted `toString`.
  */
-data class DiscoveryCatalog(val ref: CatalogRef) {
+data class DiscoveryCatalog(val ref: CatalogRef, val genresShown: Boolean = true /* Gambit: false for kids */) {
     val key: String get() = ref.key
     val title: String? get() = ref.catalog.name?.takeIf { it.isNotBlank() }
     val addonName: String get() = ref.addon.manifest.name
-    val genres: List<String> get() = ref.catalog.genreOptions()
+    val genres: List<String> get() = if (genresShown) ref.catalog.genreOptions() else emptyList()
 
     /** True when the addon says it can page this catalogue with `skip`. */
     val canPage: Boolean get() = ref.catalog.supports("skip")

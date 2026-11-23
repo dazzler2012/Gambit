@@ -11,6 +11,7 @@ import tv.own.owntv.gambit.addons.GambitKidsAccessVault
 import tv.own.owntv.gambit.addons.data.KidsAccessPruner
 import tv.own.owntv.gambit.addons.data.KidsAccessVault
 import tv.own.owntv.gambit.addons.data.KidsAddonAccess
+import tv.own.owntv.gambit.discovery.KidsTitleGate
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import tv.own.owntv.gambit.addons.GambitAddonVault
@@ -38,6 +39,7 @@ val gambitAddonModule = module {
     // that drops entries whose profile is gone or no longer Kids. Created at start so it always runs.
     single<KidsAccessVault> { GambitKidsAccessVault(androidContext(), get()) }
     single { KidsAddonAccess(get()) }
+    single { KidsTitleGate() } // in memory only, shared by Discovery and Home's addon row
     single(createdAtStart = true) {
         val dao = get<ProfileDao>()
         KidsAccessPruner(

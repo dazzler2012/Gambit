@@ -83,8 +83,8 @@ fun GambitDiscoveryPage(
     onRestored: () -> Unit = {},
     vm: DiscoveryViewModel = koinViewModel(),
 ) {
-    val access by vm.access.collectAsStateWithLifecycle()
-    if (access != DiscoveryAccess.OPEN) return
+    val access by vm.addonAccess.collectAsStateWithLifecycle()
+    if (!access.isOpen) return
     DiscoveryContent(vm, onChildFocused, onEntryHook, contentStart, modifier, onPlay, restoreFocus, onRestored)
 }
 

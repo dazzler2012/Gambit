@@ -56,7 +56,7 @@ class AddonRegistry(
 
     /** Catalogs that accept a `search` extra, in the same order. */
     fun searchCatalogs(type: String? = null): List<CatalogRef> =
-        catalogRefs(type).filter { ref -> ref.catalog.supports("search") && ref.catalog.requiredExtras.all { it == "search" } }
+        if (approvedCatalogs != null) emptyList() else catalogRefs(type).filter { ref -> ref.catalog.supports("search") && ref.catalog.requiredExtras.all { it == "search" } }
 
     /** Enabled addons that serve meta for this type and id, best first. */
     fun metaAddons(type: String, id: String): List<InstalledAddon> =
