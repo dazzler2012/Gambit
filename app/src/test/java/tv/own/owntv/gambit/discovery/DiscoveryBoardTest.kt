@@ -75,14 +75,19 @@ class DiscoveryBoardTest {
     }
 
     @Test
-    fun `disabled addons and catalogues that need an extra are left out`() = runBlocking {
+    fun `disabled addons and catalogues that need a search or other extra are left out`() = runBlocking {
         registry = AddonRegistry(listOf(
-            addon(a, "a", cat("movie", "top"), cat("movie", "search", listOf(CatalogExtra("search", isRequired = true))), cat("movie", "g", listOf(CatalogExtra("genre", isRequired = true, options = listOf("X"))))),
+            addon(
+                a, "a", cat("movie", "top"), cat("movie", "search", listOf(CatalogExtra("search", isRequired = true))),
+                cat("movie", "g", listOf(CatalogExtra("genre", isRequired = true, options = listOf("X")))), // Gambit: a required genre with options is now shown
+                cat("movie", "year", listOf(CatalogExtra("year", isRequired = true, options = listOf("2020")))),
+                cat("movie", "skip", listOf(CatalogExtra("skip", isRequired = true))),
+            ),
             addon(b, "b", cat("movie", "pop"), enabled = false),
         ))
         server.onJson("$a/catalog/movie/top.json", metas("t1"))
         board.open()
-        assertEquals(listOf("top"), board.state.value.catalogs.map { it.ref.catalog.id })
+        assertEquals(listOf("top", "g"), board.state.value.catalogs.map { it.ref.catalog.id })
     }
 
     @Test

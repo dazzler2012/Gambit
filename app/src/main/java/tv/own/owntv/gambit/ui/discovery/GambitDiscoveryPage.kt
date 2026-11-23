@@ -256,7 +256,7 @@ private fun DiscoveryContent(
 
     when (menu) {
         DiscoveryMenu.TYPE -> StagePopup(onDismiss = { closeMenu(typeFocus) }, title = stringResource(R.string.gambit_discovery_type), width = 560.mpx) {
-            DiscoveryType.entries.forEach { t ->
+            state.types.forEach { t ->
                 StagePopupOption(title = t.label(), chosen = t == state.type, onClick = { vm.selectType(t); closeMenu(typeFocus) })
             }
         }
@@ -266,7 +266,9 @@ private fun DiscoveryContent(
             }
         }
         DiscoveryMenu.GENRE -> StagePopup(onDismiss = { closeMenu(genreFocus) }, title = stringResource(R.string.gambit_discovery_genre), width = 560.mpx) {
-            StagePopupOption(title = stringResource(R.string.gambit_discovery_genre_all), chosen = state.genre == null, onClick = { vm.selectGenre(null); closeMenu(genreFocus) })
+            if (state.selected?.genreRequired != true) { // Gambit: no "All" when the addon needs a genre
+                StagePopupOption(title = stringResource(R.string.gambit_discovery_genre_all), chosen = state.genre == null, onClick = { vm.selectGenre(null); closeMenu(genreFocus) })
+            }
             state.selected?.genres.orEmpty().forEach { g ->
                 StagePopupOption(title = g, chosen = g == state.genre, onClick = { vm.selectGenre(g); closeMenu(genreFocus) })
             }
@@ -290,7 +292,11 @@ private fun DiscoveryBody(
         DiscoveryFeed.Empty -> if (state.catalogs.isEmpty()) {
             Message(
                 stringResource(R.string.gambit_discovery_no_catalogs_title),
-                stringResource(if (state.type == DiscoveryType.MOVIE) R.string.gambit_discovery_no_catalogs_movies else R.string.gambit_discovery_no_catalogs_series),
+                when (state.type) {
+                    DiscoveryType.MOVIE -> stringResource(R.string.gambit_discovery_no_catalogs_movies)
+                    DiscoveryType.SERIES -> stringResource(R.string.gambit_discovery_no_catalogs_series)
+                    else -> stringResource(R.string.gambit_discovery_no_catalogs_other, state.type.readableName)
+                },
             )
         } else {
             Message(stringResource(R.string.gambit_discovery_empty))
@@ -357,12 +363,11 @@ private fun Message(title: String, body: String? = null) {
 }
 
 @Composable
-private fun DiscoveryType.label(): String = stringResource(
-    when (this) {
-        DiscoveryType.MOVIE -> R.string.gambit_discovery_movies
-        DiscoveryType.SERIES -> R.string.gambit_discovery_series
-    },
-)
+private fun DiscoveryType.label(): String = when (this) {
+    DiscoveryType.MOVIE -> stringResource(R.string.gambit_discovery_movies)
+    DiscoveryType.SERIES -> stringResource(R.string.gambit_discovery_series)
+    else -> readableName
+}
 
 /** "Popular · Cinemeta", or the addon's name alone when the catalogue has none. Never an address. */
 @Composable

@@ -62,8 +62,8 @@ class DiscoveryBoard(
             _state.update { it.copy(type = type, selected = null, genre = null) }
         }
         if (catalogKey != null && catalogKey != _state.value.selected?.key) {
-            val wanted = wrap(registry().browseCatalogs(_state.value.type.id)).firstOrNull { it.key == catalogKey }
-            if (wanted != null) _state.update { it.copy(selected = wanted, genre = null) }
+            val wanted = wrap(registry().discoverCatalogs(_state.value.type.id)).firstOrNull { it.key == catalogKey } // Gambit: discoverCatalogs
+            if (wanted != null) _state.update { it.copy(selected = wanted, genre = wanted.defaultGenre()) }
         }
         syncCatalogs(forceReload = true)
     }
@@ -82,7 +82,7 @@ class DiscoveryBoard(
     fun selectCatalog(key: String) {
         val catalog = _state.value.catalogs.firstOrNull { it.key == key } ?: return
         if (catalog.key == _state.value.selected?.key) return
-        _state.update { it.copy(selected = catalog, genre = null) }
+        _state.update { it.copy(selected = catalog, genre = catalog.defaultGenre()) }
         load()
     }
 
@@ -91,6 +91,7 @@ class DiscoveryBoard(
         if (kids) return // Gambit: kids get the default view only
         val selected = _state.value.selected ?: return
         if (genre != null && genre !in selected.genres) return
+        if (genre == null && selected.genreRequired) return // the addon can't answer without a genre
         if (genre == _state.value.genre) return
         _state.update { it.copy(genre = genre) }
         load()
@@ -132,16 +133,27 @@ class DiscoveryBoard(
 
     /** Rebuilds the catalogue list for the chosen type; keeps the choice when it still exists. */
     private fun syncCatalogs(forceReload: Boolean) {
-        val type = _state.value.type
-        val catalogs = wrap(registry().browseCatalogs(type.id))
-        val current = _state.value.selected
+        val reg = registry()
+        val types = reg.discoverTypes().map(::DiscoveryType) // Gambit
+        // A type no addon offers any more (addon turned off) falls back to Movies.
+        val type = _state.value.type.takeIf { it in types } ?: DiscoveryType.MOVIE
+        val typeChanged = type != _state.value.type
+        val catalogs = wrap(reg.discoverCatalogs(type.id))
+        val current = if (typeChanged) null else _state.value.selected
         val kept = current?.let { c -> catalogs.firstOrNull { it.key == c.key } }
         val selected = kept ?: catalogs.firstOrNull()
-        val genre = if (kept != null) _state.value.genre?.takeIf { it in kept.genres } else null
-        val unchanged = kept != null && genre == _state.value.genre && catalogs == _state.value.catalogs
-        _state.update { it.copy(catalogs = catalogs, selected = selected, genre = genre) }
+        val genre = if (kept != null) {
+            _state.value.genre?.takeIf { it in kept.genres } ?: kept.defaultGenre()
+        } else {
+            selected?.defaultGenre()
+        }
+        val unchanged = !typeChanged && kept != null && genre == _state.value.genre && catalogs == _state.value.catalogs && types == _state.value.types
+        _state.update { it.copy(type = type, types = types, catalogs = catalogs, selected = selected, genre = genre) }
         if (forceReload || !unchanged || selected?.key != current?.key) load()
     }
+
+    /** The genre a catalogue opens on: its first one when the addon requires a genre, otherwise none (all). */
+    private fun DiscoveryCatalog.defaultGenre(): String? = if (genreRequired) genres.firstOrNull() else null
 
     private fun load() {
         job?.cancel()

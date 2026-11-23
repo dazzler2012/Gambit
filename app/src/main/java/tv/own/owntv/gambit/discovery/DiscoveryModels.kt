@@ -5,10 +5,21 @@ import tv.own.owntv.gambit.addons.model.AddonCatalog
 import tv.own.owntv.gambit.addons.model.MetaPreview
 import tv.own.owntv.gambit.addons.net.AddonError
 
-/** The first drop-down of Discovery. [id] is the Stremio type the addons use. */
-enum class DiscoveryType(val id: String) {
-    MOVIE("movie"),
-    SERIES("series"),
+/** The first drop-down of Discovery. [id] is the type string the addons use (`movie`, `series`, or any custom one). */
+data class DiscoveryType(val id: String) {
+    /** "anime.movie" → "Anime Movie", "trakt" → "Trakt". For types without their own translated name. */
+    val readableName: String
+        get() = buildString {
+            id.split('.', '_', '-', ' ').filter { it.isNotBlank() }.forEach { w ->
+                if (isNotEmpty()) append(' ')
+                append(w.replaceFirstChar { it.uppercaseChar() })
+            }
+        }.ifBlank { id }
+
+    companion object {
+        val MOVIE = DiscoveryType("movie")
+        val SERIES = DiscoveryType("series")
+    }
 }
 
 /**
@@ -21,6 +32,9 @@ data class DiscoveryCatalog(val ref: CatalogRef, val genresShown: Boolean = true
     val title: String? get() = ref.catalog.name?.takeIf { it.isNotBlank() }
     val addonName: String get() = ref.addon.manifest.name
     val genres: List<String> get() = if (genresShown) ref.catalog.genreOptions() else emptyList()
+
+    /** True when the addon can't answer without a genre: there is no "All", and the first genre is the default. */
+    val genreRequired: Boolean get() = genresShown && ref.catalog.extra.any { it.name == "genre" && it.isRequired }
 
     /** True when the addon says it can page this catalogue with `skip`. */
     val canPage: Boolean get() = ref.catalog.supports("skip")
@@ -58,6 +72,8 @@ sealed interface DiscoveryFeed {
 /** Everything the Discovery page needs. */
 data class DiscoveryState(
     val type: DiscoveryType = DiscoveryType.MOVIE,
+    /** The first drop-down's choices: Movies, Series, then any other type the addons offer. */
+    val types: List<DiscoveryType> = listOf(DiscoveryType.MOVIE, DiscoveryType.SERIES),
     /** The second drop-down for [type], in addon order. Empty when no enabled addon has one. */
     val catalogs: List<DiscoveryCatalog> = emptyList(),
     val selected: DiscoveryCatalog? = null,

@@ -54,6 +54,26 @@ class AddonRegistry(
     fun browseCatalogs(type: String? = null): List<CatalogRef> =
         catalogRefs(type).filter { it.catalog.requiredExtras.isEmpty() && (approvedCatalogs == null || it.key in approvedCatalogs) }
 
+    /**
+     * Catalogs for the Discovery page. Like [browseCatalogs], but a catalog whose required extras are all
+     * `genre` with options is kept too (Discovery opens it on its first genre). A required `search`, `skip`
+     * or any other extra still hides it. A limited registry (kids) gets exactly [browseCatalogs].
+     */
+    fun discoverCatalogs(type: String? = null): List<CatalogRef> {
+        if (approvedCatalogs != null) return browseCatalogs(type)
+        return catalogRefs(type).filter { it.catalog.discoverable }
+    }
+
+    /**
+     * The types for Discovery's first drop-down: [DISCOVER_FIRST_TYPES] always, then the other types of the
+     * discoverable catalogs in first-seen order, at most [MAX_EXTRA_TYPES] of them. A limited registry only
+     * contributes the types of its approved catalogs.
+     */
+    fun discoverTypes(): List<String> {
+        val extra = discoverCatalogs().map { it.catalog.type }.filter { it !in DISCOVER_FIRST_TYPES }.distinct().take(MAX_EXTRA_TYPES)
+        return DISCOVER_FIRST_TYPES + extra
+    }
+
     /** Catalogs that accept a `search` extra, in the same order. */
     fun searchCatalogs(type: String? = null): List<CatalogRef> =
         if (approvedCatalogs != null) emptyList() else catalogRefs(type).filter { ref -> ref.catalog.supports("search") && ref.catalog.requiredExtras.all { it == "search" } }
@@ -74,7 +94,15 @@ class AddonRegistry(
         }
 
     override fun toString(): String = "AddonRegistry(${all.joinToString()})"
+
+    private companion object {
+        val DISCOVER_FIRST_TYPES = listOf("movie", "series")
+        const val MAX_EXTRA_TYPES = 20
+    }
 }
+
+private val AddonCatalog.discoverable: Boolean
+    get() = extra.filter { it.isRequired }.all { it.name == "genre" && it.options.any(String::isNotBlank) }
 
 /** One catalog of one addon. */
 data class CatalogRef(val addon: InstalledAddon, val catalog: AddonCatalog) {

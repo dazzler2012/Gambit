@@ -191,6 +191,7 @@
     <string name="gambit_discovery_no_catalogs_title" translatable="false">No catalogues to show</string>
     <string name="gambit_discovery_no_catalogs_movies" translatable="false">None of your addons has a movie catalogue. Add one, or turn one on, in More → Addons.</string>
     <string name="gambit_discovery_no_catalogs_series" translatable="false">None of your addons has a series catalogue. Add one, or turn one on, in More → Addons.</string>
+    <string name="gambit_discovery_no_catalogs_other" translatable="false">None of your addons has a %1$s catalogue. Add one, or turn one on, in More → Addons.</string>
     <string name="gambit_discovery_empty" translatable="false">This catalogue has nothing to show right now.</string>
     <string name="gambit_discovery_failed_title" translatable="false">Couldn\'t load this catalogue</string>
     <string name="gambit_discovery_more_failed" translatable="false">Couldn\'t load more titles.</string>
