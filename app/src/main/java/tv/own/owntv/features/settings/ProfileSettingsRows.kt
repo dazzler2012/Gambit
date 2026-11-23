@@ -59,8 +59,9 @@ internal fun ProfileSettingsRows() {
     // the profile and what opens once it is right.
     var pinFirst by remember { mutableStateOf<Pair<ProfileEntity, () -> Unit>?>(null) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val gambitAdultPin = tv.own.owntv.gambit.profiles.rememberAdultPinGate(profiles) // Gambit
     val guarded: (ProfileEntity, () -> Unit) -> Unit = { p, open ->
-        scope.launch { if (vm.changeNeedsPin(p, activeProfileId)) pinFirst = p to open else open() }
+        gambitAdultPin.guardKids(activeProfileId, tv.own.owntv.gambit.profiles.AdultPinReason.CHANGE_PROFILE) { scope.launch { if (vm.changeNeedsPin(p, activeProfileId)) pinFirst = p to open else open() } } // Gambit
     }
     // A closing editor or confirmation hands focus back to the row it came from (Add a profile, or the
     // profile — its neighbour when it was deleted).
@@ -121,7 +122,7 @@ internal fun ProfileSettingsRows() {
         title = stringResource(R.string.settings_profile_add),
         desc = stringResource(R.string.settings_profile_add_line),
         value = null,
-        onClick = { returnTo = ADD_ROW; creating = true },
+        onClick = { returnTo = ADD_ROW; gambitAdultPin.guardKids(activeProfileId, tv.own.owntv.gambit.profiles.AdultPinReason.ADD_PROFILE) { creating = true } }, // Gambit
         help = help,
         modifier = Modifier.focusRequester(addFocus),
     )
@@ -160,6 +161,7 @@ internal fun ProfileSettingsRows() {
             onDismiss = { pinFirst = null },
         )
     }
+    gambitAdultPin.Dialog() // Gambit
     confirmDelete?.let { p ->
         ConfirmDialog(
             title = stringResource(R.string.profiles_delete_title, p.name),

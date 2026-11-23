@@ -152,6 +152,7 @@ fun MoreScreen(
     val gambitKids by gambitAddons.kids.collectAsStateWithLifecycle()
     val gambitAddonList by gambitAddons.addons.collectAsStateWithLifecycle()
     LaunchedEffect(gambitKids) { if (gambitKids && selected == MoreItem.ADDONS) chosen = MoreItem.SETTINGS }
+    LaunchedEffect(gambitKids) { if (gambitKids && (selected == MoreItem.BACKUP || selected == MoreItem.LOCAL_SYNC)) chosen = MoreItem.SETTINGS } // Gambit: no Backup or Local sync on kids profiles
     // Gambit: More → Trakt, not on kids profiles and not in a build without a Trakt Client ID.
     val gambitTrakt: tv.own.owntv.gambit.ui.trakt.TraktSignInViewModel = koinViewModel()
     val gambitTraktState by gambitTrakt.state.collectAsStateWithLifecycle()
@@ -197,12 +198,14 @@ fun MoreScreen(
             item(MoreItem.HISTORY, OwnTVIcon.HISTORY, stringResource(R.string.content_category_history), history.total.toString(), false)
             if (!gambitKids) item(MoreItem.ADDONS, OwnTVIcon.PLAYLIST, stringResource(R.string.gambit_addons_title), gambitAddonList.size.toString(), false) // Gambit
             if (gambitTraktShown) item(MoreItem.TRAKT, OwnTVIcon.PERSON, stringResource(R.string.gambit_trakt_title), if (gambitTraktState == tv.own.owntv.gambit.ui.trakt.TraktSignInState.SignedIn) stringResource(R.string.gambit_trakt_item_signed_in) else null, false) // Gambit
+            if (!gambitKids) { // Gambit: Backup and Local sync can replace profiles, so not on kids profiles
             GroupLabel(stringResource(R.string.more_group_keep_safe))
             item(
                 MoreItem.BACKUP, OwnTVIcon.DOWNLOADS, stringResource(R.string.settings_backup_restore),
                 lastBackup?.let { relativeShort(it.at) } ?: stringResource(R.string.common_never), lastBackup == null,
             )
             item(MoreItem.LOCAL_SYNC, OwnTVIcon.PHONE, stringResource(R.string.local_sync_title), stringResource(if (sync.listening) R.string.common_on else R.string.common_off), false)
+            } // Gambit
             GroupLabel(stringResource(R.string.settings_app_group))
             item(MoreItem.ERROR_LOG, OwnTVIcon.WARNING, stringResource(R.string.settings_playback_error_log), logCount.toString(), false)
             item(MoreItem.ABOUT, OwnTVIcon.INFO, stringResource(R.string.settings_about), BuildConfig.VERSION_NAME, false)
