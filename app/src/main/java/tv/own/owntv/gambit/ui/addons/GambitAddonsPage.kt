@@ -39,6 +39,7 @@ import tv.own.owntv.gambit.addons.data.InstalledAddon
 import tv.own.owntv.gambit.addons.net.AddonUrl
 import tv.own.owntv.gambit.profiles.AdultPinReason
 import tv.own.owntv.gambit.profiles.rememberAdultPinGate
+import tv.own.owntv.gambit.ui.stremio.StremioImportPage
 import tv.own.owntv.gambit.ui.theme.GambitColors
 import tv.own.owntv.ui.components.OwnTVIcon
 import tv.own.owntv.ui.components.TextInputDialog
@@ -84,6 +85,21 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
         KidsAccessPage(onClose = { kidsOpen = false; backFromKids = true })
         return
     }
+    // Import from Stremio: adult profiles only (this page shows nothing on a kids profile, see above).
+    var stremioOpen by remember { mutableStateOf(false) }
+    var backFromStremio by remember { mutableStateOf(false) }
+    val stremioFocus = remember { FocusRequester() }
+    LaunchedEffect(backFromStremio) {
+        if (!backFromStremio) return@LaunchedEffect
+        withFrameNanos { }
+        withFrameNanos { }
+        runCatching { stremioFocus.requestFocus() }
+        backFromStremio = false
+    }
+    if (stremioOpen) {
+        StremioImportPage(onClose = { stremioOpen = false; backFromStremio = true })
+        return
+    }
     var actionsFor by remember { mutableStateOf<InstalledAddon?>(null) }
     var removing by remember { mutableStateOf<InstalledAddon?>(null) }
     // Each row keeps its own focus target, so after Move up / Move down focus follows the moved addon,
@@ -121,6 +137,10 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
             StageTool(
                 stringResource(R.string.gambit_addons_add_typed), onClick = { typing = true },
                 icon = OwnTVIcon.ADD, boxed = true, modifier = Modifier.focusRequester(entry),
+            )
+            StageTool(
+                stringResource(R.string.gambit_stremio_title), onClick = { stremioOpen = true },
+                icon = OwnTVIcon.PHONE, boxed = true, modifier = Modifier.padding(start = 14.mpx).focusRequester(stremioFocus),
             )
             if (kidsEntry) {
                 StageTool(

@@ -100,6 +100,13 @@ class StremioClient(
     }
 
     companion object {
+        /**
+         * The client the app gives Stremio: a fresh, plain OkHttp client, not the app's shared one, so no
+         * interceptor and no event listener (logging or otherwise) is ever attached to calls that carry the
+         * session key. Like the addon clients, it uses the system's DNS and proxy, not the app's own settings.
+         */
+        fun plainHttpClient(): OkHttpClient = OkHttpClient()
+
         const val LINK_BASE = "https://link.stremio.com"
         const val API_BASE = "https://api.strem.io"
         const val DEFAULT_TIMEOUT_MS = 15_000L
