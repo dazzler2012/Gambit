@@ -51,8 +51,8 @@ class KidsAddonAccessTest {
     // --- 1. store round trip, nothing sensitive stored -------------------------------------------
 
     @Test
-    fun `release lock is on`() {
-        assertFalse(KidsAccessRelease.ALLOWED)
+    fun `release lock is lifted`() {
+        assertTrue(KidsAccessRelease.ALLOWED)
     }
 
     @Test

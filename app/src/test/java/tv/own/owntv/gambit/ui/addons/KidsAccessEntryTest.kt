@@ -12,9 +12,14 @@ import tv.own.owntv.gambit.addons.data.AddonRegistry
 class KidsAccessEntryTest {
     @Test
     fun `the Kids access entry is hidden while the lock is on, whatever the profile`() {
-        assertFalse(kidsAccessEntryVisible(kidsProfile = false))
-        assertFalse(kidsAccessEntryVisible(kidsProfile = true))
         assertFalse(kidsAccessEntryVisible(kidsProfile = false, allowKids = false))
+        assertFalse(kidsAccessEntryVisible(kidsProfile = true, allowKids = false))
+    }
+
+    @Test
+    fun `by default the entry shows on adult profiles only`() {
+        assertTrue(kidsAccessEntryVisible(kidsProfile = false))
+        assertFalse(kidsAccessEntryVisible(kidsProfile = true))
     }
 
     @Test
