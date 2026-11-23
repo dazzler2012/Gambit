@@ -15,6 +15,49 @@ sealed interface AddonAddResult {
     data class Failed(val error: AddonAddError) : AddonAddResult
 }
 
+/** One addon to import: its address and the name to call it by if it fails (null when unknown). */
+data class AddonImportRequest(val url: AddonUrl, val name: String?) {
+    override fun toString(): String = "AddonImportRequest($name, ${url.host})"
+}
+
+/** Why one imported addon couldn't be loaded. No case carries the address or a response. */
+sealed interface AddonImportFailReason {
+    /** No connection, or no answer in time. */
+    data object Unreachable : AddonImportFailReason
+
+    /** The server answered with an HTTP status other than 2xx. */
+    data class Refused(val httpCode: Int) : AddonImportFailReason
+
+    /** The server answered, but not with a Stremio addon manifest. */
+    data object NotAnAddon : AddonImportFailReason
+}
+
+/** An addon that couldn't be loaded, by name only. */
+data class AddonImportFailure(val name: String?, val reason: AddonImportFailReason)
+
+/**
+ * What a bulk import did: counts, plus each addon that couldn't be loaded by name and reason (never an
+ * address). [heldForKids] counts addons left out because one of their catalogues has the key of a
+ * catalogue a parent approved for a kids profile, so adding them would have put them on that profile
+ * without anyone approving it.
+ */
+data class AddonImportReport(
+    val added: Int = 0,
+    val alreadyAdded: Int = 0,
+    val heldForKids: Int = 0,
+    val failures: List<AddonImportFailure> = emptyList(),
+) {
+    val failed: Int get() = failures.size
+}
+
+/** The import's wording of an addon error: unreachable, refused with its status, or not an addon. */
+fun AddonError.toImportFailReason(): AddonImportFailReason = when (this) {
+    is AddonError.Timeout, is AddonError.Network -> AddonImportFailReason.Unreachable
+    is AddonError.HttpStatus -> AddonImportFailReason.Refused(code)
+    AddonError.InvalidUrl, is AddonError.MalformedJson, is AddonError.MissingField, is AddonError.NotFound, is AddonError.NoAddon ->
+        AddonImportFailReason.NotAnAddon
+}
+
 /**
  * What the add screens can say about a failed install. A 4xx means the server answered but has no
  * addon at that address; a 5xx, like a timeout or a network error, means it couldn't be reached.
@@ -77,6 +120,46 @@ class AddonStore(
                 AddonAddResult.Added(fresh.manifest.name)
             }
         }
+
+    /**
+     * Adds [requests] in the given order after every addon already in the list, so the first addon (the
+     * metadata one) stays first. Each is checked like [add], but an addon already in the list is never
+     * fetched, replaced or moved. "Already in the list" compares addresses as they are sent
+     * ([AddonUrl.canonical]), so `|` and `%7C` count as the same addon. An addon is held back when any
+     * of its catalogue keys is in [kidsApproved], so an import can never make a catalogue appear on a
+     * kids profile. Each one that can't be loaded is reported by name and reason. The list is saved
+     * once, at the end.
+     */
+    suspend fun importAll(requests: List<AddonImportRequest>, kidsApproved: Set<String>): AddonImportReport {
+        val fresh = mutableListOf<InstalledAddon>()
+        val failures = mutableListOf<AddonImportFailure>()
+        val seen = mutableSetOf<String>()
+        var already = 0
+        var held = 0
+        for (request in requests) {
+            val canonical = request.url.canonical
+            if (!seen.add(canonical)) continue
+            if (_registry.value.all.any { it.url.canonical == canonical }) {
+                already++
+                continue
+            }
+            when (val result = repository.install(request.url.manifestUrl)) {
+                is AddonResult.Err -> failures += AddonImportFailure(request.name, result.error.toImportFailReason())
+                is AddonResult.Ok -> {
+                    val addon = result.value
+                    val keys = addon.manifest.catalogs.map { CatalogRef(addon, it).key }
+                    if (keys.any { it in kidsApproved }) held++ else fresh += addon
+                }
+            }
+        }
+        var added = 0
+        update { registry ->
+            fresh.fold(registry) { next, addon ->
+                if (next.all.any { it.url.sameAddonAs(addon.url) }) next else next.withAdded(addon).also { added++ }
+            }
+        }
+        return AddonImportReport(added, already + fresh.size - added, held, failures)
+    }
 
     fun remove(url: AddonUrl) = update { it.withRemoved(url) }
 

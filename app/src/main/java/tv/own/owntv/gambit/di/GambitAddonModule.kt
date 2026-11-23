@@ -26,6 +26,9 @@ import tv.own.owntv.gambit.ui.addons.AddonsViewModel
 import tv.own.owntv.gambit.ui.addons.KidsAccessViewModel
 import tv.own.owntv.gambit.ui.discovery.DiscoveryViewModel
 import tv.own.owntv.gambit.ui.home.HomeAddonRowViewModel
+import tv.own.owntv.gambit.stremio.StremioClient
+import tv.own.owntv.gambit.stremio.StremioImporter
+import tv.own.owntv.gambit.ui.stremio.StremioImportViewModel
 
 /**
  * Gambit's Stremio addons (Phase 2): the encrypted store and More → Addons. The addon client gets its
@@ -60,6 +63,10 @@ val gambitAddonModule = module {
             else context.getString(R.string.gambit_play_sub_label_lang, n, lang, addonName)
         }
     }
+    // Stremio account import: its own plain client, for the same reason (calls carry the session key).
+    single { StremioClient(StremioClient.plainHttpClient()) }
+    single { StremioImporter(client = get(), store = get(), kids = get()) }
+    viewModelOf(::StremioImportViewModel)
     viewModelOf(::AddonsViewModel)
     viewModelOf(::KidsAccessViewModel)
     viewModelOf(::DiscoveryViewModel)

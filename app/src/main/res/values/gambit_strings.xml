@@ -272,4 +272,65 @@
     <string name="gambit_kids_access_none_ticked" translatable="false">Nothing is on yet, so this profile still sees no addon content.</string>
     <string name="gambit_kids_access_no_catalogues" translatable="false">None of your addons has a catalogue to approve. Add or turn on an addon first.</string>
     <string name="gambit_kids_access_back" translatable="false">Back</string>
+
+    <!-- More → Addons → Import from Stremio -->
+    <string name="gambit_stremio_title" translatable="false">Import from Stremio</string>
+    <string name="gambit_stremio_description" translatable="false">Copy your addons from your Stremio account. You sign in on your phone, on Stremio\'s own site, so your password never reaches this TV. The TV uses that sign-in once to read your addon list and doesn\'t keep it.</string>
+    <string name="gambit_stremio_intro" translatable="false">Start to get a code, then scan it with your phone. You choose which addons to add before anything changes.</string>
+    <string name="gambit_stremio_start" translatable="false">Start</string>
+    <string name="gambit_stremio_cancel" translatable="false">Cancel</string>
+    <string name="gambit_stremio_back" translatable="false">Back</string>
+    <string name="gambit_stremio_retry" translatable="false">Try again</string>
+    <string name="gambit_stremio_done" translatable="false">Done</string>
+    <string name="gambit_stremio_getting_code" translatable="false">Getting a code from Stremio…</string>
+    <string name="gambit_stremio_scan" translatable="false">Scan the code with your phone and sign in to Stremio, or open</string>
+    <string name="gambit_stremio_code" translatable="false">Code</string>
+    <string name="gambit_stremio_qr_description" translatable="false">QR code for the Stremio sign-in page</string>
+    <string name="gambit_stremio_waiting" translatable="false">Waiting for your phone · %1$d:%2$02d</string>
+    <string name="gambit_stremio_nothing" translatable="false">Your Stremio account has no addons this TV can use.</string>
+    <string name="gambit_stremio_unnamed" translatable="false">Unnamed addon</string>
+    <string name="gambit_stremio_row_own" translatable="false">%1$s · Stremio\'s own</string>
+    <string name="gambit_stremio_row_add" translatable="false">Add</string>
+    <string name="gambit_stremio_row_skip" translatable="false">Skip</string>
+    <string name="gambit_stremio_row_already" translatable="false">Already added</string>
+    <plurals name="gambit_stremio_import_count" translatable="false">
+        <item quantity="one">Import %1$d addon</item>
+        <item quantity="other">Import %1$d addons</item>
+    </plurals>
+    <string name="gambit_stremio_importing" translatable="false">Adding addons…</string>
+    <string name="gambit_stremio_importing_button" translatable="false">Please wait</string>
+    <plurals name="gambit_stremio_done_added" translatable="false">
+        <item quantity="one">%1$d addon added</item>
+        <item quantity="other">%1$d addons added</item>
+    </plurals>
+    <string name="gambit_stremio_done_none" translatable="false">No addons were added</string>
+    <plurals name="gambit_stremio_done_held" translatable="false">
+        <item quantity="one">%1$d not added because it matches a catalogue approved for a kids profile. It was left out to keep that profile safe.</item>
+        <item quantity="other">%1$d not added because they match a catalogue approved for a kids profile. They were left out to keep that profile safe.</item>
+    </plurals>
+    <plurals name="gambit_stremio_done_failed" translatable="false">
+        <item quantity="one">%1$d couldn\'t be loaded:</item>
+        <item quantity="other">%1$d couldn\'t be loaded:</item>
+    </plurals>
+    <string name="gambit_stremio_fail_unreachable" translatable="false">%1$s: couldn\'t be reached</string>
+    <string name="gambit_stremio_fail_refused" translatable="false">%1$s: refused (HTTP %2$d)</string>
+    <string name="gambit_stremio_fail_not_addon" translatable="false">%1$s: didn\'t return an addon</string>
+    <plurals name="gambit_stremio_done_already" translatable="false">
+        <item quantity="one">%1$d was already on this TV and was left as it is.</item>
+        <item quantity="other">%1$d were already on this TV and were left as they are.</item>
+    </plurals>
+    <plurals name="gambit_stremio_unsupported" translatable="false">
+        <item quantity="one">%1$d left out because this TV can\'t use it (for example Local Files).</item>
+        <item quantity="other">%1$d left out because this TV can\'t use them (for example Local Files).</item>
+    </plurals>
+    <plurals name="gambit_stremio_done_unreadable" translatable="false">
+        <item quantity="one">%1$d left out because Stremio had no usable address for it.</item>
+        <item quantity="other">%1$d left out because Stremio had no usable address for them.</item>
+    </plurals>
+    <string name="gambit_stremio_failed_title" translatable="false">The import did not finish</string>
+    <string name="gambit_stremio_err_expired" translatable="false">The code ran out of time. Try again to get a new one.</string>
+    <string name="gambit_stremio_err_network" translatable="false">Could not reach Stremio. Check the internet connection, then try again.</string>
+    <string name="gambit_stremio_err_busy" translatable="false">Stremio is busy right now. Try again in a moment.</string>
+    <string name="gambit_stremio_err_refused" translatable="false">Stremio did not accept the sign-in. Try again to get a new code.</string>
+    <string name="gambit_stremio_err_other" translatable="false">Something went wrong talking to Stremio. Try again.</string>
 </resources>

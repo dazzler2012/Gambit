@@ -29,6 +29,16 @@ class AddonUrl private constructor(
 
     fun subtitlesUrl(type: String, id: String): String = resource("subtitles/${encode(type)}/${encode(id)}")
 
+    /**
+     * The manifest address as OkHttp sends it: for example a raw `|` in the path becomes `%7C`, while an
+     * existing `%7C` and `; = ,` stay as they are. Two addresses with the same canonical form are the same
+     * addon. Holds the user's keys like the rest of this class: compare it, never show or log it.
+     */
+    val canonical: String get() = manifestUrl.toHttpUrlOrNull()?.toString() ?: manifestUrl
+
+    /** True when [other] reaches the same addon (see [canonical]), whichever way its address is escaped. */
+    fun sameAddonAs(other: AddonUrl): Boolean = canonical == other.canonical
+
     private fun resource(path: String) = withQuery("$base/$path.json")
 
     private fun withQuery(url: String) = if (query.isNullOrEmpty()) url else "$url?$query"
