@@ -217,7 +217,7 @@ class DiscoveryViewModel(
         streamBoard.close()
         titles.close()
         if (preview != null) titles.open(preview, catalog.ref.addon.url)
-        fromHome = HomeRequest(DiscoveryType.entries.firstOrNull { it.id == catalog.ref.catalog.type }, catalog.key)
+        fromHome = HomeRequest(DiscoveryType(catalog.ref.catalog.type), catalog.key)
     }
 
     /** After a failed first page: forget results and ask again. */
