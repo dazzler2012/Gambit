@@ -1410,6 +1410,7 @@
 1	protocol	app/src/main/java/tv/own/owntv/gambit/ui/settings/GambitSettingsHidden.kt	check_updates
 1	protocol	app/src/main/java/tv/own/owntv/gambit/ui/settings/GambitSettingsHidden.kt	quick_check_update
 1	protocol	app/src/main/java/tv/own/owntv/gambit/ui/settings/GambitSettingsHidden.kt	update_startup
+1	url	app/src/main/java/tv/own/owntv/gambit/ui/stremio/StremioImportPage.kt	https://
 1	url	app/src/main/java/tv/own/owntv/gambit/ui/trakt/GambitTraktPage.kt	https://
 1	log	app/src/main/java/tv/own/owntv/gambit/ui/trakt/TraktSignInModel.kt	TraktSignInState.Waiting
 2	empty	app/src/main/java/tv/own/owntv/player/AudioNowPlayingBar.kt	\0
