@@ -82,10 +82,12 @@ class KidsDiscoveryTypesTest {
         approve("films")
         val b = board().also { it.open() }
         assertEquals(listOf("movie", "series"), b.state.value.types.map { it.id })
-        b.selectType(DiscoveryType("Trakt"))
-        assertTrue(b.state.value.catalogs.isEmpty())
-        b.selectType(DiscoveryType("collection"))
-        assertTrue(b.state.value.catalogs.isEmpty())
+        for (hidden in listOf("Trakt", "collection")) {
+            b.selectType(DiscoveryType(hidden)) // not offered: the board falls back to movies
+            assertEquals(DiscoveryType.MOVIE, b.state.value.type)
+            assertTrue(b.state.value.types.none { it.id == "Trakt" || it.id == "collection" })
+            assertEquals(listOf("films"), b.state.value.catalogs.map { it.ref.catalog.id })
+        }
     }
 
     @Test
@@ -110,8 +112,10 @@ class KidsDiscoveryTypesTest {
         assertEquals(listOf("movie", "series"), limited.discoverTypes())
         val b = board().also { it.open() }
         assertEquals(listOf("films"), b.state.value.catalogs.map { it.ref.catalog.id })
-        b.selectType(DiscoveryType("Trakt"))
-        assertTrue(b.state.value.catalogs.isEmpty())
+        b.selectType(DiscoveryType("Trakt")) // not offered: the board falls back to movies
+        assertEquals(DiscoveryType.MOVIE, b.state.value.type)
+        assertTrue(b.state.value.types.none { it.id == "Trakt" || it.id == "collection" })
+        assertEquals(listOf("films"), b.state.value.catalogs.map { it.ref.catalog.id })
     }
 
     @Test
