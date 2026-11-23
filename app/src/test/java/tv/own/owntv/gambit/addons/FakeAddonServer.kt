@@ -2,6 +2,8 @@ package tv.own.owntv.gambit.addons
 
 import java.io.IOException
 import java.util.Collections
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -18,6 +20,15 @@ class FakeAddonServer {
         data class Body(val json: String, val code: Int = 200) : Reply
         data class Fail(val error: IOException) : Reply
         data class Slow(val delayMs: Long, val json: String) : Reply
+
+        /**
+         * Holds the request until [release] is counted down, so a test decides when the answer arrives
+         * instead of racing a clock. [entered] counts down when the request has reached the server.
+         */
+        class Gate(val json: String) : Reply {
+            val entered = CountDownLatch(1)
+            val release = CountDownLatch(1)
+        }
     }
 
     private val routes = mutableMapOf<String, Reply>()
@@ -37,6 +48,11 @@ class FakeAddonServer {
             is Reply.Body -> reply.code to reply.json
             is Reply.Fail -> throw reply.error
             is Reply.Slow -> { Thread.sleep(reply.delayMs); 200 to reply.json }
+            is Reply.Gate -> {
+                reply.entered.countDown()
+                if (!reply.release.await(GATE_TIMEOUT_S, TimeUnit.SECONDS)) throw IOException("gate not released")
+                200 to reply.json
+            }
         }
         return Response.Builder()
             .request(chain.request())
@@ -45,5 +61,9 @@ class FakeAddonServer {
             .message(if (code == 200) "OK" else "Error")
             .body(json.toResponseBody("application/json".toMediaType()))
             .build()
+    }
+
+    private companion object {
+        const val GATE_TIMEOUT_S = 30L
     }
 }

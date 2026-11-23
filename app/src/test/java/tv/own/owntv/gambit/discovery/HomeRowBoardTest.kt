@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,6 +27,7 @@ import tv.own.owntv.gambit.addons.model.CatalogExtra
 import tv.own.owntv.gambit.addons.net.AddonClient
 import tv.own.owntv.gambit.addons.net.AddonUrl
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class HomeRowBoardTest {
     private val server = FakeAddonServer()
@@ -141,22 +143,44 @@ class HomeRowBoardTest {
         server.onJson("$a/catalog/movie/top.json", metas("t1"))
         board.refresh()
         awaitItems()
-        server.on("$a/catalog/movie/top.json", Reply.Slow(400, metas("t2")))
-        board.refresh()
-        delay(100)
+        // The first job may still be winding down here, so the second refresh is forced: it never depends on that.
+        val gate = Reply.Gate(metas("t2"))
+        server.on("$a/catalog/movie/top.json", gate)
+        board.refresh(force = true)
+        assertTrue(gate.entered.await(5, TimeUnit.SECONDS))
+        // The new request is held at the server, so the old posters must still be showing.
         assertEquals(listOf("t1"), board.state.value.items.map { it.id })
+        gate.release.countDown()
         withTimeout(5_000) { board.state.first { s -> s.items.map { it.id } == listOf("t2") } }
         Unit
     }
 
     @Test
+    fun `a refresh asked for while one is on its way does not ask again`() = runBlocking {
+        registry = AddonRegistry(listOf(addon(a, "a", cat("movie", "top"))))
+        val gate = Reply.Gate(metas("t1"))
+        server.on("$a/catalog/movie/top.json", gate)
+        board.refresh()
+        assertTrue(gate.entered.await(5, TimeUnit.SECONDS))
+        board.refresh()
+        board.refresh()
+        gate.release.countDown()
+        assertEquals(listOf("t1"), awaitItems().items.map { it.id })
+        assertEquals(1, server.requested.count { "/catalog/movie/top" in it })
+    }
+
+    @Test
     fun `clear empties the row and drops a late answer`() = runBlocking {
         registry = AddonRegistry(listOf(addon(a, "a", cat("movie", "top"))))
-        server.on("$a/catalog/movie/top.json", Reply.Slow(300, metas("t1")))
+        val gate = Reply.Gate(metas("t1"))
+        server.on("$a/catalog/movie/top.json", gate)
         board.refresh()
-        delay(50)
+        // The request is held at the server, so clear() certainly comes before the answer.
+        assertTrue(gate.entered.await(5, TimeUnit.SECONDS))
         board.clear()
-        delay(600)
+        gate.release.countDown()
+        // A late answer must never show. This wait can only end in "nothing arrived", so a slow runner cannot fail it.
+        assertNull(withTimeoutOrNull(300) { board.state.first { it.items.isNotEmpty() } })
         assertTrue(board.state.value.items.isEmpty())
     }
 
