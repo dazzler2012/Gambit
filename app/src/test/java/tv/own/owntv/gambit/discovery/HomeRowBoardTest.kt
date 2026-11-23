@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -171,11 +172,15 @@ class HomeRowBoardTest {
     @Test
     fun `clear empties the row and drops a late answer`() = runBlocking {
         registry = AddonRegistry(listOf(addon(a, "a", cat("movie", "top"))))
-        server.on("$a/catalog/movie/top.json", Reply.Slow(300, metas("t1")))
+        val gate = Reply.Gate(metas("t1"))
+        server.on("$a/catalog/movie/top.json", gate)
         board.refresh()
-        delay(50)
+        // The request is held at the server, so clear() certainly comes before the answer.
+        assertTrue(gate.entered.await(5, TimeUnit.SECONDS))
         board.clear()
-        delay(600)
+        gate.release.countDown()
+        // A late answer must never show. This wait can only end in "nothing arrived", so a slow runner cannot fail it.
+        assertNull(withTimeoutOrNull(300) { board.state.first { it.items.isNotEmpty() } })
         assertTrue(board.state.value.items.isEmpty())
     }
 
