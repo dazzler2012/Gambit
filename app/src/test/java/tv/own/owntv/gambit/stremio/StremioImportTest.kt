@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import tv.own.owntv.gambit.addons.FakeAddonServer
@@ -226,10 +227,15 @@ class StremioImportTest {
 
     // --- kids profiles ---
 
+    /** The key of the movie "popular" catalogue of the installed addon at [base]. */
+    private fun moviePopular(store: AddonStore, base: String): String =
+        store.registry.value.browseCatalogs("movie").first { it.addon.url == url(base) && it.catalog.id == "popular" }.key
+
     @Test
     fun `import leaves a kids profile's approvals and Discovery unchanged`() = runBlocking {
         val (store, _) = store(TestAddons.meta)
-        val approved = setOf(META_MOVIE_POPULAR)
+        val popular = moviePopular(store, META_BASE)
+        val approved = setOf(popular)
         kids.set(KID, approved)
         val discoveryBefore = kidsDiscovery(store.registry.value, KID)
         val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store, kids)
@@ -240,35 +246,39 @@ class StremioImportTest {
         assertTrue(store.registry.value.all.any { it.url == url(LISTS_BASE) })
         assertEquals(approved, kids.approved(KID))
         assertEquals(discoveryBefore, kidsDiscovery(store.registry.value, KID))
-        assertEquals(listOf(META_MOVIE_POPULAR), kidsDiscovery(store.registry.value, KID))
+        assertEquals(listOf(popular), kidsDiscovery(store.registry.value, KID))
     }
 
     @Test
-    fun `an addon sharing a catalogue key with one a kids profile can see is held back`() = runBlocking {
+    fun `another configuration of an approved addon is imported but stays unapproved on a kids profile`() = runBlocking {
         val (store, _) = store(TestAddons.meta)
-        kids.set(KID, setOf(META_MOVIE_POPULAR))
+        val popular = moviePopular(store, META_BASE)
+        kids.set(KID, setOf(popular))
         val discoveryBefore = kidsDiscovery(store.registry.value, KID)
 
         // Same manifest id and host as the installed metadata addon, but another configuration.
         val report = store.importAll(requests(url(OTHER_META_BASE)), kids.approvals.value.values.flatten().toSet())
 
-        assertEquals(AddonImportReport(heldForKids = 1), report)
-        assertEquals(listOf(TestAddons.meta.url), store.registry.value.all.map { it.url })
-        assertEquals(setOf(META_MOVIE_POPULAR), kids.approved(KID))
+        assertEquals(AddonImportReport(added = 1), report)
+        assertEquals(listOf(TestAddons.meta.url, url(OTHER_META_BASE)), store.registry.value.all.map { it.url })
+        assertNotEquals(popular, moviePopular(store, OTHER_META_BASE))
+        assertEquals(setOf(popular), kids.approved(KID))
         assertEquals(discoveryBefore, kidsDiscovery(store.registry.value, KID))
     }
 
     @Test
     fun `an approval left over from a removed addon can't bring it back on a kids profile`() = runBlocking {
-        val (store, _) = store(TestAddons.meta)
-        kids.set(KID, setOf(LISTS_WATCHLIST))
+        val (store, _) = store(TestAddons.meta, TestAddons.lists)
+        val watchlist = store.registry.value.browseCatalogs().first { it.catalog.id == "list.watchlist" }.key
+        kids.set(KID, setOf(watchlist))
+        store.remove(url(LISTS_BASE)) // no watcher here, so the approval is left behind
         val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store, kids)
 
         val report = importer.import(listOf(ImportCandidate("Lists", url(LISTS_BASE), ImportKind.NEW)))
 
-        assertEquals(AddonImportReport(heldForKids = 1), report)
+        assertEquals(1, report.added)
         assertEquals(emptyList<String>(), kidsDiscovery(store.registry.value, KID))
-        assertEquals(setOf(LISTS_WATCHLIST), kids.approved(KID))
+        assertEquals(setOf(watchlist), kids.approved(KID))
     }
 
     @Test
@@ -363,8 +373,6 @@ class StremioImportTest {
     private companion object {
         const val KID = 7L
         const val OTHER_META_BASE = "https://meta.example/OTHER-CONFIG"
-        const val META_MOVIE_POPULAR = "org.example.meta|meta.example|movie|popular"
-        const val LISTS_WATCHLIST = "org.example.lists|lists.example|movie|list.watchlist"
         val CODE = StremioLinkCode("AB12", "https://link.stremio.example/AB12")
         const val WAITING = """{"error":{"code":101,"message":"Invalid or expired token"}}"""
         val LINKED = """{"result":{"authKey":"${FakeStremio.KEY}"}}"""

@@ -11,6 +11,7 @@ import tv.own.owntv.gambit.addons.GambitKidsAccessVault
 import tv.own.owntv.gambit.addons.data.KidsAccessPruner
 import tv.own.owntv.gambit.addons.data.KidsAccessVault
 import tv.own.owntv.gambit.addons.data.KidsAddonAccess
+import tv.own.owntv.gambit.addons.data.setupIds
 import tv.own.owntv.gambit.discovery.KidsTitleGate
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -40,7 +41,9 @@ val gambitAddonModule = module {
     single { AddonRepository(AddonClient(OkHttpClient())) }
     single { AddonStore(get(), GambitAddonVault(androidContext(), get())) }
     // Kids addon access: per kids profile, the catalogues a parent approved (encrypted), and the watcher
-    // that drops entries whose profile is gone or no longer Kids. Created at start so it always runs.
+    // that drops entries whose profile is gone or no longer Kids, and approvals of addons no longer
+    // installed. Created at start so it always runs. AddonStore loads its list when it is created, so the
+    // registry the watcher sees first is the loaded list, never a placeholder.
     single<KidsAccessVault> { GambitKidsAccessVault(androidContext(), get()) }
     single { KidsAddonAccess(get()) }
     single { KidsTitleGate() } // in memory only, shared by Discovery and Home's addon row
@@ -50,6 +53,7 @@ val gambitAddonModule = module {
             access = get(),
             kidsProfileIds = dao.observeAll().map { all -> all.filter { it.isKids }.mapTo(HashSet()) { it.id } },
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            setupIds = get<AddonStore>().registry.map { it.setupIds() },
         ).also { it.start() }
     }
     // Addon playback: the player only ever gets a 127.0.0.1 address from the proxy. Both use their own

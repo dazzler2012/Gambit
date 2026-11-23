@@ -106,6 +106,33 @@ private val AddonCatalog.discoverable: Boolean
 
 /** One catalog of one addon. */
 data class CatalogRef(val addon: InstalledAddon, val catalog: AddonCatalog) {
-    /** Unique across addons: two addons may both have a "popular" movie catalog. */
-    val key: String get() = "${addon.manifest.id}|${addon.url.host}|${catalog.type}|${catalog.id}"
+    /**
+     * Unique across addons and addon setups (see [CatalogKeys]): two addons may both have a "popular" movie
+     * catalog, and a second configuration or a re-add of the same addon gets keys of its own.
+     */
+    val key: String get() = CatalogKeys.of(addon.setupId, catalog.type, catalog.id)
+}
+
+/**
+ * Catalogue keys, which kids approvals hold: format version, the addon's [AddonSetupId], then the type and
+ * catalogue id escaped so neither can contain the separator. No address, host or manifest id. Keys of any
+ * other shape (such as the old manifest id and host form) are not valid and never match.
+ */
+object CatalogKeys {
+    private const val VERSION = 2
+    private const val SEP = '|'
+
+    fun of(setupId: String, type: String, catalogId: String): String = buildString {
+        append(VERSION).append(SEP).append(setupId).append(SEP)
+        append(AddonUrl.encode(type)).append(SEP).append(AddonUrl.encode(catalogId))
+    }
+
+    /** True for a key [of] could have made. */
+    fun isValid(key: String): Boolean {
+        val parts = key.split(SEP)
+        return parts.size == 4 && parts[0] == VERSION.toString() && AddonSetupId.isValid(parts[1])
+    }
+
+    /** The setup id of a valid key, else null. */
+    fun setupOf(key: String): String? = if (isValid(key)) key.split(SEP)[1] else null
 }

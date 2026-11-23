@@ -12,6 +12,7 @@ import tv.own.owntv.gambit.addons.TestAddons.meta
 import tv.own.owntv.gambit.addons.TestAddons.streamsA
 import tv.own.owntv.gambit.addons.TestAddons.streamsB
 import tv.own.owntv.gambit.addons.data.AddonRegistry
+import tv.own.owntv.gambit.addons.data.CatalogKeys
 import tv.own.owntv.gambit.addons.data.KidsAccessCodec
 import tv.own.owntv.gambit.addons.data.KidsAccessPruner
 import tv.own.owntv.gambit.addons.data.KidsAccessRelease
@@ -68,11 +69,71 @@ class KidsAddonAccessTest {
         assertEquals(emptySet<String>(), again.approved(8))
 
         val text = vault.text!!
-        listOf("KEY-META", "KEY-LISTS", "KEY-A", "KEY-B", "manifest.json", "https://").forEach {
+        listOf("KEY-META", "KEY-LISTS", "KEY-A", "KEY-B", "manifest.json", "https://", "example", "org.example").forEach {
             assertFalse("stored text holds $it", text.contains(it))
         }
-        // The key is made of manifest id, host, type and catalogue id only.
+        // The key is made of the format version, the random setup id, type and catalogue id only.
+        assertTrue(keys.all(CatalogKeys::isValid))
         assertTrue(keys.all { it.split("|").size == 4 })
+    }
+
+    // --- old and foreign keys --------------------------------------------------------------------
+
+    @Test
+    fun `approvals saved in the old format are gone, and the first watcher pass deletes them`() = runBlocking {
+        val old = """{"v":1,"profiles":{"7":["org.example.meta|meta.example|movie|popular"]}}"""
+        val vault = MemoryVault(text = old)
+        val a = access(vault)
+        assertEquals(emptySet<String>(), a.approved(7))
+        assertTrue(vault.saved) // still on disk until the watcher runs
+
+        KidsAccessPruner(a, kotlinx.coroutines.flow.emptyFlow(), kotlinx.coroutines.CoroutineScope(Dispatchers.Unconfined)).prune(setOf(7))
+
+        assertFalse(vault.saved)
+        assertEquals(1, vault.removes)
+    }
+
+    @Test
+    fun `old-format keys mixed into the current format are dropped and the rest is saved again`() = runBlocking {
+        val mixed = KidsAccessCodec.encode(mapOf(7L to setOf(keys[0]))).replace("[", "[\"org.example.meta|meta.example|movie|popular\",")
+        val vault = MemoryVault(text = mixed)
+        val a = access(vault)
+        assertEquals(setOf(keys[0]), a.approved(7))
+        assertTrue(a.flushIfDirty())
+        assertEquals(mapOf(7L to setOf(keys[0])), stored(vault))
+        assertFalse(vault.text!!.contains("meta.example"))
+    }
+
+    @Test
+    fun `set ignores keys that are not current catalogue keys`() = runBlocking {
+        val vault = MemoryVault()
+        val a = access(vault)
+        a.set(7, setOf("org.example.meta|meta.example|movie|popular", "2|not-a-setup|movie|x", keys[1]))
+        assertEquals(setOf(keys[1]), a.approved(7))
+        a.set(8, setOf("org.example.meta|meta.example|movie|popular"))
+        assertEquals(emptySet<String>(), a.approved(8))
+        assertEquals(setOf(7L), stored(vault).keys)
+    }
+
+    @Test
+    fun `retainSetups drops approvals of setups that are gone on every kids profile and keeps the rest`() = runBlocking {
+        val vault = MemoryVault()
+        val a = access(vault)
+        val metaKeys = registry.browseCatalogs().filter { it.addon.setupId == meta.setupId }.map { it.key }.toSet()
+        val listsKeys = registry.browseCatalogs().filter { it.addon.setupId == lists.setupId }.map { it.key }.toSet()
+        assertTrue(metaKeys.isNotEmpty() && listsKeys.isNotEmpty())
+        a.set(1, metaKeys + listsKeys); a.set(2, metaKeys)
+        val writes = vault.writes
+
+        assertTrue(a.retainSetups(setOf(lists.setupId, streamsA.setupId)))
+
+        assertEquals(listsKeys, a.approved(1))
+        assertEquals(emptySet<String>(), a.approved(2))
+        assertEquals(mapOf(1L to listsKeys), stored(vault))
+        assertEquals(writes + 1, vault.writes)
+
+        assertTrue(a.retainSetups(setOf(lists.setupId))) // nothing to drop: no write
+        assertEquals(writes + 1, vault.writes)
     }
 
     // --- 2. unreadable vault ---------------------------------------------------------------------
