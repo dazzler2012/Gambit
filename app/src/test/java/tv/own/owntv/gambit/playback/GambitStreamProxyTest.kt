@@ -203,8 +203,10 @@ class GambitStreamProxyTest {
         val port = proxy.port!!
         session.close()
         assertNull(proxy.port)
-        val refused = runCatching { Socket(InetAddress.getLoopbackAddress(), port).close() }.isFailure
-        assertTrue("port $port still open", refused)
+        // The freed port may already belong to another socket, so refusal is not guaranteed. What must hold
+        // is that the old address is never served: a refused connection or a stranger's answer both pass.
+        val stillServed = runCatching { get(address).code == 200 }.getOrDefault(false)
+        assertFalse("old address still served on port $port", stillServed)
         // A new session gets new addresses; the old one stays dead.
         val again = proxy.openSession()
         again.add(filmUrl, headers)
