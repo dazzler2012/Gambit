@@ -30,7 +30,7 @@ import tv.own.owntv.ui.theme.mpx
 import tv.own.owntv.ui.theme.stageText
 
 /** What the adult PIN is being asked for; picks the dialog's body text. */
-enum class AdultPinReason { ADD_PROFILE, CHANGE_PROFILE }
+enum class AdultPinReason { ADD_PROFILE, CHANGE_PROFILE, KIDS_ACCESS }
 
 /** One adult profile's answer to a PIN, without Core's type so the rule can be tested here. */
 internal sealed interface AdultPinOutcome {
@@ -75,6 +75,48 @@ internal object AdultPinRule {
     }
 }
 
+/**
+ * One PIN prompt. [check] tries a PIN on the adults in [holders]; only an accepted PIN unlocks, and then
+ * [run] does [action] once (a second call, or a call before unlocking, does nothing).
+ */
+internal class PinSession(
+    private val holders: List<ProfileEntity>,
+    private val verify: suspend (ProfileEntity, String) -> AdultPinOutcome,
+    private val action: () -> Unit,
+) {
+    private var unlocked = false
+    private var ran = false
+
+    suspend fun check(pin: String): AdultPinOutcome {
+        val outcome = AdultPinRule.verifyAny(holders, pin, verify)
+        if (outcome == AdultPinOutcome.Accepted) unlocked = true
+        return outcome
+    }
+
+    fun run() {
+        if (!unlocked || ran) return
+        ran = true
+        action()
+    }
+}
+
+/**
+ * The strict rule: with no adult PIN holder there is nothing to check a PIN against, so [onNoPin] is called
+ * and there is no session (the action can never run). Otherwise a [PinSession] to prompt with.
+ */
+internal fun strictPinSession(
+    holders: List<ProfileEntity>,
+    verify: suspend (ProfileEntity, String) -> AdultPinOutcome,
+    action: () -> Unit,
+    onNoPin: () -> Unit,
+): PinSession? {
+    if (holders.isEmpty()) {
+        onNoPin()
+        return null
+    }
+    return PinSession(holders, verify, action)
+}
+
 private fun PinAttempt.toOutcome(): AdultPinOutcome = when (this) {
     PinAttempt.Accepted -> AdultPinOutcome.Accepted
     PinAttempt.Wrong -> AdultPinOutcome.Wrong
@@ -91,7 +133,7 @@ class AdultPinGate internal constructor(
     private val scope: CoroutineScope,
     private val profiles: () -> List<ProfileEntity>,
 ) {
-    private class Pending(val holders: List<ProfileEntity>, val reason: AdultPinReason, val action: () -> Unit)
+    private class Pending(val session: PinSession, val reason: AdultPinReason)
 
     private var pending by mutableStateOf<Pending?>(null)
 
@@ -102,12 +144,26 @@ class AdultPinGate internal constructor(
     fun guardKids(activeProfileId: Long, reason: AdultPinReason, action: () -> Unit) =
         guard(always = false, activeIsKids = AdultPinRule.activeIsKids(profiles(), activeProfileId), reason, action)
 
+    /**
+     * Like [guardAlways], but for what must never run without a PIN (Kids access): when no adult profile has
+     * a PIN, [onNoPin] is called and [action] never runs. Otherwise [action] runs once after a right PIN.
+     */
+    fun guardStrict(reason: AdultPinReason, onNoPin: () -> Unit, action: () -> Unit) {
+        val adults = profiles().filter { !it.isKids }
+        scope.launch {
+            val holders = adults.filter { protection.isProtected(it) }
+            strictPinSession(holders, ::verifyOne, action, onNoPin)?.let { pending = Pending(it, reason) }
+        }
+    }
+
+    private suspend fun verifyOne(profile: ProfileEntity, pin: String): AdultPinOutcome = protection.verify(profile, pin).toOutcome()
+
     private fun guard(always: Boolean, activeIsKids: Boolean, reason: AdultPinReason, action: () -> Unit) {
         if (!always && !activeIsKids) { action(); return }
         val adults = profiles().filter { !it.isKids }
         scope.launch {
             val holders = adults.filter { protection.isProtected(it) }
-            if (AdultPinRule.needed(always, activeIsKids, holders.size)) pending = Pending(holders, reason, action) else action()
+            if (AdultPinRule.needed(always, activeIsKids, holders.size)) pending = Pending(PinSession(holders, ::verifyOne, action), reason) else action()
         }
     }
 
@@ -119,10 +175,11 @@ class AdultPinGate internal constructor(
                 when (ask.reason) {
                     AdultPinReason.ADD_PROFILE -> R.string.gambit_adult_pin_add
                     AdultPinReason.CHANGE_PROFILE -> R.string.gambit_adult_pin_change
+                    AdultPinReason.KIDS_ACCESS -> R.string.gambit_adult_pin_kids_access
                 },
             ),
-            verify = { pin -> AdultPinRule.verifyAny(ask.holders, pin) { p, entered -> protection.verify(p, entered).toOutcome() } },
-            onUnlocked = { pending = null; ask.action() },
+            verify = { pin -> ask.session.check(pin) },
+            onUnlocked = { pending = null; ask.session.run() },
             onDismiss = { pending = null },
         )
     }

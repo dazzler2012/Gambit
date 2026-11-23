@@ -108,7 +108,7 @@ class ProfilesViewModel(
      * already been written, and the dialog's copy would put the old one back.
      */
     fun edit(profile: ProfileEntity, name: String, avatarId: Int, isKids: Boolean, pin: String?) {
-        viewModelScope.launch { manager.edit(profileDao.getById(profile.id) ?: profile, name, avatarId, isKids, pin) }
+        viewModelScope.launch { tv.own.owntv.gambit.addons.data.beforeProfileEdit(profile.id, isKids); manager.edit(profileDao.getById(profile.id) ?: profile, name, avatarId, isKids, pin) } // Gambit: clear kids addon approvals before Kids is turned off
     }
 
     fun rename(profile: ProfileEntity, name: String) {

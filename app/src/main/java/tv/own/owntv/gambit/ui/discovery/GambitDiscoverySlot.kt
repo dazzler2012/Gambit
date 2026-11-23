@@ -26,11 +26,11 @@ val GambitDiscoveryIcon: OwnTVIcon = OwnTVIcon.GRID
 fun gambitDiscoveryLabel(): String = stringResource(R.string.gambit_discovery_title)
 
 /**
- * The rail's sections with Discovery's slot left out unless the active profile is known to be an adult
- * one: never on a kids profile, and not before the profile has been read.
+ * The rail's sections with Discovery's slot left out unless the active profile is an adult one, or a kids
+ * one with approved catalogues: never on a closed kids profile, and not before the profile has been read.
  */
 @Composable
 fun gambitDiscoveryRail(visible: Set<MainSection>, vm: DiscoveryViewModel = koinViewModel()): Set<MainSection> {
-    val access by vm.access.collectAsStateWithLifecycle()
-    return if (access == DiscoveryAccess.OPEN) visible else visible - GambitDiscoverySection
+    val access by vm.addonAccess.collectAsStateWithLifecycle()
+    return if (access.isOpen) visible else visible - GambitDiscoverySection
 }

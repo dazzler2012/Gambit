@@ -1,7 +1,17 @@
 package tv.own.owntv.gambit.di
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.map
 import okhttp3.OkHttpClient
 import org.koin.android.ext.koin.androidContext
+import tv.own.owntv.core.database.dao.ProfileDao
+import tv.own.owntv.gambit.addons.GambitKidsAccessVault
+import tv.own.owntv.gambit.addons.data.KidsAccessPruner
+import tv.own.owntv.gambit.addons.data.KidsAccessVault
+import tv.own.owntv.gambit.addons.data.KidsAddonAccess
+import tv.own.owntv.gambit.discovery.KidsTitleGate
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import tv.own.owntv.gambit.addons.GambitAddonVault
@@ -13,6 +23,7 @@ import tv.own.owntv.gambit.playback.GambitAddonPlayer
 import tv.own.owntv.gambit.playback.GambitStreamProxy
 import tv.own.owntv.R
 import tv.own.owntv.gambit.ui.addons.AddonsViewModel
+import tv.own.owntv.gambit.ui.addons.KidsAccessViewModel
 import tv.own.owntv.gambit.ui.discovery.DiscoveryViewModel
 import tv.own.owntv.gambit.ui.home.HomeAddonRowViewModel
 
@@ -25,6 +36,19 @@ val gambitAddonModule = module {
     single { GambitSecretStore() }
     single { AddonRepository(AddonClient(OkHttpClient())) }
     single { AddonStore(get(), GambitAddonVault(androidContext(), get())) }
+    // Kids addon access: per kids profile, the catalogues a parent approved (encrypted), and the watcher
+    // that drops entries whose profile is gone or no longer Kids. Created at start so it always runs.
+    single<KidsAccessVault> { GambitKidsAccessVault(androidContext(), get()) }
+    single { KidsAddonAccess(get()) }
+    single { KidsTitleGate() } // in memory only, shared by Discovery and Home's addon row
+    single(createdAtStart = true) {
+        val dao = get<ProfileDao>()
+        KidsAccessPruner(
+            access = get(),
+            kidsProfileIds = dao.observeAll().map { all -> all.filter { it.isKids }.mapTo(HashSet()) { it.id } },
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+        ).also { it.start() }
+    }
     // Addon playback: the player only ever gets a 127.0.0.1 address from the proxy. Both use their own
     // plain clients, for the same reason as above (stream addresses carry debrid tokens).
     single { GambitStreamProxy(OkHttpClient()) }
@@ -37,6 +61,7 @@ val gambitAddonModule = module {
         }
     }
     viewModelOf(::AddonsViewModel)
+    viewModelOf(::KidsAccessViewModel)
     viewModelOf(::DiscoveryViewModel)
     viewModelOf(::HomeAddonRowViewModel)
 }

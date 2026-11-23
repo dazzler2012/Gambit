@@ -22,8 +22,14 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import tv.own.owntv.core.database.dao.ProfileDao
 import tv.own.owntv.core.settings.SettingsRepository
+import kotlinx.coroutines.flow.combine
+import tv.own.owntv.gambit.addons.data.AddonRegistry
 import tv.own.owntv.gambit.addons.data.AddonRepository
 import tv.own.owntv.gambit.addons.data.AddonStore
+import tv.own.owntv.gambit.addons.data.KidsAccessRelease
+import tv.own.owntv.gambit.addons.data.KidsAddonAccess
+import tv.own.owntv.gambit.discovery.KidsTitleGate
+import tv.own.owntv.gambit.discovery.KidsTitleSession
 import tv.own.owntv.gambit.discovery.DiscoveryBoard
 import tv.own.owntv.gambit.discovery.DiscoveryCatalog
 import tv.own.owntv.gambit.discovery.DiscoveryState
@@ -37,8 +43,61 @@ import tv.own.owntv.gambit.discovery.TitleState
 import tv.own.owntv.gambit.addons.model.AddonVideo
 import tv.own.owntv.gambit.addons.model.MetaPreview
 
-/** Whether Discovery may show for the active profile. Until the profile is read it is [UNKNOWN]. */
+/**
+ * Whether Discovery may show for the active profile. Until the profile is read it is [UNKNOWN]. Always
+ * derived from [AddonAccess] by [toDiscoveryAccess]; [OPEN] means an adult profile and nothing else.
+ */
 enum class DiscoveryAccess { UNKNOWN, KIDS, OPEN }
+
+/**
+ * What the active profile may do with addon content; the single source of truth ([DiscoveryAccess] is
+ * derived from it).
+ *  - [Unknown]: the profile has not been read yet; nothing is requested.
+ *  - [Adult]: a profile that is not Kids; unchanged.
+ *  - [Closed]: a kids profile with no approvals, or any kids profile while the release lock is on.
+ *  - [Kids]: a kids profile with approved catalogues, only while the lock allows it. [profileId] tells
+ *    the title gate when the profile changed.
+ */
+sealed interface AddonAccess {
+    data object Unknown : AddonAccess
+    data object Closed : AddonAccess
+    data object Adult : AddonAccess
+    data class Kids(val approved: Set<String>, val profileId: Long = -1L) : AddonAccess
+}
+
+/** [isKids] is null until the profile has been read. */
+internal fun addonAccessOf(
+    isKids: Boolean?,
+    approved: Set<String>,
+    allowKids: Boolean = KidsAccessRelease.ALLOWED,
+    profileId: Long = -1L,
+): AddonAccess = when {
+    isKids == null -> AddonAccess.Unknown
+    !isKids -> AddonAccess.Adult
+    allowKids && approved.isNotEmpty() -> AddonAccess.Kids(approved, profileId)
+    else -> AddonAccess.Closed
+}
+
+/** The one mapping to [DiscoveryAccess]. Kids never maps to [DiscoveryAccess.OPEN]. */
+internal fun AddonAccess.toDiscoveryAccess(): DiscoveryAccess = when (this) {
+    AddonAccess.Adult -> DiscoveryAccess.OPEN
+    AddonAccess.Unknown -> DiscoveryAccess.UNKNOWN
+    AddonAccess.Closed -> DiscoveryAccess.KIDS
+    is AddonAccess.Kids -> DiscoveryAccess.KIDS
+}
+
+/** True when addon content may be requested at all: an adult profile, or a kids profile with approvals. */
+internal val AddonAccess.isOpen: Boolean get() = this is AddonAccess.Adult || this is AddonAccess.Kids
+
+/**
+ * The registry this access may use: all of it for an adult, only the approved browse catalogues for kids,
+ * and nothing while closed or unknown.
+ */
+internal fun AddonAccess.registryFrom(all: AddonRegistry): AddonRegistry = when (this) {
+    AddonAccess.Adult -> all
+    is AddonAccess.Kids -> all.limitedTo(approved)
+    else -> AddonRegistry()
+}
 
 /**
  * Discovery: the addons' catalogues as a poster grid with a type and a catalogue/genre choice. A thin
@@ -51,18 +110,28 @@ class DiscoveryViewModel(
     settings: SettingsRepository,
     profileDao: ProfileDao,
     private val addonPlayer: GambitAddonPlayer,
+    kidsAccess: KidsAddonAccess,
+    private val gate: KidsTitleGate,
 ) : ViewModel() {
 
-    private val board = DiscoveryBoard(repository, { store.registry.value }, viewModelScope)
+    /** What the active profile may do with addons; see [AddonAccess]. */
+    val addonAccess: StateFlow<AddonAccess> = observeAddonAccess(settings, profileDao, kidsAccess)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, AddonAccess.Unknown)
+
+    private val kidsTitle = KidsTitleSession(gate)
+
+    private fun registryNow(): AddonRegistry = addonAccess.value.registryFrom(store.registry.value)
+
+    private val board = DiscoveryBoard(repository, { registryNow() }, viewModelScope, gate, { addonAccess.value is AddonAccess.Kids })
 
     val state: StateFlow<DiscoveryState> = board.state
 
-    private val titles = TitleBoard(repository, { store.registry.value }, viewModelScope)
+    private val titles = TitleBoard(repository, { registryNow() }, viewModelScope)
 
     /** The title page, while one is open over Discovery; null shows the grid. */
     val title: StateFlow<TitleState?> = titles.state
 
-    private val streamBoard = StreamBoard(repository, { store.registry.value }, viewModelScope)
+    private val streamBoard = StreamBoard(repository, { registryNow() }, viewModelScope)
 
     /** The stream list, while one is open over the title page; null shows the title page. */
     val streams: StateFlow<StreamListState?> = streamBoard.state
@@ -81,7 +150,7 @@ class DiscoveryViewModel(
     private var playJob: Job? = null
 
     /** [DiscoveryAccess.OPEN] only once the active profile has been read and is not a kids profile. */
-    val access: StateFlow<DiscoveryAccess> = discoveryAccess(settings, profileDao)
+    val access: StateFlow<DiscoveryAccess> = addonAccess.map { it.toDiscoveryAccess() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, DiscoveryAccess.UNKNOWN)
 
     /** What Home's addon row asked Discovery to open on; taken by the next [open]. */
@@ -93,11 +162,26 @@ class DiscoveryViewModel(
         store.registry.drop(1).onEach { board.onRegistryChanged() }.launchIn(viewModelScope)
         // A play Gambit had to stop (stuck on both engines): say so on the stream list.
         addonPlayer.failures.onEach { _playNote.value = PlayNote.FAILED }.launchIn(viewModelScope)
-        // A kids profile (or one not read yet) never keeps a title page open.
-        access.onEach {
-            if (it != DiscoveryAccess.OPEN) {
-                streamBoard.close()
-                titles.close()
+        // A closed profile (or one not read yet) never keeps a title page open; a kids profile keeps one only
+        // while its catalogue is still approved.
+        addonAccess.onEach { a ->
+            when (a) {
+                AddonAccess.Adult -> gate.reset()
+                is AddonAccess.Kids -> {
+                    gate.retainApproved(a.profileId, a.approved)
+                    board.onRegistryChanged()
+                    if (titles.state.value != null && !kidsTitle.mayStream()) {
+                        kidsTitle.close()
+                        streamBoard.close()
+                        titles.close()
+                    }
+                }
+                else -> {
+                    gate.reset()
+                    kidsTitle.close()
+                    streamBoard.close()
+                    titles.close()
+                }
             }
         }.launchIn(viewModelScope)
     }
@@ -114,10 +198,11 @@ class DiscoveryViewModel(
         fromHome = null
         // A title picked on Home is already open (see openFromHome); everything else starts on the grid.
         if (request == null) {
+            kidsTitle.close()
             streamBoard.close()
             titles.close()
         }
-        if (access.value == DiscoveryAccess.OPEN) board.open(request?.type, request?.catalogKey)
+        if (addonAccess.value.isOpen) board.open(request?.type, request?.catalogKey)
     }
 
     /**
@@ -126,7 +211,7 @@ class DiscoveryViewModel(
      * "See all" passes no preview. Does nothing unless the profile is an adult one.
      */
     fun openFromHome(catalog: DiscoveryCatalog, preview: MetaPreview? = null) {
-        if (access.value != DiscoveryAccess.OPEN) return
+        if (!mayOpen(catalog.key, preview?.id)) return
         playJob?.cancel()
         returningFromPlayer = false
         streamBoard.close()
@@ -145,12 +230,15 @@ class DiscoveryViewModel(
 
     /** OK on a poster: its details, asked first from the addon whose catalogue is showing. */
     fun openTitle(preview: MetaPreview) {
-        if (access.value != DiscoveryAccess.OPEN) return
+        val catalogKey = state.value.selected?.key
+        if (catalogKey == null && addonAccess.value is AddonAccess.Kids) return
+        if (!mayOpen(catalogKey.orEmpty(), preview.id)) return
         streamBoard.close()
         titles.open(preview, state.value.selected?.ref?.addon?.url)
     }
 
     fun closeTitle() {
+        kidsTitle.close()
         streamBoard.close()
         titles.close()
     }
@@ -160,7 +248,7 @@ class DiscoveryViewModel(
     /** "Find streams" on a movie: streams for the title's own id. */
     fun findStreams() {
         val open = title.value ?: return
-        if (access.value != DiscoveryAccess.OPEN) return
+        if (!mayStream()) return
         val detail = (open.feed as? TitleFeed.Loaded)?.detail
         val name = detail?.name?.takeIf { it.isNotBlank() } ?: open.preview.name.orEmpty()
         val id = detail?.id ?: open.preview.id
@@ -172,8 +260,10 @@ class DiscoveryViewModel(
     /** OK on an episode: streams for that episode's video id. */
     fun findEpisodeStreams(video: AddonVideo) {
         val open = title.value ?: return
-        if (access.value != DiscoveryAccess.OPEN) return
+        if (!mayStream()) return
         val detail = (open.feed as? TitleFeed.Loaded)?.detail
+        // Kids: only an episode of the approved series whose page is open.
+        if (addonAccess.value is AddonAccess.Kids && !kidsTitle.mayStreamEpisode(detail?.videos?.map { it.id }, video.id)) return
         val name = detail?.name?.takeIf { it.isNotBlank() } ?: open.preview.name.orEmpty()
         _playNote.value = null
         lastPlayedKey = null
@@ -190,7 +280,8 @@ class DiscoveryViewModel(
      * player. Refused on a kids profile (or before the profile is known) and for HLS.
      */
     fun playStream(key: Int, onStarted: () -> Unit) {
-        if (!canPlay(access.value)) return
+        // Kids never pass canPlay (it is for OPEN only); they play only from the stream list of a gated title.
+        if (!canPlay(access.value) && !(addonAccess.value is AddonAccess.Kids && kidsTitle.mayStream())) return
         val target = streamBoard.state.value?.target ?: return
         val sourced = streamBoard.streamFor(key) ?: return
         playJob?.cancel()
@@ -221,6 +312,24 @@ class DiscoveryViewModel(
         }
     }
 
+    /** May a title page open? Adults: yes. Kids: only a title the gate has seen in an approved catalogue. */
+    private fun mayOpen(catalogKey: String, id: String?): Boolean = when (val a = addonAccess.value) {
+        AddonAccess.Adult -> { kidsTitle.close(); true }
+        is AddonAccess.Kids -> when {
+            catalogKey !in a.approved -> false
+            id == null -> { kidsTitle.close(); true }
+            else -> kidsTitle.open(catalogKey, id)
+        }
+        else -> false
+    }
+
+    /** May streams be listed for the open title page? Kids: only while it is a gated title. */
+    private fun mayStream(): Boolean = when (addonAccess.value) {
+        AddonAccess.Adult -> true
+        is AddonAccess.Kids -> kidsTitle.mayStream()
+        else -> false
+    }
+
     fun closeStreams() {
         playJob?.cancel()
         _playNote.value = null
@@ -230,19 +339,23 @@ class DiscoveryViewModel(
     fun retryStreams() = streamBoard.retry()
 }
 
-/** The active profile's access to addon content, as it changes. Shared by Discovery and Home's addon row. */
+/**
+ * The active profile's [AddonAccess], as it changes. Shared by Discovery and Home's addon row. A kids
+ * profile counts as kids only while it is a kids profile right now, whatever is stored for it.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
-internal fun discoveryAccess(settings: SettingsRepository, profileDao: ProfileDao): Flow<DiscoveryAccess> =
+internal fun observeAddonAccess(
+    settings: SettingsRepository,
+    profileDao: ProfileDao,
+    kids: KidsAddonAccess,
+    allowKids: Boolean = KidsAccessRelease.ALLOWED,
+): Flow<AddonAccess> =
     settings.activeProfileId.flatMapLatest { id ->
         if (id < 0) {
-            flowOf(DiscoveryAccess.UNKNOWN)
+            flowOf(AddonAccess.Unknown)
         } else {
-            profileDao.observeById(id).map { p ->
-                when {
-                    p == null -> DiscoveryAccess.UNKNOWN
-                    p.isKids -> DiscoveryAccess.KIDS
-                    else -> DiscoveryAccess.OPEN
-                }
+            combine(profileDao.observeById(id), kids.approvals) { p, all ->
+                addonAccessOf(p?.isKids, all[id].orEmpty(), allowKids, id)
             }
         }
     }

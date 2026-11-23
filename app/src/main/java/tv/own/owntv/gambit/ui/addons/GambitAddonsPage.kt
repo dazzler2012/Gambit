@@ -1,5 +1,6 @@
 package tv.own.owntv.gambit.ui.addons
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,8 @@ import tv.own.owntv.gambit.addons.data.AddonAddError
 import tv.own.owntv.gambit.addons.data.AddonAddResult
 import tv.own.owntv.gambit.addons.data.InstalledAddon
 import tv.own.owntv.gambit.addons.net.AddonUrl
+import tv.own.owntv.gambit.profiles.AdultPinReason
+import tv.own.owntv.gambit.profiles.rememberAdultPinGate
 import tv.own.owntv.gambit.ui.theme.GambitColors
 import tv.own.owntv.ui.components.OwnTVIcon
 import tv.own.owntv.ui.components.TextInputDialog
@@ -61,6 +64,26 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
     val unreadable by vm.unreadable.collectAsStateWithLifecycle()
     val typed by vm.typed.collectAsStateWithLifecycle()
     var typing by remember { mutableStateOf(false) }
+    // Kids access: an adult PIN every time it is opened; leaving the page (or switching profile) locks it again.
+    val kidsEntry by vm.kidsAccessEntry.collectAsStateWithLifecycle()
+    val profiles by vm.profiles.collectAsStateWithLifecycle()
+    val pinGate = rememberAdultPinGate(profiles)
+    var kidsOpen by remember { mutableStateOf(false) }
+    var noPin by remember { mutableStateOf(false) }
+    var backFromKids by remember { mutableStateOf(false) }
+    val kidsFocus = remember { FocusRequester() }
+    LaunchedEffect(backFromKids) {
+        if (!backFromKids) return@LaunchedEffect
+        withFrameNanos { }
+        withFrameNanos { }
+        runCatching { kidsFocus.requestFocus() }
+        backFromKids = false
+    }
+    if (kidsOpen) {
+        BackHandler { kidsOpen = false; backFromKids = true }
+        KidsAccessPage(onClose = { kidsOpen = false; backFromKids = true })
+        return
+    }
     var actionsFor by remember { mutableStateOf<InstalledAddon?>(null) }
     var removing by remember { mutableStateOf<InstalledAddon?>(null) }
     // Each row keeps its own focus target, so after Move up / Move down focus follows the moved addon,
@@ -99,6 +122,15 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
                 stringResource(R.string.gambit_addons_add_typed), onClick = { typing = true },
                 icon = OwnTVIcon.ADD, boxed = true, modifier = Modifier.focusRequester(entry),
             )
+            if (kidsEntry) {
+                StageTool(
+                    stringResource(R.string.gambit_kids_access_title),
+                    onClick = {
+                        pinGate.guardStrict(AdultPinReason.KIDS_ACCESS, onNoPin = { noPin = true }) { kidsOpen = true }
+                    },
+                    boxed = true, modifier = Modifier.padding(start = 14.mpx).focusRequester(kidsFocus),
+                )
+            }
         }
         Column(Modifier.padding(top = 26.mpx), verticalArrangement = Arrangement.spacedBy(6.mpx)) {
             if (unreadable) {
@@ -118,6 +150,15 @@ internal fun GambitAddonsPage(entry: FocusRequester, vm: AddonsViewModel = koinV
                 }
             }
         }
+    }
+
+    pinGate.Dialog()
+    if (noPin) {
+        StageNotice(
+            title = stringResource(R.string.gambit_kids_access_set_pin_title),
+            body = stringResource(R.string.gambit_kids_access_set_pin_body),
+            onDismiss = { noPin = false },
+        )
     }
 
     if (typing) {

@@ -10,6 +10,7 @@ import tv.own.owntv.gambit.addons.data.AddonRegistry
 import tv.own.owntv.gambit.addons.data.AddonRepository
 import tv.own.owntv.gambit.addons.model.MetaPreview
 import tv.own.owntv.gambit.addons.net.AddonResult
+import tv.own.owntv.gambit.addons.net.CatalogExtraArgs
 
 /**
  * What Home's addon row shows: the [catalog] it came from and its first [items]. Empty items hide the row.
@@ -33,6 +34,10 @@ class HomeRowBoard(
     private val repository: AddonRepository,
     private val registry: () -> AddonRegistry,
     private val scope: CoroutineScope,
+    /** Kids profiles: the row's titles are reported here (see [KidsTitleGate]). */
+    private val kidsGate: KidsTitleGate? = null,
+    /** True while the active profile is a kids one; only then are titles reported. */
+    private val kidsActive: () -> Boolean = { kidsGate != null },
 ) {
     private val _state = MutableStateFlow(HomeRowState.EMPTY)
     val state: StateFlow<HomeRowState> = _state.asStateFlow()
@@ -61,6 +66,7 @@ class HomeRowBoard(
                 if (gen != generation) return@launch
                 val items = (result as? AddonResult.Ok)?.value?.distinctBy { it.id }?.take(MAX_ITEMS).orEmpty()
                 if (items.isNotEmpty()) {
+                    if (kidsActive()) kidsGate?.report(ref.key, items.map { it.id }, CatalogExtraArgs())
                     _state.value = HomeRowState(DiscoveryCatalog(ref), items)
                     return@launch
                 }

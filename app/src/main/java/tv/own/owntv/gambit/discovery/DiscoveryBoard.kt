@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import tv.own.owntv.gambit.addons.data.AddonRegistry
 import tv.own.owntv.gambit.addons.data.AddonRepository
+import tv.own.owntv.gambit.addons.data.CatalogRef
 import tv.own.owntv.gambit.addons.model.MetaPreview
 import tv.own.owntv.gambit.addons.net.AddonResult
 import tv.own.owntv.gambit.addons.net.CatalogExtraArgs
@@ -28,7 +29,15 @@ class DiscoveryBoard(
     private val repository: AddonRepository,
     private val registry: () -> AddonRegistry,
     private val scope: CoroutineScope,
+    /** Kids profiles: every page of titles is reported here (see [KidsTitleGate]). */
+    private val kidsGate: KidsTitleGate? = null,
+    /** True while the active profile is a kids one: default view plus paging only, no genres. */
+    private val kidsActive: () -> Boolean = { kidsGate != null },
 ) {
+    private val kids: Boolean get() = kidsGate != null && kidsActive()
+
+    private fun wrap(refs: List<CatalogRef>): List<DiscoveryCatalog> = refs.map { DiscoveryCatalog(it, genresShown = !kids) }
+
     private val _state = MutableStateFlow(DiscoveryState())
     val state: StateFlow<DiscoveryState> = _state.asStateFlow()
 
@@ -53,7 +62,7 @@ class DiscoveryBoard(
             _state.update { it.copy(type = type, selected = null, genre = null) }
         }
         if (catalogKey != null && catalogKey != _state.value.selected?.key) {
-            val wanted = registry().browseCatalogs(_state.value.type.id).map(::DiscoveryCatalog).firstOrNull { it.key == catalogKey }
+            val wanted = wrap(registry().browseCatalogs(_state.value.type.id)).firstOrNull { it.key == catalogKey }
             if (wanted != null) _state.update { it.copy(selected = wanted, genre = null) }
         }
         syncCatalogs(forceReload = true)
@@ -79,6 +88,7 @@ class DiscoveryBoard(
 
     /** [genre] must be one of the selected catalogue's genres, or null for all. */
     fun selectGenre(genre: String?) {
+        if (kids) return // Gambit: kids get the default view only
         val selected = _state.value.selected ?: return
         if (genre != null && genre !in selected.genres) return
         if (genre == _state.value.genre) return
@@ -92,13 +102,15 @@ class DiscoveryBoard(
         val catalog = s.selected ?: return
         val feed = s.feed as? DiscoveryFeed.Loaded ?: return
         if (!feed.canLoadMore || feed.loadingMore) return
-        val genre = s.genre
+        val genre = if (kids) null else s.genre
+        val extras = CatalogExtraArgs(genre = genre, skip = feed.fetched)
         val gen = ++generation
         job?.cancel()
         _state.update { it.copy(feed = feed.copy(loadingMore = true, moreError = null)) }
         job = scope.launch {
-            val result = repository.catalog(catalog.ref, CatalogExtraArgs(genre = genre, skip = feed.fetched))
+            val result = repository.catalog(catalog.ref, extras)
             if (gen != generation) return@launch
+            if (kids && result is AddonResult.Ok) kidsGate?.report(catalog.key, result.value.map { it.id }, extras)
             val next = when (result) {
                 is AddonResult.Err -> feed.copy(loadingMore = false, moreError = result.error)
                 is AddonResult.Ok -> {
@@ -121,7 +133,7 @@ class DiscoveryBoard(
     /** Rebuilds the catalogue list for the chosen type; keeps the choice when it still exists. */
     private fun syncCatalogs(forceReload: Boolean) {
         val type = _state.value.type
-        val catalogs = registry().browseCatalogs(type.id).map(::DiscoveryCatalog)
+        val catalogs = wrap(registry().browseCatalogs(type.id))
         val current = _state.value.selected
         val kept = current?.let { c -> catalogs.firstOrNull { it.key == c.key } }
         val selected = kept ?: catalogs.firstOrNull()
@@ -147,8 +159,10 @@ class DiscoveryBoard(
         }
         _state.update { it.copy(feed = DiscoveryFeed.Loading) }
         job = scope.launch {
-            val result = repository.catalog(catalog.ref, CatalogExtraArgs(genre = s.genre))
+            val extras = CatalogExtraArgs(genre = if (kids) null else s.genre)
+            val result = repository.catalog(catalog.ref, extras)
             if (gen != generation) return@launch
+            if (kids && result is AddonResult.Ok) kidsGate?.report(catalog.key, result.value.map { it.id }, extras)
             val feed = when (result) {
                 is AddonResult.Err -> DiscoveryFeed.Failed(result.error)
                 is AddonResult.Ok -> firstPage(result.value, catalog.canPage)
