@@ -10,20 +10,32 @@ import tv.own.owntv.gambit.addons.net.AddonUrl
  *
  * Immutable: every change returns a new registry, ready to be saved by whatever stores it.
  */
-class AddonRegistry(val all: List<InstalledAddon> = emptyList()) {
+class AddonRegistry(
+    val all: List<InstalledAddon> = emptyList(),
+    /** When set, [browseCatalogs] lists only these catalogue keys (see [limitedTo]). */
+    private val approvedCatalogs: Set<String>? = null,
+) {
 
     val enabled: List<InstalledAddon> get() = all.filter { it.enabled }
+
+    /**
+     * The same addons, but [browseCatalogs] lists only the catalogues whose [CatalogRef.key] is in [keys],
+     * in the usual order. Keys that match no installed catalogue are ignored. Meta and stream lookups are
+     * unchanged. Limiting a limited registry keeps only the keys both allow.
+     */
+    fun limitedTo(keys: Set<String>): AddonRegistry =
+        AddonRegistry(all, approvedCatalogs?.let { it intersect keys } ?: keys.toSet())
 
     /** Adds [addon] at the end, or replaces the one with the same URL in place (keeping its position). */
     fun withAdded(addon: InstalledAddon): AddonRegistry {
         val index = all.indexOfFirst { it.url == addon.url }
-        return AddonRegistry(if (index < 0) all + addon else all.toMutableList().also { it[index] = addon })
+        return AddonRegistry(if (index < 0) all + addon else all.toMutableList().also { it[index] = addon }, approvedCatalogs)
     }
 
-    fun withRemoved(url: AddonUrl): AddonRegistry = AddonRegistry(all.filterNot { it.url == url })
+    fun withRemoved(url: AddonUrl): AddonRegistry = AddonRegistry(all.filterNot { it.url == url }, approvedCatalogs)
 
     fun withEnabled(url: AddonUrl, enabled: Boolean): AddonRegistry =
-        AddonRegistry(all.map { if (it.url == url) it.copy(enabled = enabled) else it })
+        AddonRegistry(all.map { if (it.url == url) it.copy(enabled = enabled) else it }, approvedCatalogs)
 
     /** Moves the addon at [url] to [toIndex] (clamped to the list). Unknown URLs change nothing. */
     fun moved(url: AddonUrl, toIndex: Int): AddonRegistry {
@@ -32,7 +44,7 @@ class AddonRegistry(val all: List<InstalledAddon> = emptyList()) {
         val list = all.toMutableList()
         val item = list.removeAt(from)
         list.add(toIndex.coerceIn(0, list.size), item)
-        return AddonRegistry(list)
+        return AddonRegistry(list, approvedCatalogs)
     }
 
     /**
@@ -40,7 +52,7 @@ class AddonRegistry(val all: List<InstalledAddon> = emptyList()) {
      * can't be opened without an extra (search-only and similar) are left out. [type] narrows to one type.
      */
     fun browseCatalogs(type: String? = null): List<CatalogRef> =
-        catalogRefs(type).filter { it.catalog.requiredExtras.isEmpty() }
+        catalogRefs(type).filter { it.catalog.requiredExtras.isEmpty() && (approvedCatalogs == null || it.key in approvedCatalogs) }
 
     /** Catalogs that accept a `search` extra, in the same order. */
     fun searchCatalogs(type: String? = null): List<CatalogRef> =
