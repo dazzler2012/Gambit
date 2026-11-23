@@ -248,4 +248,8 @@
     <string name="gambit_play_failed" translatable="false">Couldn\'t play this stream on this TV. Pick another one.</string>
     <string name="gambit_play_sub_label" translatable="false">%2$s (%1$s)</string>
     <string name="gambit_play_sub_label_lang" translatable="false">%2$s · %3$s (%1$s)</string>
+    <!-- Kids mode: an adult profile's PIN before adding or changing profiles -->
+    <string name="gambit_adult_pin_title" translatable="false">Adult PIN needed</string>
+    <string name="gambit_adult_pin_add" translatable="false">Enter the PIN of an adult profile to add a profile.</string>
+    <string name="gambit_adult_pin_change" translatable="false">Enter the PIN of an adult profile to change profiles from a kids profile.</string>
 </resources>

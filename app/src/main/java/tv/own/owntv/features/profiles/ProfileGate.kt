@@ -48,6 +48,7 @@ fun ProfileGate(onEnter: (Long) -> Unit, onAddProfile: () -> Unit, modifier: Mod
     var pinFor by remember { mutableStateOf<ProfileEntity?>(null) }
     var pinError by remember { mutableStateOf(false) }
     val firstFocus = remember { FocusRequester() }
+    val gambitAdultPin = tv.own.owntv.gambit.profiles.rememberAdultPinGate(profiles) // Gambit
 
     LaunchedEffect(profiles.isNotEmpty()) {
         if (profiles.isNotEmpty()) runCatching { firstFocus.requestFocus() }
@@ -80,7 +81,7 @@ fun ProfileGate(onEnter: (Long) -> Unit, onAddProfile: () -> Unit, modifier: Mod
                         onClick = { choose(p) },
                     )
                 }
-                item { AddTile(onClick = onAddProfile) }
+                item { AddTile(onClick = { gambitAdultPin.guardAlways(tv.own.owntv.gambit.profiles.AdultPinReason.ADD_PROFILE, onAddProfile) }) } // Gambit
             }
         }
     }
@@ -96,6 +97,7 @@ fun ProfileGate(onEnter: (Long) -> Unit, onAddProfile: () -> Unit, modifier: Mod
             onDismiss = { pinFor = null },
         )
     }
+    gambitAdultPin.Dialog() // Gambit
 }
 
 @Composable
