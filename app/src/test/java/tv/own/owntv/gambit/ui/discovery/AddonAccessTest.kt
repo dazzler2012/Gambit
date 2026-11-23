@@ -29,9 +29,10 @@ class AddonAccessTest {
     }
 
     @Test
-    fun `with the lock on a kids profile is Closed, and the default is the lock`() {
+    fun `with the lock on a kids profile is Closed, and the default now lets approvals through`() {
         assertEquals(AddonAccess.Closed, addonAccessOf(isKids = true, approved = approved, allowKids = false))
-        assertEquals(AddonAccess.Closed, addonAccessOf(isKids = true, approved = approved))
+        assertEquals(AddonAccess.Kids(approved, 4), addonAccessOf(isKids = true, approved = approved, profileId = 4))
+        assertEquals(AddonAccess.Closed, addonAccessOf(isKids = true, approved = emptySet()))
     }
 
     @Test
