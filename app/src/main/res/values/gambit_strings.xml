@@ -252,4 +252,24 @@
     <string name="gambit_adult_pin_title" translatable="false">Adult PIN needed</string>
     <string name="gambit_adult_pin_add" translatable="false">Enter the PIN of an adult profile to add a profile.</string>
     <string name="gambit_adult_pin_change" translatable="false">Enter the PIN of an adult profile to change profiles from a kids profile.</string>
+    <string name="gambit_adult_pin_kids_access" translatable="false">Enter the PIN of an adult profile to open Kids access.</string>
+
+    <!-- More → Addons → Kids access: which addon catalogues a kids profile may see. -->
+    <string name="gambit_kids_access_title" translatable="false">Kids access</string>
+    <string name="gambit_kids_access_description" translatable="false">Choose which addon catalogues each kids profile can see. Everything else from addons stays hidden on that profile.</string>
+    <string name="gambit_kids_access_set_pin_title" translatable="false">Set a profile PIN first</string>
+    <string name="gambit_kids_access_set_pin_body" translatable="false">Kids access is protected by an adult profile\'s PIN. Add a PIN to an adult profile, then open Kids access again.</string>
+    <string name="gambit_kids_access_no_kids" translatable="false">No kids profiles yet. Turn on Kids in a profile\'s settings first.</string>
+    <string name="gambit_kids_access_allow" translatable="false">Show addon catalogues</string>
+    <string name="gambit_kids_access_on" translatable="false">On</string>
+    <string name="gambit_kids_access_off" translatable="false">Off</string>
+    <plurals name="gambit_kids_access_count" translatable="false">
+        <item quantity="one">%1$d catalogue</item>
+        <item quantity="other">%1$d catalogues</item>
+    </plurals>
+    <string name="gambit_kids_access_catalogues" translatable="false">Catalogues</string>
+    <string name="gambit_kids_access_catalogue" translatable="false">%1$s (%2$s)</string>
+    <string name="gambit_kids_access_none_ticked" translatable="false">Nothing is on yet, so this profile still sees no addon content.</string>
+    <string name="gambit_kids_access_no_catalogues" translatable="false">None of your addons has a catalogue to approve. Add or turn on an addon first.</string>
+    <string name="gambit_kids_access_back" translatable="false">Back</string>
 </resources>

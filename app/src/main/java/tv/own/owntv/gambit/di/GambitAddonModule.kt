@@ -23,6 +23,7 @@ import tv.own.owntv.gambit.playback.GambitAddonPlayer
 import tv.own.owntv.gambit.playback.GambitStreamProxy
 import tv.own.owntv.R
 import tv.own.owntv.gambit.ui.addons.AddonsViewModel
+import tv.own.owntv.gambit.ui.addons.KidsAccessViewModel
 import tv.own.owntv.gambit.ui.discovery.DiscoveryViewModel
 import tv.own.owntv.gambit.ui.home.HomeAddonRowViewModel
 
@@ -60,6 +61,7 @@ val gambitAddonModule = module {
         }
     }
     viewModelOf(::AddonsViewModel)
+    viewModelOf(::KidsAccessViewModel)
     viewModelOf(::DiscoveryViewModel)
     viewModelOf(::HomeAddonRowViewModel)
 }

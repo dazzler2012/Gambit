@@ -13,10 +13,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import tv.own.owntv.core.database.dao.ProfileDao
+import tv.own.owntv.core.database.entity.ProfileEntity
 import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.gambit.addons.data.AddonAddResult
 import tv.own.owntv.gambit.addons.data.AddonStore
 import tv.own.owntv.gambit.addons.data.InstalledAddon
+import tv.own.owntv.gambit.addons.data.KidsAccessRelease
 import tv.own.owntv.gambit.addons.net.AddonUrl
 
 /** More → Addons: the device's addon list and adding one by typing its address. */
@@ -40,6 +42,14 @@ class AddonsViewModel(
         .map { it?.isKids == true }
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    /** Every profile, for the adult PIN prompt in front of Kids access. */
+    val profiles: StateFlow<List<ProfileEntity>> = profileDao.observeAll()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Whether the Kids access entry shows: on an adult profile, and only while the release lock allows it. */
+    val kidsAccessEntry: StateFlow<Boolean> = kids.map { kidsAccessEntryVisible(it) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     private val _typed = MutableStateFlow<AddonAddResult?>(null)
     /** The result of the last typed address, for the page to say so (null = nothing to say). */
     val typed: StateFlow<AddonAddResult?> = _typed.asStateFlow()
@@ -55,3 +65,7 @@ class AddonsViewModel(
     fun setEnabled(url: AddonUrl, on: Boolean) = store.setEnabled(url, on)
     fun move(url: AddonUrl, delta: Int) = store.move(url, delta)
 }
+
+/** The Kids access entry is hidden on kids profiles and while [KidsAccessRelease] has not allowed it. */
+internal fun kidsAccessEntryVisible(kidsProfile: Boolean, allowKids: Boolean = KidsAccessRelease.ALLOWED): Boolean =
+    !kidsProfile && allowKids
