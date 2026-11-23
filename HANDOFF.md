@@ -1,8 +1,12 @@
 # Handoff: main
 
-Last updated: 2026-11-22. Branch: `main` at `c9b1c012`. Replaces the old `feature/addons-client` handoff.
+Last updated: 2026-11-23. Branch: `main` at `fcf7d52a` (plus this handoff commit). Replaces the old `feature/addons-client` handoff.
 
 ## Done
+- **Flaky tests fixed (old Open 0c and 0e).** Branch `fix/flaky-tests` (kept), commits `baccc35b` and `c3a79814`, merged to main with `--no-ff` in `fcf7d52a`. Test files only, no app code.
+  - 0e was a test race, not an app bug: `HomeRowBoard` sets the posters a moment before its job ends, so a second `refresh()` straight after could be skipped. `FakeAddonServer` has a new `Reply.Gate` (holds a request until the test releases it); the two `HomeRowBoardTest` tests that raced a sleep now use it, and a new test pins that a refresh asked for mid-flight does not ask again. `settle()` (a 300 ms wait) remains in two tests.
+  - 0c: the `GambitStreamProxyTest` port check now asserts the old address is never served, instead of expecting the freed port to refuse a connection. Tests not run locally (CI only); one CI pass each, flakiness only shows over many runs.
+  - CI on `fcf7d52a`: Gambit CI, Android CI and i18n all passed.
 - **Addon playback fixes done.** Branch `fix/addon-playback` (kept), commit `ca49c747`, merged to main with `--no-ff` in `c9b1c012`. Gambit files only, no upstream edits.
   - **Stuck plays end in an error, not a spinner** (`gambit/playback/AddonPlayWatch.kt`, `GambitAddonPlayer.kt`): after 20 s of buffering with no progress and no error, the same stream is played again through the same proxy session with `vodEngineOverride = EXO_ONLY`; Core then shows its own "Playback failed on both video engines" screen. If the ExoPlayer retry is stuck for 60 s, Gambit stops the player and the stream list says "Couldn't play this stream on this TV". The proxy session now survives a 5 s gap with no address during a player reset.
   - **"May not play on this TV" tag** (`StreamRows.likelyDvProfile7` in `StreamBoard.kt`): REMUX + DV (or an explicit P7/FEL/DV MEL), not WEB, Movies Anywhere or P5/P8. Tagged rows move below the other streams of the same quality; nothing is hidden. Tests: `StreamRowsDvTest`, `AddonPlayWatchTest`.
@@ -63,8 +67,6 @@ Last updated: 2026-11-22. Branch: `main` at `c9b1c012`. Replaces the old `featur
 ## Open
 0a. **Tune the "may not play on this TV" rule** once we have more examples of failing files. The stream Darren played for check 3 was likely the `BDRemux 2160p` row, not labelled DV, and it failed the same way: unlabelled UHD REMUXes can also be Profile 7. Possibly flag all 2160p UHD BluRay REMUXes.
 0b. **Header shows MPV after the fallback to ExoPlayer** (seen in check 3). Small; not fixed.
-0c. **Flaky `GambitStreamProxyTest` port check** (`addresses die when the session closes, and the server stops`, line 207): asserts the freed port refuses a connection, but another socket can reuse it. Failed once on run 45071172117, passed on re-run.
-0e. **Flaky `HomeRowBoardTest > posters stay while a refresh is on its way`** (`TimeoutCancellationException`; failed on Gambit CI #64, passed on re-run). Suspicion, UNVERIFIED: `HomeRowBoard.refresh(force = false)` returns early while a refresh job is still active, so on a slow runner the test's second refresh is skipped and the new posters never arrive. That could be a real bug too: Home shown again during a slow refresh would not fetch fresh posters.
 0d. **OwnTV_Core fallback bug, reported upstream by Darren.** In `player-core` 1.0.71, `fallbackToExoVod(failure, hardResetFirst = true)` saves `loadGeneration`, then `hardReset()` bumps it again, so the ExoPlayer start 500 ms later sees a mismatch and silently returns (spinner, no error). Affects Movies/Series too. Gambit works around it for addon streams only (retry on EXO_ONLY).
 1. **Trakt scrobbling and sync are not wired to the player or any screen yet.** Sign-in is done; nothing calls `TraktScrobbler` or `TraktSync` in normal use. Next action: plan the wiring and get approval before editing.
 2. **Trakt calls not proven live** (fixtures only):
