@@ -41,6 +41,8 @@ import androidx.tv.material3.Text
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import tv.own.owntv.R
+import tv.own.owntv.gambit.addons.data.AddonImportFailReason
+import tv.own.owntv.gambit.addons.data.AddonImportFailure
 import tv.own.owntv.gambit.stremio.ImportCandidate
 import tv.own.owntv.gambit.stremio.ImportKind
 import tv.own.owntv.gambit.ui.theme.GambitColors
@@ -246,10 +248,26 @@ private fun DonePanel(done: StremioImportState.Done) {
             style = stageText(30, 700), color = GambitColors.Text,
         )
         if (r.heldForKids > 0) Sentence(pluralStringResource(R.plurals.gambit_stremio_done_held, r.heldForKids, r.heldForKids))
-        if (r.failed > 0) Sentence(pluralStringResource(R.plurals.gambit_stremio_done_failed, r.failed, r.failed))
+        if (r.failed > 0) {
+            Sentence(pluralStringResource(R.plurals.gambit_stremio_done_failed, r.failed, r.failed))
+            Column(Modifier.padding(start = 20.mpx), verticalArrangement = Arrangement.spacedBy(4.mpx)) {
+                r.failures.forEach { Sentence(failureLine(it)) }
+            }
+        }
         if (r.alreadyAdded > 0) Sentence(pluralStringResource(R.plurals.gambit_stremio_done_already, r.alreadyAdded, r.alreadyAdded))
         if (done.unsupported > 0) Sentence(pluralStringResource(R.plurals.gambit_stremio_unsupported, done.unsupported, done.unsupported))
         if (done.unreadable > 0) Sentence(pluralStringResource(R.plurals.gambit_stremio_done_unreadable, done.unreadable, done.unreadable))
+    }
+}
+
+/** "Name: couldn't be reached" and so on. The addon's name and a category only, never its address. */
+@Composable
+private fun failureLine(failure: AddonImportFailure): String {
+    val name = failure.name ?: stringResource(R.string.gambit_stremio_unnamed)
+    return when (val reason = failure.reason) {
+        AddonImportFailReason.Unreachable -> stringResource(R.string.gambit_stremio_fail_unreachable, name)
+        is AddonImportFailReason.Refused -> stringResource(R.string.gambit_stremio_fail_refused, name, reason.httpCode)
+        AddonImportFailReason.NotAnAddon -> stringResource(R.string.gambit_stremio_fail_not_addon, name)
     }
 }
 

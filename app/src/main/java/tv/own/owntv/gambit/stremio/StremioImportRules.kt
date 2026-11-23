@@ -35,18 +35,19 @@ data class ImportPreview(val candidates: List<ImportCandidate>, val unsupported:
 /** Turns the account's addon list into the preview. Pure: no I/O. */
 object StremioImportRules {
     fun preview(collection: StremioAddonCollection, installed: List<InstalledAddon>): ImportPreview {
-        val have = installed.map { it.url }.toSet()
-        val seen = mutableSetOf<AddonUrl>()
+        // Compared as sent (AddonUrl.canonical), so `|` and `%7C` are the same addon.
+        val have = installed.map { it.url.canonical }.toSet()
+        val seen = mutableSetOf<String>()
         val rows = mutableListOf<ImportCandidate>()
         var unsupported = 0
         for (addon in collection.addons) {
-            if (!seen.add(addon.url)) continue
+            if (!seen.add(addon.url.canonical)) continue
             if (isUnsupported(addon)) {
                 unsupported++
                 continue
             }
             val kind = when {
-                addon.url in have -> ImportKind.ALREADY_ADDED
+                addon.url.canonical in have -> ImportKind.ALREADY_ADDED
                 addon.official -> ImportKind.STREMIO_OWN
                 else -> ImportKind.NEW
             }

@@ -1000,6 +1000,7 @@
 1	technical	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonRegistry.kt	${addon.manifest.id}|${addon.url.host}|${catalog.type}|${catalog.id}
 1	log	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonRegistry.kt	AddonRegistry(${all.joinToString()})
 2	protocol	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonRegistry.kt	search
+1	log	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStore.kt	AddonImportRequest($name, ${url.host})
 1	empty	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStoreCodec.kt	\0
 2	json	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStoreCodec.kt	addons
 1	json	app/src/main/java/tv/own/owntv/gambit/addons/data/AddonStoreCodec.kt	adult

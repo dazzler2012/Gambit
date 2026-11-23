@@ -1,6 +1,7 @@
 package tv.own.owntv.gambit.stremio
 
 import java.io.IOException
+import java.net.SocketTimeoutException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -12,7 +13,10 @@ import tv.own.owntv.gambit.addons.TestAddons
 import tv.own.owntv.gambit.addons.TestAddons.LISTS_BASE
 import tv.own.owntv.gambit.addons.TestAddons.META_BASE
 import tv.own.owntv.gambit.addons.TestAddons.STREAMS_B_BASE
+import tv.own.owntv.gambit.addons.data.AddonImportFailReason
+import tv.own.owntv.gambit.addons.data.AddonImportFailure
 import tv.own.owntv.gambit.addons.data.AddonImportReport
+import tv.own.owntv.gambit.addons.data.AddonImportRequest
 import tv.own.owntv.gambit.addons.data.AddonRegistry
 import tv.own.owntv.gambit.addons.data.AddonRepository
 import tv.own.owntv.gambit.addons.data.AddonStore
@@ -57,6 +61,8 @@ class StremioImportTest {
     }
 
     private fun url(base: String) = AddonUrl.parse("$base/manifest.json")!!
+
+    private fun requests(vararg urls: AddonUrl) = urls.map { AddonImportRequest(it, null) }
 
     private fun account(name: String, base: String, official: Boolean = false, legacy: Boolean = false) =
         StremioAccountAddon(name, if (legacy) AddonUrl.parse(base)!! else url(base), official, official, legacy)
@@ -115,7 +121,7 @@ class StremioImportTest {
         val streamsA = TestAddons.streamsA.copy(enabled = false)
         val (store, vault) = store(TestAddons.meta, streamsA)
 
-        val report = store.importAll(listOf(url(STREAMS_B_BASE), streamsA.url, url(LISTS_BASE)), kidsApproved = emptySet())
+        val report = store.importAll(requests(url(STREAMS_B_BASE), streamsA.url, url(LISTS_BASE)), kidsApproved = emptySet())
 
         assertEquals(AddonImportReport(added = 2, alreadyAdded = 1), report)
         assertEquals(listOf(TestAddons.meta.url, streamsA.url, url(STREAMS_B_BASE), url(LISTS_BASE)), store.registry.value.all.map { it.url })
@@ -127,10 +133,95 @@ class StremioImportTest {
     @Test
     fun `an addon whose manifest can't be read is counted and not added`() = runBlocking {
         val (store, vault) = store(TestAddons.meta)
-        val report = store.importAll(listOf(url("https://missing.example/cfg")), kidsApproved = emptySet())
-        assertEquals(AddonImportReport(failed = 1), report)
+        val report = store.importAll(listOf(AddonImportRequest(url("https://missing.example/cfg"), "Missing")), kidsApproved = emptySet())
+        assertEquals(AddonImportReport(failures = listOf(AddonImportFailure("Missing", AddonImportFailReason.Refused(404)))), report)
         assertEquals(listOf(TestAddons.meta.url), store.registry.value.all.map { it.url })
         assertEquals(0, vault.writes)
+    }
+
+    @Test
+    fun `each addon that can't be loaded is reported by name and reason, never by address`() = runBlocking {
+        addons.on("https://down.example/FAKEKEY-1/manifest.json", FakeAddonServer.Reply.Fail(IOException("down")))
+        addons.on("https://slow.example/FAKEKEY-2/manifest.json", FakeAddonServer.Reply.Fail(SocketTimeoutException("slow")))
+        addons.onJson("https://refuses.example/FAKEKEY-3/manifest.json", "{}", code = 403)
+        addons.onJson("https://notaddon.example/FAKEKEY-4/manifest.json", """{"hello":"world"}""")
+        addons.onJson("https://html.example/FAKEKEY-5/manifest.json", "<html>")
+        val (store, vault) = store(TestAddons.meta)
+
+        val report = store.importAll(
+            listOf(
+                AddonImportRequest(url("https://down.example/FAKEKEY-1"), "Down"),
+                AddonImportRequest(url("https://slow.example/FAKEKEY-2"), "Slow"),
+                AddonImportRequest(url("https://refuses.example/FAKEKEY-3"), "Refuses"),
+                AddonImportRequest(url("https://notaddon.example/FAKEKEY-4"), "Not an addon"),
+                AddonImportRequest(url("https://html.example/FAKEKEY-5"), null),
+            ),
+            kidsApproved = emptySet(),
+        )
+
+        assertEquals(
+            listOf(
+                AddonImportFailure("Down", AddonImportFailReason.Unreachable),
+                AddonImportFailure("Slow", AddonImportFailReason.Unreachable),
+                AddonImportFailure("Refuses", AddonImportFailReason.Refused(403)),
+                AddonImportFailure("Not an addon", AddonImportFailReason.NotAnAddon),
+                AddonImportFailure(null, AddonImportFailReason.NotAnAddon),
+            ),
+            report.failures,
+        )
+        assertEquals(5, report.failed)
+        assertEquals(0, report.added)
+        assertEquals(0, vault.writes)
+        assertFalse(report.toString().contains("FAKEKEY"))
+        assertFalse(report.toString().contains(".example"))
+    }
+
+    @Test
+    fun `the importer reports a failure under the name Stremio gave the addon`() = runBlocking {
+        val (store, _) = store(TestAddons.meta)
+        val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store, kids)
+
+        val report = importer.import(listOf(ImportCandidate("My Lists", url("https://missing.example/FAKEKEY"), ImportKind.NEW)))
+
+        assertEquals(listOf(AddonImportFailure("My Lists", AddonImportFailReason.Refused(404))), report.failures)
+    }
+
+    // --- the same addon with | or %7C ---
+
+    private val pipeRaw = AddonUrl.parse("https://torrentio.example/sort=size|debrid=FAKEKEY/manifest.json")!!
+    private val pipeEscaped = AddonUrl.parse("https://torrentio.example/sort=size%7Cdebrid=FAKEKEY/manifest.json")!!
+
+    @Test
+    fun `an addon added with raw pipes is already added when Stremio has it escaped`() = runBlocking {
+        val installed = InstalledAddon(pipeRaw, TestAddons.manifest("manifest_streams.json"))
+        val (store, vault) = store(TestAddons.meta, installed)
+
+        val report = store.importAll(requests(pipeEscaped), kidsApproved = emptySet())
+
+        assertEquals(AddonImportReport(alreadyAdded = 1), report)
+        assertEquals(2, store.registry.value.all.size)
+        assertTrue(addons.requested.isEmpty())
+        assertEquals(0, vault.writes)
+    }
+
+    @Test
+    fun `the preview greys out the escaped form of an addon added with raw pipes`() {
+        val installed = InstalledAddon(pipeRaw, TestAddons.manifest("manifest_streams.json"))
+        val collection = StremioAddonCollection(listOf(StremioAccountAddon("Torrent", pipeEscaped, false, false)), 0)
+        val preview = StremioImportRules.preview(collection, listOf(installed))
+        assertEquals(listOf(ImportKind.ALREADY_ADDED), preview.candidates.map { it.kind })
+    }
+
+    @Test
+    fun `both forms in one import add the addon once`() = runBlocking {
+        addons.onFixture(pipeEscaped.canonical, "manifest_streams.json")
+        val (store, _) = store(TestAddons.meta)
+
+        val report = store.importAll(requests(pipeRaw, pipeEscaped), kidsApproved = emptySet())
+
+        assertEquals(AddonImportReport(added = 1), report)
+        assertEquals(1, addons.requested.size)
+        assertEquals(2, store.registry.value.all.size)
     }
 
     // --- kids profiles ---
@@ -159,7 +250,7 @@ class StremioImportTest {
         val discoveryBefore = kidsDiscovery(store.registry.value, KID)
 
         // Same manifest id and host as the installed metadata addon, but another configuration.
-        val report = store.importAll(listOf(url(OTHER_META_BASE)), kids.approvals.value.values.flatten().toSet())
+        val report = store.importAll(requests(url(OTHER_META_BASE)), kids.approvals.value.values.flatten().toSet())
 
         assertEquals(AddonImportReport(heldForKids = 1), report)
         assertEquals(listOf(TestAddons.meta.url), store.registry.value.all.map { it.url })

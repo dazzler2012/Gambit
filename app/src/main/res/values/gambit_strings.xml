@@ -309,9 +309,12 @@
         <item quantity="other">%1$d not added because they match a catalogue approved for a kids profile. They were left out to keep that profile safe.</item>
     </plurals>
     <plurals name="gambit_stremio_done_failed" translatable="false">
-        <item quantity="one">%1$d couldn\'t be loaded. Check the internet connection, then try again.</item>
-        <item quantity="other">%1$d couldn\'t be loaded. Check the internet connection, then try again.</item>
+        <item quantity="one">%1$d couldn\'t be loaded:</item>
+        <item quantity="other">%1$d couldn\'t be loaded:</item>
     </plurals>
+    <string name="gambit_stremio_fail_unreachable" translatable="false">%1$s: couldn\'t be reached</string>
+    <string name="gambit_stremio_fail_refused" translatable="false">%1$s: refused (HTTP %2$d)</string>
+    <string name="gambit_stremio_fail_not_addon" translatable="false">%1$s: didn\'t return an addon</string>
     <plurals name="gambit_stremio_done_already" translatable="false">
         <item quantity="one">%1$d was already on this TV and was left as it is.</item>
         <item quantity="other">%1$d were already on this TV and were left as they are.</item>

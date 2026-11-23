@@ -2,6 +2,7 @@ package tv.own.owntv.gambit.stremio
 
 import kotlinx.coroutines.delay
 import tv.own.owntv.gambit.addons.data.AddonImportReport
+import tv.own.owntv.gambit.addons.data.AddonImportRequest
 import tv.own.owntv.gambit.addons.data.AddonStore
 import tv.own.owntv.gambit.addons.data.KidsAddonAccess
 
@@ -63,7 +64,7 @@ class StremioImporter(
     /** Adds the ticked rows. Rows that can't be ticked are ignored. */
     suspend fun import(chosen: List<ImportCandidate>): AddonImportReport =
         store.importAll(
-            urls = chosen.filter { it.selectable }.map { it.url },
+            requests = chosen.filter { it.selectable }.map { AddonImportRequest(it.url, it.name) },
             kidsApproved = kids.approvals.value.values.flatten().toSet(),
         )
 
