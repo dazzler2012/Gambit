@@ -118,6 +118,27 @@ class KidsAccessBoardTest {
         assertTrue(gate.allows(key("top"), "t3"))
     }
 
+    @Test
+    fun `a kids board follows a repeat page and reports every page to the gate`() = runBlocking {
+        approve("top")
+        server.onJson("$a/catalog/movie/top.json", metas("t1", "t2"))
+        server.onJson("$a/catalog/movie/top/skip=2.json", metas("t2", "r1"))
+        val b = board()
+        b.open()
+        b.loaded()
+        b.loadMore()
+        withTimeout(5_000) { b.state.first { (it.feed as? DiscoveryFeed.Loaded)?.items?.size == 3 } }
+        // A page with one new title is not a repeat page: paging waits for focus again.
+        delay(100)
+        assertEquals(listOf("$a/catalog/movie/top.json", "$a/catalog/movie/top/skip=2.json"), server.requested.toList())
+        server.onJson("$a/catalog/movie/top/skip=4.json", metas("t1", "r1"))
+        server.onJson("$a/catalog/movie/top/skip=6.json", metas("t5"))
+        b.loadMore()
+        withTimeout(5_000) { b.state.first { (it.feed as? DiscoveryFeed.Loaded)?.items?.size == 4 } }
+        assertTrue(server.requested.none { "search=" in it || "genre=" in it })
+        listOf("t1", "t2", "r1", "t5").forEach { assertTrue(it, gate.allows(key("top"), it)) }
+    }
+
     // --- 20. which requests may add ids ------------------------------------------------------------
 
     @Test

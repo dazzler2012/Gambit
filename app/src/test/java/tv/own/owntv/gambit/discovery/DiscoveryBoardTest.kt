@@ -161,16 +161,78 @@ class DiscoveryBoardTest {
         assertEquals(1, server.requested.size)
     }
 
+    // Gambit: only an empty page ends paging; repeat pages are followed at once, at most 3 in a row.
+    private suspend fun awaitEnded(): DiscoveryFeed.Loaded =
+        await { (it.feed as? DiscoveryFeed.Loaded)?.let { f -> !f.loadingMore && !f.canLoadMore } == true }.feed as DiscoveryFeed.Loaded
+
     @Test
-    fun `an addon that ignores skip stops paging`() = runBlocking {
+    fun `an addon that ignores skip costs at most three extra requests`() = runBlocking {
         registry = AddonRegistry(listOf(addon(a, "a", cat("movie", "top"))))
-        server.onJson("$a/catalog/movie/top.json", metas("t1", "t2"))
-        server.onJson("$a/catalog/movie/top/skip=2.json", metas("t1", "t2"))
+        listOf("top.json", "top/skip=2.json", "top/skip=4.json", "top/skip=6.json", "top/skip=8.json").forEach {
+            server.onJson("$a/catalog/movie/$it", metas("t1", "t2"))
+        }
         board.open()
         awaitLoaded()
         board.loadMore()
-        await { (it.feed as? DiscoveryFeed.Loaded)?.let { f -> !f.loadingMore && !f.canLoadMore } == true }
-        assertEquals(listOf("t1", "t2"), ids(board.state.value.feed))
+        assertEquals(listOf("t1", "t2"), awaitEnded().items.map { it.id })
+        board.loadMore()
+        delay(100)
+        assertEquals(
+            listOf("top.json", "top/skip=2.json", "top/skip=4.json", "top/skip=6.json").map { "$a/catalog/movie/$it" },
+            server.requested.toList(),
+        )
+    }
+
+    @Test
+    fun `a page of repeats is followed by the next page without a focus change`() = runBlocking {
+        registry = AddonRegistry(listOf(addon(a, "a", cat("movie", "top"))))
+        server.onJson("$a/catalog/movie/top.json", metas("t1", "t2"))
+        server.onJson("$a/catalog/movie/top/skip=2.json", metas("t1", "t2"))
+        server.onJson("$a/catalog/movie/top/skip=4.json", metas("t3"))
+        board.open()
+        awaitLoaded()
+        board.loadMore() // one call, as one focus event would make
+        val f = await { ids(it.feed).size == 3 && !(it.feed as DiscoveryFeed.Loaded).loadingMore }.feed as DiscoveryFeed.Loaded
+        assertEquals(listOf("t1", "t2", "t3"), f.items.map { it.id })
+        assertEquals(5, f.fetched) // skip counts repeats too
+        assertTrue(f.canLoadMore)
+        assertEquals(3, server.requested.size)
+    }
+
+    @Test
+    fun `three repeat pages in a row end paging`() = runBlocking {
+        registry = AddonRegistry(listOf(addon(a, "a", cat("movie", "top"))))
+        server.onJson("$a/catalog/movie/top.json", metas("t1", "t2", "t3"))
+        server.onJson("$a/catalog/movie/top/skip=3.json", metas("t1"))
+        server.onJson("$a/catalog/movie/top/skip=4.json", metas("t2", "t3"))
+        server.onJson("$a/catalog/movie/top/skip=6.json", metas("t3"))
+        server.onJson("$a/catalog/movie/top/skip=7.json", metas("t9"))
+        board.open()
+        awaitLoaded()
+        board.loadMore()
+        val f = awaitEnded()
+        assertEquals(listOf("t1", "t2", "t3"), f.items.map { it.id })
+        assertEquals(7, f.fetched)
+        delay(100)
+        assertFalse(server.requested.any { it.endsWith("skip=7.json") })
+    }
+
+    @Test
+    fun `a short page does not end paging, an empty one after repeats does`() = runBlocking {
+        registry = AddonRegistry(listOf(addon(a, "a", cat("movie", "top"))))
+        server.onJson("$a/catalog/movie/top.json", metas("t1", "t2"))
+        server.onJson("$a/catalog/movie/top/skip=2.json", metas("t3"))
+        server.onJson("$a/catalog/movie/top/skip=3.json", metas("t3"))
+        server.onJson("$a/catalog/movie/top/skip=4.json", metas())
+        board.open()
+        awaitLoaded()
+        board.loadMore()
+        assertTrue(await { ids(it.feed).size == 3 && !(it.feed as DiscoveryFeed.Loaded).loadingMore }.feed.let { (it as DiscoveryFeed.Loaded).canLoadMore })
+        board.loadMore()
+        assertEquals(listOf("t1", "t2", "t3"), awaitEnded().items.map { it.id })
+        board.loadMore()
+        delay(100)
+        assertEquals(4, server.requested.size)
     }
 
     @Test
