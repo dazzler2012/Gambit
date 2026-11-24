@@ -4,7 +4,6 @@ import kotlinx.coroutines.delay
 import tv.own.owntv.gambit.addons.data.AddonImportReport
 import tv.own.owntv.gambit.addons.data.AddonImportRequest
 import tv.own.owntv.gambit.addons.data.AddonStore
-import tv.own.owntv.gambit.addons.data.KidsAddonAccess
 
 /** How waiting for the phone ended. None of these holds the session key. */
 sealed interface StremioLinkOutcome {
@@ -32,7 +31,6 @@ sealed interface StremioLinkOutcome {
 class StremioImporter(
     private val client: StremioClient,
     private val store: AddonStore,
-    private val kids: KidsAddonAccess,
     private val pollMs: Long = POLL_MS,
     /** How long [awaitAccountAddons] waits for the phone; the screen's countdown uses the same value. */
     val timeoutMs: Long = TIMEOUT_MS,
@@ -61,12 +59,12 @@ class StremioImporter(
         }
     }
 
-    /** Adds the ticked rows. Rows that can't be ticked are ignored. */
+    /**
+     * Adds the ticked rows. Rows that can't be ticked are ignored. Each added addon is a new setup, so it
+     * starts unapproved on every kids profile.
+     */
     suspend fun import(chosen: List<ImportCandidate>): AddonImportReport =
-        store.importAll(
-            requests = chosen.filter { it.selectable }.map { AddonImportRequest(it.url, it.name) },
-            kidsApproved = kids.approvals.value.values.flatten().toSet(),
-        )
+        store.importAll(chosen.filter { it.selectable }.map { AddonImportRequest(it.url, it.name) })
 
     private suspend fun readAddons(linked: StremioLinkStatus.Linked): StremioLinkOutcome =
         when (val collection = client.addonCollection(linked.key)) {

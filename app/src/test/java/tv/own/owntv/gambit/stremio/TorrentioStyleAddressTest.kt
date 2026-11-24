@@ -64,7 +64,7 @@ class TorrentioStyleAddressTest {
     fun `raw and escaped pipes reach the addon as the same request`() = runBlocking {
         listOf(RAW, ESCAPED).forEach { address ->
             server.requested.clear()
-            val report = store().importAll(request(address), kidsApproved = emptySet())
+            val report = store().importAll(request(address))
             assertEquals(address, AddonImportReport(added = 1), report)
             assertEquals(listOf(CANONICAL), server.requested.toList())
         }
@@ -72,14 +72,14 @@ class TorrentioStyleAddressTest {
 
     @Test
     fun `a query on a configured address survives`() = runBlocking {
-        val report = store().importAll(request(RAW_WITH_QUERY), kidsApproved = emptySet())
+        val report = store().importAll(request(RAW_WITH_QUERY))
         assertEquals(AddonImportReport(added = 1), report)
         assertEquals(listOf(CANONICAL_WITH_QUERY), server.requested.toList())
     }
 
     @Test
     fun `a double-escaped address is sent double-escaped, not repaired`() = runBlocking {
-        val report = store().importAll(request(DOUBLE_ESCAPED, "Torrent"), kidsApproved = emptySet())
+        val report = store().importAll(request(DOUBLE_ESCAPED, "Torrent"))
         assertEquals(listOf(AddonImportFailure("Torrent", AddonImportFailReason.Refused(404))), report.failures)
         assertTrue(server.requested.single().contains("%257C"))
     }
@@ -93,7 +93,7 @@ class TorrentioStyleAddressTest {
             val viaTyping = server.requested.toList()
 
             server.requested.clear()
-            store().importAll(request(address), kidsApproved = emptySet())
+            store().importAll(request(address))
             assertEquals(viaTyping, server.requested.toList())
         }
     }

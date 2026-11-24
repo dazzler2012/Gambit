@@ -37,14 +37,11 @@ data class AddonImportFailure(val name: String?, val reason: AddonImportFailReas
 
 /**
  * What a bulk import did: counts, plus each addon that couldn't be loaded by name and reason (never an
- * address). [heldForKids] counts addons left out because one of their catalogues has the key of a
- * catalogue a parent approved for a kids profile, so adding them would have put them on that profile
- * without anyone approving it.
+ * address).
  */
 data class AddonImportReport(
     val added: Int = 0,
     val alreadyAdded: Int = 0,
-    val heldForKids: Int = 0,
     val failures: List<AddonImportFailure> = emptyList(),
 ) {
     val failed: Int get() = failures.size
@@ -135,17 +132,15 @@ class AddonStore(
      * Adds [requests] in the given order after every addon already in the list, so the first addon (the
      * metadata one) stays first. Each is checked like [add], but an addon already in the list is never
      * fetched, replaced or moved. "Already in the list" compares addresses as they are sent
-     * ([AddonUrl.canonical]), so `|` and `%7C` count as the same addon. An addon is held back when any
-     * of its catalogue keys is in [kidsApproved], so an import can never make a catalogue appear on a
-     * kids profile. Each one that can't be loaded is reported by name and reason. The list is saved
-     * once, at the end.
+     * ([AddonUrl.canonical]), so `|` and `%7C` count as the same addon. Every imported addon is a new
+     * setup ([AddonSetupId]), so it starts unapproved on every kids profile. Each one that can't be loaded
+     * is reported by name and reason. The list is saved once, at the end.
      */
-    suspend fun importAll(requests: List<AddonImportRequest>, kidsApproved: Set<String>): AddonImportReport {
+    suspend fun importAll(requests: List<AddonImportRequest>): AddonImportReport {
         val fresh = mutableListOf<InstalledAddon>()
         val failures = mutableListOf<AddonImportFailure>()
         val seen = mutableSetOf<String>()
         var already = 0
-        var held = 0
         for (request in requests) {
             val canonical = request.url.canonical
             if (!seen.add(canonical)) continue
@@ -155,11 +150,7 @@ class AddonStore(
             }
             when (val result = repository.install(request.url.manifestUrl)) {
                 is AddonResult.Err -> failures += AddonImportFailure(request.name, result.error.toImportFailReason())
-                is AddonResult.Ok -> {
-                    val addon = result.value
-                    val keys = addon.manifest.catalogs.map { CatalogRef(addon, it).key }
-                    if (keys.any { it in kidsApproved }) held++ else fresh += addon
-                }
+                is AddonResult.Ok -> fresh += result.value
             }
         }
         var added = 0
@@ -168,7 +159,7 @@ class AddonStore(
                 if (next.all.any { it.url.sameAddonAs(addon.url) }) next else next.withAdded(addon).also { added++ }
             }
         }
-        return AddonImportReport(added, already + fresh.size - added, held, failures)
+        return AddonImportReport(added, already + fresh.size - added, failures)
     }
 
     fun remove(url: AddonUrl) = update { it.withRemoved(url) }

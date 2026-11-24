@@ -69,7 +69,7 @@ val gambitAddonModule = module {
     }
     // Stremio account import: its own plain client, for the same reason (calls carry the session key).
     single { StremioClient(StremioClient.plainHttpClient()) }
-    single { StremioImporter(client = get(), store = get(), kids = get()) }
+    single { StremioImporter(client = get(), store = get()) }
     viewModelOf(::StremioImportViewModel)
     viewModelOf(::AddonsViewModel)
     viewModelOf(::KidsAccessViewModel)

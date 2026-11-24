@@ -20,8 +20,6 @@ import tv.own.owntv.gambit.addons.data.AddonRepository
 import tv.own.owntv.gambit.addons.data.AddonStore
 import tv.own.owntv.gambit.addons.data.AddonStoreCodec
 import tv.own.owntv.gambit.addons.data.AddonVault
-import tv.own.owntv.gambit.addons.data.KidsAccessVault
-import tv.own.owntv.gambit.addons.data.KidsAddonAccess
 import tv.own.owntv.gambit.addons.net.AddonClient
 import tv.own.owntv.gambit.addons.net.AddonUrl
 import tv.own.owntv.gambit.stremio.FakeStremio
@@ -37,16 +35,8 @@ class StremioImportModelTest {
         override fun write(text: String): Boolean { this.text = text; return true }
     }
 
-    private class NoKidsVault : KidsAccessVault {
-        override fun hasSaved(): Boolean = false
-        override fun read(): String? = null
-        override fun write(text: String): Boolean = true
-        override fun remove(): Boolean = true
-    }
-
     private val addons = FakeAddonServer().onFixture("$LISTS_BASE/manifest.json", "manifest_lists.json")
     private val store = AddonStore(AddonRepository(AddonClient(addons.client)), MemoryVault(AddonStoreCodec.encode(listOf(TestAddons.meta))))
-    private val kids = KidsAddonAccess(NoKidsVault(), Dispatchers.Unconfined)
 
     /** Each poll waits here until the test lets it go, so the test can look at the Waiting screen. */
     private var gate = CompletableDeferred<Unit>()
@@ -58,7 +48,7 @@ class StremioImportModelTest {
 
     private fun model(host: FakeStremioHost, scope: CoroutineScope): StremioImportModel {
         val importer = StremioImporter(
-            FakeStremio.client(host), store, kids, timeoutMs = 60_000,
+            FakeStremio.client(host), store, timeoutMs = 60_000,
             nowMs = { 0L }, pause = { gate.await(); gate = CompletableDeferred() },
         )
         return StremioImportModel(importer, scope, nowMillis = { 1_000L })
