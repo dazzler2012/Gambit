@@ -97,34 +97,49 @@ class DiscoveryBoard(
         load()
     }
 
-    /** Asks for the next page of the chosen catalogue. Does nothing while loading or when there is no more. */
+    /**
+     * Asks for the next page of the chosen catalogue. Does nothing while loading or when there is no more.
+     *
+     * Like Stremio, only an empty page ends the catalogue, and `skip` is every title received so far,
+     * repeats included. A page that is all repeats adds nothing to the grid, so focus never reaches a
+     * new poster to ask again: the next page is asked for straight away instead. After [MAX_DRY_PAGES]
+     * such pages in a row paging ends, so an addon that ignores `skip` costs at most that many requests.
+     */
     fun loadMore() {
         val s = _state.value
         val catalog = s.selected ?: return
         val feed = s.feed as? DiscoveryFeed.Loaded ?: return
         if (!feed.canLoadMore || feed.loadingMore) return
         val genre = if (kids) null else s.genre
-        val extras = CatalogExtraArgs(genre = genre, skip = feed.fetched)
         val gen = ++generation
         job?.cancel()
         _state.update { it.copy(feed = feed.copy(loadingMore = true, moreError = null)) }
         job = scope.launch {
-            val result = repository.catalog(catalog.ref, extras)
-            if (gen != generation) return@launch
-            if (kids && result is AddonResult.Ok) kidsGate?.report(catalog.key, result.value.map { it.id }, extras)
-            val next = when (result) {
-                is AddonResult.Err -> feed.copy(loadingMore = false, moreError = result.error)
-                is AddonResult.Ok -> {
-                    val seen = feed.items.mapTo(HashSet()) { it.id }
-                    val fresh = result.value.filter { seen.add(it.id) }
-                    // A page with nothing new ends paging: an addon that ignores `skip` would repeat forever.
-                    feed.copy(
-                        items = feed.items + fresh,
-                        fetched = feed.fetched + result.value.size,
-                        canLoadMore = fresh.isNotEmpty(),
-                        loadingMore = false,
-                    )
+            var next = feed
+            var dryPages = 0
+            while (true) {
+                val extras = CatalogExtraArgs(genre = genre, skip = next.fetched)
+                val result = repository.catalog(catalog.ref, extras)
+                if (gen != generation) return@launch
+                if (kids && result is AddonResult.Ok) kidsGate?.report(catalog.key, result.value.map { it.id }, extras)
+                val page = when (result) {
+                    is AddonResult.Err -> {
+                        next = next.copy(loadingMore = false, moreError = result.error)
+                        break
+                    }
+                    is AddonResult.Ok -> result.value
                 }
+                val seen = next.items.mapTo(HashSet()) { it.id }
+                val fresh = page.filter { seen.add(it.id) }
+                dryPages = if (page.isNotEmpty() && fresh.isEmpty()) dryPages + 1 else 0
+                val more = page.isNotEmpty() && dryPages < MAX_DRY_PAGES
+                next = next.copy(
+                    items = next.items + fresh,
+                    fetched = next.fetched + page.size,
+                    canLoadMore = more,
+                    loadingMore = false,
+                )
+                if (!more || fresh.isNotEmpty()) break
             }
             cache[CacheKey(catalog.key, genre)] = next
             _state.update { it.copy(feed = next) }
@@ -189,5 +204,10 @@ class DiscoveryBoard(
         val items = metas.distinctBy { it.id }
         if (items.isEmpty()) return DiscoveryFeed.Empty
         return DiscoveryFeed.Loaded(items = items, fetched = metas.size, canLoadMore = canPage)
+    }
+
+    private companion object {
+        /** Pages in a row that bring nothing new (but aren't empty) before paging gives up. */
+        const val MAX_DRY_PAGES = 3
     }
 }
