@@ -46,6 +46,7 @@ class HomeRowBoardTest {
         AddonUrl.parse("$base/manifest.json")!!,
         AddonManifest(id, "Addon $id", "1.0.0", resources = listOf(AddonResource("catalog")), types = listOf("movie", "series"), catalogs = catalogs.toList()),
         enabled,
+        setupId = tv.own.owntv.gambit.addons.TestAddons.setupId("$base|$id"),
     )
 
     private fun cat(type: String, id: String, name: String? = "Cat $id", extra: List<CatalogExtra> = emptyList()) = AddonCatalog(type, id, name, extra)

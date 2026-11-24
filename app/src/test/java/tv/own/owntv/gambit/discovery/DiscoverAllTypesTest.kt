@@ -39,6 +39,7 @@ class DiscoverAllTypesTest {
         AddonUrl.parse("$host/manifest.json")!!,
         AddonManifest(id, "Addon $id", "1.0.0", resources = listOf(AddonResource("catalog")), catalogs = catalogs.toList()),
         enabled,
+        setupId = tv.own.owntv.gambit.addons.TestAddons.setupId("$host|$id"),
     )
 
     private fun cat(type: String, id: String, extra: List<CatalogExtra> = emptyList()) = AddonCatalog(type, id, "Cat $id", extra)

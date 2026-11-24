@@ -43,6 +43,7 @@ class DiscoveryBoardTest {
         AddonUrl.parse("$base/manifest.json")!!,
         AddonManifest(id, "Addon $id", "1.0.0", resources = listOf(AddonResource("catalog")), types = listOf("movie", "series"), catalogs = catalogs.toList()),
         enabled,
+        setupId = tv.own.owntv.gambit.addons.TestAddons.setupId("$base|$id"),
     )
 
     private val paged = listOf(CatalogExtra("skip"))

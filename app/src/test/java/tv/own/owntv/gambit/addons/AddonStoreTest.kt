@@ -4,6 +4,7 @@ import java.net.SocketTimeoutException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,6 +16,7 @@ import tv.own.owntv.gambit.addons.TestAddons.streamsA
 import tv.own.owntv.gambit.addons.data.AddonAddError
 import tv.own.owntv.gambit.addons.data.AddonAddResult
 import tv.own.owntv.gambit.addons.data.AddonRepository
+import tv.own.owntv.gambit.addons.data.AddonSetupId
 import tv.own.owntv.gambit.addons.data.AddonStore
 import tv.own.owntv.gambit.addons.data.AddonStoreCodec
 import tv.own.owntv.gambit.addons.data.AddonVault
@@ -40,6 +42,19 @@ class AddonStoreTest {
     private val server = FakeAddonServer()
     private val repo = AddonRepository(AddonClient(server.client))
     private val src = TEST_SOURCE
+
+    /** For comparing addons whose setup id was made at random by a real install. */
+    private fun List<InstalledAddon>.sansSetup() = map { it.copy(setupId = "") }
+
+    /** [text] with every entry's setup id taken out, as lists were saved before setup ids existed. */
+    private fun withoutSetupIds(text: String): String {
+        val root = org.json.JSONObject(text)
+        val items = root.getJSONArray("addons")
+        for (i in 0 until items.length()) items.getJSONObject(i).remove("setup")
+        return root.toString()
+    }
+
+    private fun setupIds(store: AddonStore) = store.registry.value.all.map { it.setupId }
 
     // --- error mapping -------------------------------------------------------------------------
 
@@ -67,7 +82,7 @@ class AddonStoreTest {
 
     @Test
     fun `saved list loads back the same, in order, with on and off kept`() {
-        val withQuery = InstalledAddon(AddonUrl.parse("https://q.example/KEY-Q/manifest.json?token=KEY-QUERY")!!, TestAddons.manifest("manifest_odd.json"), enabled = false)
+        val withQuery = InstalledAddon(AddonUrl.parse("https://q.example/KEY-Q/manifest.json?token=KEY-QUERY")!!, TestAddons.manifest("manifest_odd.json"), enabled = false, setupId = TestAddons.setupId("q"))
         val list = listOf(meta, lists, streamsA.copy(enabled = false), withQuery)
         assertEquals(list, AddonStoreCodec.decode(AddonStoreCodec.encode(list)))
     }
@@ -78,7 +93,7 @@ class AddonStoreTest {
             "config":[{"key":"debridKey","default":"SECRET-CONFIG"}],
             "behaviorHints":{"configurable":true,"apiKey":"SECRET-HINT"}}"""
         val manifest = (tv.own.owntv.gambit.addons.net.AddonJson.manifest(raw, src) as tv.own.owntv.gambit.addons.net.AddonResult.Ok).value
-        val text = AddonStoreCodec.encode(listOf(InstalledAddon(AddonUrl.parse("https://a.example/manifest.json")!!, manifest)))
+        val text = AddonStoreCodec.encode(listOf(InstalledAddon(AddonUrl.parse("https://a.example/manifest.json")!!, manifest, setupId = TestAddons.setupId("a"))))
         assertFalse(text, text.contains("SECRET"))
         assertFalse(text, text.contains("config\""))
     }
@@ -98,17 +113,21 @@ class AddonStoreTest {
     fun `adding saves the list, and a new store loads it back`() = runBlocking {
         server.onFixture("$META_BASE/manifest.json", "manifest_meta.json")
         val vault = MemoryVault()
-        assertEquals(AddonAddResult.Added("Example Meta"), AddonStore(repo, vault).add("$META_BASE/manifest.json"))
-        assertEquals(listOf(meta), AddonStore(repo, vault).registry.value.all)
+        val first = AddonStore(repo, vault)
+        assertEquals(AddonAddResult.Added("Example Meta"), first.add("$META_BASE/manifest.json"))
+        assertEquals(listOf(meta).sansSetup(), AddonStore(repo, vault).registry.value.all.sansSetup())
+        assertEquals(first.registry.value.all, AddonStore(repo, vault).registry.value.all) // setup id included
     }
 
     @Test
-    fun `adding the same address again keeps its place and its off state`() = runBlocking {
+    fun `adding the same address again keeps its place and its off state, as a new setup`() = runBlocking {
         server.onFixture("$META_BASE/manifest.json", "manifest_meta.json")
         val vault = MemoryVault(AddonStoreCodec.encode(listOf(lists, meta.copy(enabled = false))))
         val store = AddonStore(repo, vault)
         store.add("stremio://meta.example/KEY-META")
-        assertEquals(listOf(lists, meta.copy(enabled = false)), store.registry.value.all)
+        assertEquals(listOf(lists, meta.copy(enabled = false)).sansSetup(), store.registry.value.all.sansSetup())
+        assertEquals(lists.setupId, store.registry.value.all[0].setupId)
+        assertNotEquals(meta.setupId, store.registry.value.all[1].setupId)
     }
 
     @Test
@@ -150,7 +169,7 @@ class AddonStoreTest {
         val store = AddonStore(repo, MemoryVault(text = null, saved = true))
         store.add("$META_BASE/manifest.json")
         assertFalse(store.unreadable.value)
-        assertEquals(listOf(meta), store.registry.value.all)
+        assertEquals(listOf(meta).sansSetup(), store.registry.value.all.sansSetup())
     }
 
     @Test
@@ -165,5 +184,65 @@ class AddonStoreTest {
         assertEquals(expected, store.registry.value.all)
         assertEquals(expected, AddonStoreCodec.decode(vault.text!!))
         assertEquals(3, vault.writes)
+    }
+
+    // --- setup ids -----------------------------------------------------------------------------
+
+    @Test
+    fun `a list saved before setup ids gets them, saves them at once, and keeps them after a restart`() {
+        val vault = MemoryVault(withoutSetupIds(AddonStoreCodec.encode(listOf(meta, lists, streamsA))))
+        val first = AddonStore(repo, vault)
+        val ids = setupIds(first)
+        assertTrue(ids.all(AddonSetupId::isValid))
+        assertEquals(3, ids.toSet().size)
+        assertEquals(1, vault.writes)
+        assertEquals(listOf(meta, lists, streamsA).sansSetup(), first.registry.value.all.sansSetup())
+
+        val again = AddonStore(repo, vault)
+        assertEquals(ids, setupIds(again))
+        assertEquals(1, vault.writes) // nothing new to save
+        // Catalogue keys (what kids approvals hold) are the same after the restart.
+        assertEquals(first.registry.value.browseCatalogs().map { it.key }, again.registry.value.browseCatalogs().map { it.key })
+    }
+
+    @Test
+    fun `a damaged or repeated setup id is replaced and saved, the good one is kept`() {
+        val root = org.json.JSONObject(AddonStoreCodec.encode(listOf(meta, lists, streamsA)))
+        val items = root.getJSONArray("addons")
+        items.getJSONObject(0).put("setup", "not-an-id")
+        items.getJSONObject(2).put("setup", lists.setupId) // a repeat of the entry before it
+        val vault = MemoryVault(root.toString())
+        val ids = setupIds(AddonStore(repo, vault))
+        assertNotEquals("not-an-id", ids[0])
+        assertTrue(AddonSetupId.isValid(ids[0]))
+        assertEquals(lists.setupId, ids[1])
+        assertNotEquals(lists.setupId, ids[2])
+        assertEquals(1, vault.writes)
+        assertEquals(ids, setupIds(AddonStore(repo, vault)))
+    }
+
+    @Test
+    fun `a list whose setup ids are all good is not saved again on load`() {
+        val vault = MemoryVault(AddonStoreCodec.encode(listOf(meta, lists)))
+        assertEquals(listOf(meta.setupId, lists.setupId), setupIds(AddonStore(repo, vault)))
+        assertEquals(0, vault.writes)
+    }
+
+    @Test
+    fun `if saving minted ids fails the list still loads, and the next start mints new ones`() {
+        val text = withoutSetupIds(AddonStoreCodec.encode(listOf(meta)))
+        val vault = MemoryVault(text, failWrites = true)
+        val first = setupIds(AddonStore(repo, vault))
+        val second = setupIds(AddonStore(repo, vault))
+        assertTrue(first.all(AddonSetupId::isValid))
+        assertNotEquals(first, second) // fails closed: approvals tied to the first ids no longer match
+        assertEquals(text, vault.text)
+    }
+
+    @Test
+    fun `the saved list holds each addon's setup id and reads it back`() {
+        val text = AddonStoreCodec.encode(listOf(meta))
+        assertTrue(text.contains(meta.setupId))
+        assertEquals(listOf(meta), AddonStoreCodec.decode(text))
     }
 }

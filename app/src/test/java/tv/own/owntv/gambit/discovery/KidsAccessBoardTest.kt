@@ -45,6 +45,7 @@ class KidsAccessBoardTest {
                 "a", "Addon a", "1.0.0", resources = listOf(AddonResource("catalog")), types = listOf("movie", "series"),
                 catalogs = listOf(cat("movie", "top", withGenre), cat("movie", "new"), cat("series", "shows")),
             ),
+            setupId = tv.own.owntv.gambit.addons.TestAddons.setupId("a"),
         ),
     ))
 

@@ -247,7 +247,6 @@ private fun DonePanel(done: StremioImportState.Done) {
             else stringResource(R.string.gambit_stremio_done_none),
             style = stageText(30, 700), color = GambitColors.Text,
         )
-        if (r.heldForKids > 0) Sentence(pluralStringResource(R.plurals.gambit_stremio_done_held, r.heldForKids, r.heldForKids))
         if (r.failed > 0) {
             Sentence(pluralStringResource(R.plurals.gambit_stremio_done_failed, r.failed, r.failed))
             Column(Modifier.padding(start = 20.mpx), verticalArrangement = Arrangement.spacedBy(4.mpx)) {

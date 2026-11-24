@@ -11,7 +11,7 @@ import tv.own.owntv.gambit.addons.net.AddonSource
 import tv.own.owntv.gambit.addons.net.AddonUrl
 
 /**
- * The saved form of the addon list: each addon's address, on/off state and last manifest. The manifest
+ * The saved form of the addon list: each addon's address, on/off state, setup id and last manifest. The manifest
  * is written back in Stremio's own shape and read with [AddonJson.manifest], so loading the list needs
  * no network. Only the fields [AddonManifest] keeps are written; anything else the addon sent (such as
  * `config`) was already dropped by the parser.
@@ -27,23 +27,43 @@ internal object AddonStoreCodec {
         .put("v", VERSION)
         .put("addons", JSONArray().apply {
             addons.forEach { a ->
-                put(JSONObject().put("url", a.url.manifestUrl).put("enabled", a.enabled).put("manifest", manifest(a.manifest)))
+                put(
+                    JSONObject().put("url", a.url.manifestUrl).put("enabled", a.enabled)
+                        .put("setup", a.setupId).put("manifest", manifest(a.manifest)),
+                )
             }
         })
         .toString()
 
+    /**
+     * The saved list, plus whether any entry was given a new setup id because its own was missing (lists
+     * saved before setup ids), malformed or a repeat of an earlier entry's. Null when [text] can't be read.
+     */
+    class Decoded(val addons: List<InstalledAddon>, val minted: Boolean)
+
     /** The saved list, in order, or null when [text] can't be read at all. Unreadable entries are dropped. */
-    fun decode(text: String): List<InstalledAddon>? {
+    fun decode(text: String, mint: () -> String = AddonSetupId::mint): List<InstalledAddon>? = decodeAll(text, mint)?.addons
+
+    /** Like [decode], and says whether setup ids were minted (the caller then saves the list again). */
+    fun decodeAll(text: String, mint: () -> String = AddonSetupId::mint): Decoded? {
         val root = runCatching { JSONObject(text) }.getOrNull() ?: return null
         if (root.optInt("v") != VERSION) return null
         val items = root.optJSONArray("addons") ?: return null
-        return (0 until items.length()).mapNotNull { i ->
+        val seen = HashSet<String>()
+        var minted = false
+        val addons = (0 until items.length()).mapNotNull { i ->
             val o = items.optJSONObject(i) ?: return@mapNotNull null
             val url = AddonUrl.parse(o.optString("url")) ?: return@mapNotNull null
             val m = o.optJSONObject("manifest") ?: return@mapNotNull null
             val manifest = (AddonJson.manifest(m.toString(), NO_SOURCE) as? AddonResult.Ok)?.value ?: return@mapNotNull null
-            InstalledAddon(url, manifest, enabled = o.optBoolean("enabled", true))
+            val stored = o.optString("setup")
+            val setupId = if (AddonSetupId.isValid(stored) && seen.add(stored)) stored else {
+                minted = true
+                mint().also { seen.add(it) }
+            }
+            InstalledAddon(url, manifest, enabled = o.optBoolean("enabled", true), setupId = setupId)
         }
+        return Decoded(addons, minted)
     }
 
     private fun manifest(m: AddonManifest): JSONObject = JSONObject().apply {

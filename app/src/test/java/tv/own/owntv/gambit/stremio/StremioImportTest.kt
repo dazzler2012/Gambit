@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import tv.own.owntv.gambit.addons.FakeAddonServer
@@ -121,7 +122,7 @@ class StremioImportTest {
         val streamsA = TestAddons.streamsA.copy(enabled = false)
         val (store, vault) = store(TestAddons.meta, streamsA)
 
-        val report = store.importAll(requests(url(STREAMS_B_BASE), streamsA.url, url(LISTS_BASE)), kidsApproved = emptySet())
+        val report = store.importAll(requests(url(STREAMS_B_BASE), streamsA.url, url(LISTS_BASE)))
 
         assertEquals(AddonImportReport(added = 2, alreadyAdded = 1), report)
         assertEquals(listOf(TestAddons.meta.url, streamsA.url, url(STREAMS_B_BASE), url(LISTS_BASE)), store.registry.value.all.map { it.url })
@@ -133,7 +134,7 @@ class StremioImportTest {
     @Test
     fun `an addon whose manifest can't be read is counted and not added`() = runBlocking {
         val (store, vault) = store(TestAddons.meta)
-        val report = store.importAll(listOf(AddonImportRequest(url("https://missing.example/cfg"), "Missing")), kidsApproved = emptySet())
+        val report = store.importAll(listOf(AddonImportRequest(url("https://missing.example/cfg"), "Missing")))
         assertEquals(AddonImportReport(failures = listOf(AddonImportFailure("Missing", AddonImportFailReason.Refused(404)))), report)
         assertEquals(listOf(TestAddons.meta.url), store.registry.value.all.map { it.url })
         assertEquals(0, vault.writes)
@@ -156,7 +157,6 @@ class StremioImportTest {
                 AddonImportRequest(url("https://notaddon.example/FAKEKEY-4"), "Not an addon"),
                 AddonImportRequest(url("https://html.example/FAKEKEY-5"), null),
             ),
-            kidsApproved = emptySet(),
         )
 
         assertEquals(
@@ -179,7 +179,7 @@ class StremioImportTest {
     @Test
     fun `the importer reports a failure under the name Stremio gave the addon`() = runBlocking {
         val (store, _) = store(TestAddons.meta)
-        val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store, kids)
+        val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store)
 
         val report = importer.import(listOf(ImportCandidate("My Lists", url("https://missing.example/FAKEKEY"), ImportKind.NEW)))
 
@@ -193,10 +193,10 @@ class StremioImportTest {
 
     @Test
     fun `an addon added with raw pipes is already added when Stremio has it escaped`() = runBlocking {
-        val installed = InstalledAddon(pipeRaw, TestAddons.manifest("manifest_streams.json"))
+        val installed = InstalledAddon(pipeRaw, TestAddons.manifest("manifest_streams.json"), setupId = TestAddons.setupId("pipe"))
         val (store, vault) = store(TestAddons.meta, installed)
 
-        val report = store.importAll(requests(pipeEscaped), kidsApproved = emptySet())
+        val report = store.importAll(requests(pipeEscaped))
 
         assertEquals(AddonImportReport(alreadyAdded = 1), report)
         assertEquals(2, store.registry.value.all.size)
@@ -206,7 +206,7 @@ class StremioImportTest {
 
     @Test
     fun `the preview greys out the escaped form of an addon added with raw pipes`() {
-        val installed = InstalledAddon(pipeRaw, TestAddons.manifest("manifest_streams.json"))
+        val installed = InstalledAddon(pipeRaw, TestAddons.manifest("manifest_streams.json"), setupId = TestAddons.setupId("pipe"))
         val collection = StremioAddonCollection(listOf(StremioAccountAddon("Torrent", pipeEscaped, false, false)), 0)
         val preview = StremioImportRules.preview(collection, listOf(installed))
         assertEquals(listOf(ImportKind.ALREADY_ADDED), preview.candidates.map { it.kind })
@@ -217,7 +217,7 @@ class StremioImportTest {
         addons.onFixture(pipeEscaped.canonical, "manifest_streams.json")
         val (store, _) = store(TestAddons.meta)
 
-        val report = store.importAll(requests(pipeRaw, pipeEscaped), kidsApproved = emptySet())
+        val report = store.importAll(requests(pipeRaw, pipeEscaped))
 
         assertEquals(AddonImportReport(added = 1), report)
         assertEquals(1, addons.requested.size)
@@ -226,13 +226,18 @@ class StremioImportTest {
 
     // --- kids profiles ---
 
+    /** The key of the movie "popular" catalogue of the installed addon at [base]. */
+    private fun moviePopular(store: AddonStore, base: String): String =
+        store.registry.value.browseCatalogs("movie").first { it.addon.url == url(base) && it.catalog.id == "popular" }.key
+
     @Test
     fun `import leaves a kids profile's approvals and Discovery unchanged`() = runBlocking {
         val (store, _) = store(TestAddons.meta)
-        val approved = setOf(META_MOVIE_POPULAR)
+        val popular = moviePopular(store, META_BASE)
+        val approved = setOf(popular)
         kids.set(KID, approved)
         val discoveryBefore = kidsDiscovery(store.registry.value, KID)
-        val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store, kids)
+        val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store)
 
         val report = importer.import(listOf(ImportCandidate("Lists", url(LISTS_BASE), ImportKind.NEW)))
 
@@ -240,41 +245,45 @@ class StremioImportTest {
         assertTrue(store.registry.value.all.any { it.url == url(LISTS_BASE) })
         assertEquals(approved, kids.approved(KID))
         assertEquals(discoveryBefore, kidsDiscovery(store.registry.value, KID))
-        assertEquals(listOf(META_MOVIE_POPULAR), kidsDiscovery(store.registry.value, KID))
+        assertEquals(listOf(popular), kidsDiscovery(store.registry.value, KID))
     }
 
     @Test
-    fun `an addon sharing a catalogue key with one a kids profile can see is held back`() = runBlocking {
+    fun `another configuration of an approved addon is imported but stays unapproved on a kids profile`() = runBlocking {
         val (store, _) = store(TestAddons.meta)
-        kids.set(KID, setOf(META_MOVIE_POPULAR))
+        val popular = moviePopular(store, META_BASE)
+        kids.set(KID, setOf(popular))
         val discoveryBefore = kidsDiscovery(store.registry.value, KID)
 
         // Same manifest id and host as the installed metadata addon, but another configuration.
-        val report = store.importAll(requests(url(OTHER_META_BASE)), kids.approvals.value.values.flatten().toSet())
+        val report = store.importAll(requests(url(OTHER_META_BASE)))
 
-        assertEquals(AddonImportReport(heldForKids = 1), report)
-        assertEquals(listOf(TestAddons.meta.url), store.registry.value.all.map { it.url })
-        assertEquals(setOf(META_MOVIE_POPULAR), kids.approved(KID))
+        assertEquals(AddonImportReport(added = 1), report)
+        assertEquals(listOf(TestAddons.meta.url, url(OTHER_META_BASE)), store.registry.value.all.map { it.url })
+        assertNotEquals(popular, moviePopular(store, OTHER_META_BASE))
+        assertEquals(setOf(popular), kids.approved(KID))
         assertEquals(discoveryBefore, kidsDiscovery(store.registry.value, KID))
     }
 
     @Test
     fun `an approval left over from a removed addon can't bring it back on a kids profile`() = runBlocking {
-        val (store, _) = store(TestAddons.meta)
-        kids.set(KID, setOf(LISTS_WATCHLIST))
-        val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store, kids)
+        val (store, _) = store(TestAddons.meta, TestAddons.lists)
+        val watchlist = store.registry.value.browseCatalogs().first { it.catalog.id == "list.watchlist" }.key
+        kids.set(KID, setOf(watchlist))
+        store.remove(url(LISTS_BASE)) // no watcher here, so the approval is left behind
+        val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store)
 
         val report = importer.import(listOf(ImportCandidate("Lists", url(LISTS_BASE), ImportKind.NEW)))
 
-        assertEquals(AddonImportReport(heldForKids = 1), report)
+        assertEquals(1, report.added)
         assertEquals(emptyList<String>(), kidsDiscovery(store.registry.value, KID))
-        assertEquals(setOf(LISTS_WATCHLIST), kids.approved(KID))
+        assertEquals(setOf(watchlist), kids.approved(KID))
     }
 
     @Test
     fun `rows that can't be ticked are never imported`() = runBlocking {
         val (store, _) = store(TestAddons.meta)
-        val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store, kids)
+        val importer = StremioImporter(FakeStremio.client(FakeStremioHost()), store)
         val report = importer.import(listOf(ImportCandidate("Lists", url(LISTS_BASE), ImportKind.ALREADY_ADDED)))
         assertEquals(AddonImportReport(), report)
         assertTrue(addons.requested.isEmpty())
@@ -286,7 +295,7 @@ class StremioImportTest {
     private val pauses = mutableListOf<Long>()
 
     private fun importer(host: FakeStremioHost, store: AddonStore, timeoutMs: Long = StremioImporter.TIMEOUT_MS) =
-        StremioImporter(FakeStremio.client(host), store, kids, timeoutMs = timeoutMs, nowMs = { now }, pause = { now += it; pauses += it })
+        StremioImporter(FakeStremio.client(host), store, timeoutMs = timeoutMs, nowMs = { now }, pause = { now += it; pauses += it })
 
     @Test
     fun `waits for the phone, then reads the account once and returns the preview`() = runBlocking {
@@ -363,8 +372,6 @@ class StremioImportTest {
     private companion object {
         const val KID = 7L
         const val OTHER_META_BASE = "https://meta.example/OTHER-CONFIG"
-        const val META_MOVIE_POPULAR = "org.example.meta|meta.example|movie|popular"
-        const val LISTS_WATCHLIST = "org.example.lists|lists.example|movie|list.watchlist"
         val CODE = StremioLinkCode("AB12", "https://link.stremio.example/AB12")
         const val WAITING = """{"error":{"code":101,"message":"Invalid or expired token"}}"""
         val LINKED = """{"result":{"authKey":"${FakeStremio.KEY}"}}"""

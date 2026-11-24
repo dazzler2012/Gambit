@@ -61,6 +61,11 @@ internal fun KidsAccessPage(onClose: () -> Unit, vm: KidsAccessViewModel = koinV
             stringResource(R.string.gambit_kids_access_description), style = stageText(18, 500), color = GambitColors.Muted,
             modifier = Modifier.padding(top = 10.mpx),
         )
+        // Approvals follow one exact addon setup; settings changed on the addon's own server can't be seen.
+        Text(
+            stringResource(R.string.gambit_kids_access_settings_note), style = stageText(16, 500), color = GambitColors.Dim,
+            modifier = Modifier.padding(top = 6.mpx),
+        )
         Column(Modifier.padding(top = 24.mpx)) {
             if (selected == null) {
                 if (profiles.isEmpty()) {

@@ -258,6 +258,7 @@
     <!-- More → Addons → Kids access: which addon catalogues a kids profile may see. -->
     <string name="gambit_kids_access_title" translatable="false">Kids access</string>
     <string name="gambit_kids_access_description" translatable="false">Choose which addon catalogues each kids profile can see. Everything else from addons stays hidden on that profile.</string>
+    <string name="gambit_kids_access_settings_note" translatable="false">Changed an addon\'s settings on its website? Add its address again under Addons, then approve its catalogues here again.</string>
     <string name="gambit_kids_access_set_pin_title" translatable="false">Set a profile PIN first</string>
     <string name="gambit_kids_access_set_pin_body" translatable="false">Kids access is protected by an adult profile\'s PIN. Add a PIN to an adult profile, then open Kids access again.</string>
     <string name="gambit_kids_access_no_kids" translatable="false">No kids profiles yet. Turn on Kids in a profile\'s settings first.</string>
@@ -305,10 +306,6 @@
         <item quantity="other">%1$d addons added</item>
     </plurals>
     <string name="gambit_stremio_done_none" translatable="false">No addons were added</string>
-    <plurals name="gambit_stremio_done_held" translatable="false">
-        <item quantity="one">%1$d not added because it matches a catalogue approved for a kids profile. It was left out to keep that profile safe.</item>
-        <item quantity="other">%1$d not added because they match a catalogue approved for a kids profile. They were left out to keep that profile safe.</item>
-    </plurals>
     <plurals name="gambit_stremio_done_failed" translatable="false">
         <item quantity="one">%1$d couldn\'t be loaded:</item>
         <item quantity="other">%1$d couldn\'t be loaded:</item>
