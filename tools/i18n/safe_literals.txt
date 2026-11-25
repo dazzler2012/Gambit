@@ -1133,6 +1133,10 @@
 1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)\\b720p\\b
 1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)movies[ ._-]?anywhere
 1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)remux
+1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/TraktTitles.kt	$TMDB_PREFIX$it
+1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/TraktTitles.kt	movie
+1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/TraktTitles.kt	series
+1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/TraktTitles.kt	tmdb:
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$KEY_PREFIX:$SERIES:$metaId
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$KEY_PREFIX:$type:$videoId
 1	protocol	app/src/main/java/tv/own/owntv/gambit/playback/GambitAddonPlayer.kt	$SUB_NAME$i.$subExt
