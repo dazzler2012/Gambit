@@ -1,7 +1,7 @@
 package tv.own.owntv.gambit.stremio
 
 import java.io.IOException
-import java.util.Collections
+import java.util.concurrent.CopyOnWriteArrayList
 import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -34,7 +34,8 @@ internal class FakeStremioHost : Interceptor {
     class Reply(val code: Int = 200, val body: String = "", val failure: IOException? = null)
 
     private val routes = mutableMapOf<String, ArrayDeque<Reply>>()
-    val seen: MutableList<SeenRequest> = Collections.synchronizedList(mutableListOf())
+    /** Copy-on-write: a cancelled call's OkHttp thread may still append while a test reads the list. */
+    val seen: MutableList<SeenRequest> = CopyOnWriteArrayList()
 
     fun on(method: String, path: String, vararg replies: Reply) = apply { routes["$method $path"] = ArrayDeque(replies.toList()) }
     fun onJson(method: String, path: String, body: String, code: Int = 200) = on(method, path, Reply(code, body))
