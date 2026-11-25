@@ -1,7 +1,11 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package tv.own.owntv.gambit.ui.discovery
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +37,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -70,6 +76,31 @@ private const val LOAD_MORE_AHEAD = 12
 
 /** The grid key of the "loading more / couldn't load more" row; posters are keyed by their String id. */
 private const val MORE_ROW_KEY = -1
+
+/** Room, in design pixels, the grid leaves beyond the focused poster when it has to scroll. */
+private const val SCROLL_MARGIN_MPX = 80
+
+/** How far into that room the focused poster may be before the grid moves: the focus zoom shifts it about 11. */
+private const val SCROLL_SLACK_MPX = 16
+
+/**
+ * How far a poster grid scrolls for the focused item (positive is down), all in pixels: [offset] is the
+ * item's top in the grid's window, [size] its height. Nothing while it sits no more than [slack] into the
+ * [margin] at either edge; otherwise just far enough to leave the whole [margin] on the side it left by.
+ * A window too small for both margins centres the item; an item taller than the window aligns its top.
+ */
+internal fun discoveryScrollDistance(offset: Float, size: Float, containerSize: Float, margin: Float, slack: Float): Float {
+    if (size > containerSize) return offset
+    val room = margin.coerceAtMost((containerSize - size) / 2f)
+    val allowed = slack.coerceAtMost(room)
+    val lead = offset - room
+    val trailing = offset + size + room - containerSize
+    return when {
+        lead < -allowed -> lead
+        trailing > allowed -> trailing
+        else -> 0f
+    }
+}
 
 /**
  * Discovery, in the rail's Sports slot: a Type drop-down (Movies / Series), the addons' catalogues for it
@@ -275,9 +306,21 @@ private fun DiscoveryContent(
                 }
             }
         }
+        // Both grids: in place of the TV default, which pins the focused poster a third down on every move.
+        val density = LocalDensity.current
+        val gridScrollSpec = remember(density) {
+            val margin = with(density) { SCROLL_MARGIN_MPX.mpx.toPx() }
+            val slack = with(density) { SCROLL_SLACK_MPX.mpx.toPx() }
+            object : BringIntoViewSpec {
+                override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
+                    discoveryScrollDistance(offset, size, containerSize, margin, slack)
+            }
+        }
         Column(Modifier.padding(top = 22.mpx).fillMaxSize()) {
-            if (onTrakt) TraktBody(trakt, traktList, vm, gridState, gridFocus, retryFocus, posterFocus, openTitle)
-            else DiscoveryBody(state, vm, gridState, gridFocus, retryFocus, posterFocus, openTitle)
+            CompositionLocalProvider(LocalBringIntoViewSpec provides gridScrollSpec) {
+                if (onTrakt) TraktBody(trakt, traktList, vm, gridState, gridFocus, retryFocus, posterFocus, openTitle)
+                else DiscoveryBody(state, vm, gridState, gridFocus, retryFocus, posterFocus, openTitle)
+            }
         }
     }
 
