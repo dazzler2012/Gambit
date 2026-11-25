@@ -75,6 +75,13 @@ class AddonUrlTest {
     }
 
     @Test
+    fun `catalog extras never print the typed text`() {
+        val shown = CatalogExtraArgs(search = "zebra", genre = "Drama", skip = 20).toString()
+        assertFalse(shown.contains("zebra"))
+        assertEquals("CatalogExtraArgs(search=true, genre=Drama, skip=20)", shown)
+    }
+
+    @Test
     fun `ids and non ascii text are percent encoded`() {
         val u = url("https://addon.example/abc")
         assertEquals("https://addon.example/abc/catalog/movie/list%2Fone/search=caf%C3%A9.json",
