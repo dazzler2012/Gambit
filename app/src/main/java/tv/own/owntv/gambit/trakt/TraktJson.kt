@@ -105,13 +105,22 @@ internal fun JSONObject.toSeason(show: TraktShow?): TraktSeason = TraktSeason(
 
 /** Reads the media item of a history, playback or watchlist entry, chosen by its "type" field. */
 internal fun JSONObject.toMediaItem(): TraktMediaItem {
+    val type = requireString("type")
+    return toMediaItemOrNull() ?: throw TraktJsonException("unknown type '$type'")
+}
+
+/**
+ * Like [toMediaItem], but a "type" this client does not know (a list can hold a `person`) gives null
+ * instead of failing. A known type with a missing or broken object still fails.
+ */
+internal fun JSONObject.toMediaItemOrNull(): TraktMediaItem? {
     val show = objectOrNull("show")?.toShow()
-    return when (val type = requireString("type")) {
+    return when (requireString("type")) {
         "movie" -> TraktMediaItem.Movie(requireObject("movie").toMovie())
         "show" -> TraktMediaItem.Show(show ?: throw TraktJsonException("missing 'show'"))
         "season" -> TraktMediaItem.Season(requireObject("season").toSeason(show))
         "episode" -> TraktMediaItem.Episode(requireObject("episode").toEpisode(show))
-        else -> throw TraktJsonException("unknown type '$type'")
+        else -> null
     }
 }
 

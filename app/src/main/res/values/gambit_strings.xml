@@ -167,6 +167,7 @@
     <string name="gambit_trakt_err_refused" translatable="false">Trakt did not accept this app. The family build may need a new Trakt app set up.</string>
     <string name="gambit_trakt_err_storage" translatable="false">Could not save the sign-in on this TV. Try again.</string>
     <string name="gambit_trakt_err_expired_signin" translatable="false">Your Trakt sign-in ran out. Sign in again.</string>
+    <string name="gambit_trakt_err_account_limit" translatable="false">Trakt says this account has reached one of its limits.</string>
     <string name="gambit_trakt_err_other" translatable="false">Something went wrong talking to Trakt. Try again.</string>
 
     <!-- Home's addon row, in the Live sports slot. Title: "Discovery · Popular", the catalogue's own name. -->

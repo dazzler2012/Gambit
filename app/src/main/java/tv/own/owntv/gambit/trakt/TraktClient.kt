@@ -5,7 +5,7 @@ import kotlinx.coroutines.delay
 import okhttp3.OkHttpClient
 
 /**
- * Gambit's entry point to Trakt: sign-in, scrobbling and sync, all sharing one session.
+ * Gambit's entry point to Trakt: sign-in, scrobbling, sync and lists, all sharing one session.
  *
  * Pass the app's shared [OkHttpClient] to reuse its connection pool; [httpClient] is not changed.
  * [nowMillis] and [sleep] are there so tests can run the clock themselves.
@@ -23,6 +23,7 @@ class TraktClient(
     val deviceAuth = TraktDeviceAuth(config, http, tokenStore, nowMillis, sleep)
     val scrobbler = TraktScrobbler(http, session)
     val sync = TraktSync(http, session)
+    val lists = TraktLists(http, session)
 
     companion object {
         fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()

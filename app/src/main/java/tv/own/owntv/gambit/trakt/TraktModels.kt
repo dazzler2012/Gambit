@@ -137,3 +137,37 @@ data class TraktWatchlistChange(
     val existing: TraktCounts,
     val notFound: TraktCounts,
 )
+
+// ---- Lists ----
+
+/**
+ * One of the signed-in user's personal lists. [traktId] is what the items call uses (a slug changes when
+ * the list is renamed). [itemCount] is Trakt's count, which can include entries Gambit skips (people).
+ */
+data class TraktList(
+    val traktId: Long,
+    val slug: String?,
+    val name: String?,
+    val itemCount: Int?,
+    val updatedAt: Instant?,
+)
+
+/** One entry of a personal list or the watchlist, in the order Trakt sent it. */
+data class TraktListEntry(
+    val rank: Int?,
+    val listedAt: Instant?,
+    val item: TraktMediaItem,
+)
+
+/**
+ * One page of a list or the watchlist. [page] is the page asked for. [hasMore] says whether to ask for
+ * the next one (see [TraktLists]). [skipped] counts entries of a kind Gambit does not show (people).
+ */
+data class TraktListPage(
+    val entries: List<TraktListEntry>,
+    val page: Int,
+    val hasMore: Boolean,
+    val pageCount: Int?,
+    val itemCount: Int?,
+    val skipped: Int,
+)

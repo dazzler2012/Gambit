@@ -55,6 +55,14 @@ sealed class TraktError {
         override val description = "Trakt would not process the request (422)"
     }
 
+    /**
+     * 420: an account limit was hit (list count, item count and so on). Trakt also sends X-Account-Limit,
+     * X-VIP-User and X-Upgrade-URL; Gambit reads none of them and never opens the upgrade link.
+     */
+    data object AccountLimit : TraktError() {
+        override val description = "Trakt account limit reached (420)"
+    }
+
     /** 429: too many requests. Wait [retryAfterSeconds] (from the Retry-After header) when it is known. */
     data class RateLimited(val retryAfterSeconds: Long?) : TraktError() {
         override val description = "Trakt rate limit hit (429), retry after ${retryAfterSeconds ?: "unknown"} s"

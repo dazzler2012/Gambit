@@ -112,6 +112,7 @@ internal class TraktHttp(
         403 -> TraktError.Forbidden
         404 -> TraktError.NotFound
         409 -> conflict(reply.body)
+        420 -> TraktError.AccountLimit
         422 -> TraktError.Unprocessable
         429 -> TraktError.RateLimited(retryAfterSeconds(reply.headers))
         in 500..599 -> TraktError.Server(code)
