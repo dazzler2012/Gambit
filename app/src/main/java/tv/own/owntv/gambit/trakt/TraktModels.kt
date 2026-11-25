@@ -13,9 +13,11 @@ data class TraktIds(
     val isEmpty: Boolean get() = trakt == null && slug == null && imdb == null && tmdb == null && tvdb == null
 }
 
-data class TraktMovie(val title: String?, val year: Int?, val ids: TraktIds)
+/** [poster] is an https URL from Trakt's `images`, only when the call asked for `extended=images`. */
+data class TraktMovie(val title: String?, val year: Int?, val ids: TraktIds, val poster: String? = null)
 
-data class TraktShow(val title: String?, val year: Int?, val ids: TraktIds)
+/** [poster] is an https URL from Trakt's `images`, only when the call asked for `extended=images`. */
+data class TraktShow(val title: String?, val year: Int?, val ids: TraktIds, val poster: String? = null)
 
 data class TraktSeason(val number: Int, val ids: TraktIds, val show: TraktShow?)
 

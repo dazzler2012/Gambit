@@ -82,7 +82,7 @@ class TraktListBoardTest {
         assertEquals(TraktListFeed.Loading, board.state.value.feed)
         val done = awaitComplete()
         assertEquals((1..6).map { "tt$it" }, done.items.map { it.id })
-        assertEquals(listOf("page=1&limit=100", "page=2&limit=100", "page=3&limit=100"), queries(listPath))
+        assertEquals(listOf("page=1&limit=100&extended=images", "page=2&limit=100&extended=images", "page=3&limit=100&extended=images"), queries(listPath))
         assertEquals(list, board.state.value.source)
     }
 
@@ -102,7 +102,7 @@ class TraktListBoardTest {
         host.on("GET", watchPath, Canned(body = movies(7, 8)))
         board.open(TraktListSource.Watchlist)
         assertEquals(listOf("tt7", "tt8"), awaitComplete().items.map { it.id })
-        assertEquals(listOf("page=1&limit=100"), queries(watchPath))
+        assertEquals(listOf("page=1&limit=100&extended=images"), queries(watchPath))
     }
 
     @Test
@@ -121,7 +121,7 @@ class TraktListBoardTest {
         assertEquals(TraktError.Server(500), failed.error)
         board.retry()
         assertEquals(listOf("tt1"), awaitComplete().items.map { it.id })
-        assertEquals(listOf("page=1&limit=100", "page=1&limit=100"), queries(listPath))
+        assertEquals(listOf("page=1&limit=100&extended=images", "page=1&limit=100&extended=images"), queries(listPath))
     }
 
     @Test
@@ -138,7 +138,7 @@ class TraktListBoardTest {
         assertEquals(TraktError.RateLimited(5), stopped.error)
         board.retry()
         assertEquals(listOf("tt1", "tt2", "tt3"), awaitComplete().items.map { it.id })
-        assertEquals(listOf("page=1&limit=100", "page=2&limit=100", "page=2&limit=100"), queries(listPath))
+        assertEquals(listOf("page=1&limit=100&extended=images", "page=2&limit=100&extended=images", "page=2&limit=100&extended=images"), queries(listPath))
     }
 
     @Test
@@ -233,6 +233,6 @@ class TraktListBoardTest {
         val done = awaitComplete()
         assertEquals(100, done.items.size)
         assertEquals(TraktListBoard.MAX_PAGES, queries(listPath).size)
-        assertTrue(queries(listPath).last() == "page=${TraktListBoard.MAX_PAGES}&limit=100")
+        assertTrue(queries(listPath).last() == "page=${TraktListBoard.MAX_PAGES}&limit=100&extended=images")
     }
 }

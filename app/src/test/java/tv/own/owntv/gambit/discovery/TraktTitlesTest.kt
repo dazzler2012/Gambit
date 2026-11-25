@@ -60,6 +60,31 @@ class TraktTitlesTest {
     }
 
     @Test
+    fun `Trakt's poster first, else the IMDb poster service, and none for a TMDB-only title`() {
+        val out = TraktTitles.from(
+            listOf(
+                entry(TraktMediaItem.Movie(TraktMovie("Own", 2000, TraktIds(imdb = "tt0000001"), poster = "https://media.trakt.example/p.jpg"))),
+                movie("Imdb only", TraktIds(imdb = "tt0000002", tmdb = 2)),
+                movie("Tmdb only", TraktIds(trakt = 3, tmdb = 3)),
+                episode(showA.copy(poster = "https://media.trakt.example/show.jpg")),
+            ),
+            mutableSetOf(),
+        )
+        assertEquals("https://media.trakt.example/p.jpg", out[0].poster)
+        assertEquals("https://images.metahub.space/poster/medium/tt0000002/img", out[1].poster)
+        assertNull(out[2].poster)
+        assertEquals("a season or episode uses its show's poster", "https://media.trakt.example/show.jpg", out[3].poster)
+    }
+
+    @Test
+    fun `only a well-formed IMDb id ever reaches the poster service`() {
+        assertEquals("https://images.metahub.space/poster/medium/tt1234567/img", TraktTitles.fallbackPoster(" tt1234567 "))
+        listOf(null, "", "nm0000001", "tt", "tt12a", "tt1/../x", "tt1?token=x", "tt1 2", "TT123").forEach {
+            assertNull("$it", TraktTitles.fallbackPoster(it))
+        }
+    }
+
+    @Test
     fun `ids seen on an earlier page are not repeated`() {
         val seen = mutableSetOf<String>()
         TraktTitles.from(listOf(show(showA)), seen)

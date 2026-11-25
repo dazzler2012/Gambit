@@ -66,7 +66,7 @@ class TraktListsTest {
     }
 
     @Test
-    fun `the comma in the type filter reaches the server intact, with page and limit and no sort`() = runBlocking {
+    fun `the comma in the type filter reaches the server intact, with page, limit and images and no sort`() = runBlocking {
         val h = Harness()
         h.host.on("GET", itemsPath, Canned(body = "[]"))
 
@@ -75,7 +75,7 @@ class TraktListsTest {
         val seen = h.host.seen.single()
         assertEquals(itemsPath, seen.path)
         assertFalse("comma must not be escaped", seen.path.contains("%2C", ignoreCase = true))
-        assertEquals("page=3&limit=100", seen.query)
+        assertEquals("page=3&limit=100&extended=images", seen.query)
     }
 
     @Test
@@ -86,7 +86,31 @@ class TraktListsTest {
         val page = h.client.lists.watchlist(page = 1).getOrNull()!!
 
         assertEquals(listOf(1, 2, 3, 4), page.entries.map { it.rank })
-        assertEquals("page=1&limit=100", h.host.seen.single().query)
+        assertEquals("page=1&limit=100&extended=images", h.host.seen.single().query)
+    }
+
+    @Test
+    fun `posters come from Trakt's images with https in front, and a bad or missing one is ignored`() = runBlocking {
+        val h = Harness()
+        val body = """[
+            {"rank":1,"type":"movie","movie":{"title":"A","ids":{"trakt":1,"imdb":"tt1"},"images":{"poster":["media.trakt.example/images/movies/1/posters/medium/a.jpg"]}}},
+            {"rank":2,"type":"show","show":{"title":"B","ids":{"trakt":2},"images":{"poster":[]}}},
+            {"rank":3,"type":"episode","episode":{"season":1,"number":1,"ids":{"trakt":3}},
+             "show":{"title":"C","ids":{"trakt":4},"images":{"poster":["https://media.trakt.example/c.jpg"]}}},
+            {"rank":4,"type":"movie","movie":{"title":"D","ids":{"trakt":5},"images":{"poster":["not a url"]}}},
+            {"rank":5,"type":"movie","movie":{"title":"E","ids":{"trakt":6}}},
+            {"rank":6,"type":"movie","movie":{"title":"F","ids":{"trakt":7},"images":{"poster":[null]}}}
+        ]"""
+        h.host.on("GET", itemsPath, Canned(body = body))
+
+        val entries = h.client.lists.items(42, page = 1).getOrNull()!!.entries
+
+        assertEquals("https://media.trakt.example/images/movies/1/posters/medium/a.jpg", (entries[0].item as TraktMediaItem.Movie).movie.poster)
+        assertNull((entries[1].item as TraktMediaItem.Show).show.poster)
+        assertEquals("https://media.trakt.example/c.jpg", (entries[2].item as TraktMediaItem.Episode).episode.show!!.poster)
+        assertNull((entries[3].item as TraktMediaItem.Movie).movie.poster)
+        assertNull((entries[4].item as TraktMediaItem.Movie).movie.poster)
+        assertNull((entries[5].item as TraktMediaItem.Movie).movie.poster)
     }
 
     @Test

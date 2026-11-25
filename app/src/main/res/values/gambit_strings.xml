@@ -206,7 +206,7 @@
     <string name="gambit_discovery_err_no_addon" translatable="false">No addon offers this catalogue any more. Check More → Addons.</string>
     <string name="gambit_discovery_err_other" translatable="false">Something went wrong loading this catalogue. Try again.</string>
     <!-- Discovery's Trakt choice (adult profiles only): the type, its list drop-down and its messages. -->
-    <string name="gambit_discovery_trakt" translatable="false">Trakt</string>
+    <string name="gambit_discovery_trakt" translatable="false">My Trakt</string>
     <string name="gambit_discovery_trakt_list" translatable="false">List</string>
     <string name="gambit_discovery_trakt_watchlist" translatable="false">Watchlist</string>
     <string name="gambit_discovery_trakt_unnamed" translatable="false">Untitled list</string>
@@ -270,6 +270,7 @@
     <string name="gambit_kids_access_title" translatable="false">Kids access</string>
     <string name="gambit_kids_access_description" translatable="false">Choose which addon catalogues each kids profile can see. Everything else from addons stays hidden on that profile.</string>
     <string name="gambit_kids_access_settings_note" translatable="false">Changed an addon\'s settings on its website? Add its address again under Addons, then approve its catalogues here again.</string>
+    <string name="gambit_kids_access_account_note" translatable="false">Catalogues such as history, watchlists or personal lists show your own account\'s viewing. Think before approving them for a kids profile.</string>
     <string name="gambit_kids_access_set_pin_title" translatable="false">Set a profile PIN first</string>
     <string name="gambit_kids_access_set_pin_body" translatable="false">Kids access is protected by an adult profile\'s PIN. Add a PIN to an adult profile, then open Kids access again.</string>
     <string name="gambit_kids_access_no_kids" translatable="false">No kids profiles yet. Turn on Kids in a profile\'s settings first.</string>

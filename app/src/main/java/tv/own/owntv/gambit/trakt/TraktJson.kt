@@ -2,6 +2,7 @@ package tv.own.owntv.gambit.trakt
 
 import java.time.Instant
 import java.time.format.DateTimeParseException
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -81,13 +82,34 @@ internal fun JSONObject.toMovie(): TraktMovie = TraktMovie(
     title = stringOrNull("title"),
     year = intOrNull("year"),
     ids = requireObject("ids").toIds(),
+    poster = objectOrNull("images")?.posterUrl(),
 )
 
 internal fun JSONObject.toShow(): TraktShow = TraktShow(
     title = stringOrNull("title"),
     year = intOrNull("year"),
     ids = requireObject("ids").toIds(),
+    poster = objectOrNull("images")?.posterUrl(),
 )
+
+/**
+ * The first poster of an `images` object (`extended=images`): a list of addresses that Trakt sends
+ * without a scheme, so `https://` is put in front. Anything that is not then a plain https address with
+ * a host is ignored, and so is a missing or empty list: the title simply has no Trakt poster.
+ */
+internal fun JSONObject.posterUrl(): String? {
+    val raw = when (val value = opt("poster")) {
+        is JSONArray -> value.optString(0, "")
+        is String -> value
+        else -> ""
+    }.trim()
+    if (raw.isEmpty() || raw.any { it.isWhitespace() }) return null
+    val bare = raw.removePrefix("https://").removePrefix("http://").removePrefix("//")
+    val url = (HTTPS + bare).toHttpUrlOrNull() ?: return null
+    return url.takeIf { it.isHttps && it.host.isNotEmpty() }?.toString()
+}
+
+private const val HTTPS = "https://"
 
 internal fun JSONObject.toEpisode(show: TraktShow?): TraktEpisode = TraktEpisode(
     season = requireInt("season"),

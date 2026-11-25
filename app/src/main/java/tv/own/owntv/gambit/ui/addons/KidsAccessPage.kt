@@ -66,6 +66,11 @@ internal fun KidsAccessPage(onClose: () -> Unit, vm: KidsAccessViewModel = koinV
             stringResource(R.string.gambit_kids_access_settings_note), style = stageText(16, 500), color = GambitColors.Dim,
             modifier = Modifier.padding(top = 6.mpx),
         )
+        // Account catalogues (history, watchlists, personal lists) show the adult's own viewing.
+        Text(
+            stringResource(R.string.gambit_kids_access_account_note), style = stageText(16, 500), color = GambitColors.Dim,
+            modifier = Modifier.padding(top = 6.mpx),
+        )
         Column(Modifier.padding(top = 24.mpx)) {
             if (selected == null) {
                 if (profiles.isEmpty()) {

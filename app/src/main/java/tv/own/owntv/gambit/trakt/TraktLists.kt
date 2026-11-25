@@ -8,7 +8,8 @@ import okhttp3.Headers
  * Paths and behaviour follow Trakt's API docs (Apiary): `GET /users/{id}/lists`, `GET /users/{id}/lists/
  * {list_id}/items/{type}` and `GET /sync/watchlist/{type}`. Both item calls are "Pagination Optional"
  * (everything at once unless page and limit are sent), so every call here sends both. No sort is sent:
- * then Trakt returns the list in its own default sort (the one the user chose on Trakt).
+ * then Trakt returns the list in its own default sort (the one the user chose on Trakt). Both item calls
+ * also send `extended=images` for posters.
  */
 class TraktLists internal constructor(
     private val http: TraktHttp,
@@ -31,7 +32,7 @@ class TraktLists internal constructor(
 
     private suspend fun pageOf(path: String, page: Int, limit: Int): TraktResult<TraktListPage> {
         if (page < 1 || limit !in 1..PAGE_LIMIT) return TraktResult.Failure(TraktError.Unprocessable)
-        val query = mapOf("page" to page.toString(), "limit" to limit.toString())
+        val query = mapOf("page" to page.toString(), "limit" to limit.toString(), "extended" to EXTENDED_IMAGES)
         return session.authorized { token ->
             http.send("GET", path, accessToken = token, query = query).flatMap { reply ->
                 parsing { readPage(reply.body, reply.headers, page, limit) }
@@ -42,6 +43,12 @@ class TraktLists internal constructor(
     companion object {
         /** Items asked for per page. Trakt documents no maximum; it may send fewer (see [hasMorePages]). */
         const val PAGE_LIMIT = 100
+
+        /**
+         * Asks Trakt to add an `images` object (posters) to each movie and show. Taken from Trakt's API docs
+         * as relayed for this task; the docs host could not be read to confirm it (UNVERIFIED).
+         */
+        internal const val EXTENDED_IMAGES = "images"
 
         /** The type filter for list items: a comma-separated value in one path segment. Leaves out `person`. */
         internal const val LIST_TYPES = "movie,show,season,episode"
