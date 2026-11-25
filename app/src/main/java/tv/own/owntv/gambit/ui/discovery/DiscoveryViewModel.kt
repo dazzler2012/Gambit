@@ -40,6 +40,11 @@ import tv.own.owntv.gambit.discovery.StreamTarget
 import tv.own.owntv.gambit.discovery.TitleBoard
 import tv.own.owntv.gambit.discovery.TitleFeed
 import tv.own.owntv.gambit.discovery.TitleState
+import tv.own.owntv.gambit.discovery.TraktDiscovery
+import tv.own.owntv.gambit.discovery.TraktDiscoveryState
+import tv.own.owntv.gambit.discovery.TraktListSource
+import tv.own.owntv.gambit.discovery.TraktListState
+import tv.own.owntv.gambit.trakt.GambitTrakt
 import tv.own.owntv.gambit.addons.model.AddonVideo
 import tv.own.owntv.gambit.addons.model.MetaPreview
 
@@ -112,11 +117,27 @@ class DiscoveryViewModel(
     private val addonPlayer: GambitAddonPlayer,
     kidsAccess: KidsAddonAccess,
     private val gate: KidsTitleGate,
+    gambitTrakt: GambitTrakt,
 ) : ViewModel() {
 
     /** What the active profile may do with addons; see [AddonAccess]. */
     val addonAccess: StateFlow<AddonAccess> = observeAddonAccess(settings, profileDao, kidsAccess)
         .stateIn(viewModelScope, SharingStarted.Eagerly, AddonAccess.Unknown)
+
+    private val traktConfigured = gambitTrakt.isConfigured
+
+    /** Trakt in Discovery: adult profiles only, in a build with a Client ID. */
+    private val traktDiscovery = TraktDiscovery(gambitTrakt.client, viewModelScope, { traktAllowed(addonAccess.value, traktConfigured) })
+
+    /** Whether the type drop-down offers "Trakt". */
+    val traktShown: StateFlow<Boolean> = addonAccess.map { traktAllowed(it, traktConfigured) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** Trakt's sign-in, list drop-down and choice; [TraktDiscoveryState.active] while "Trakt" is the type. */
+    val trakt: StateFlow<TraktDiscoveryState> = traktDiscovery.state
+
+    /** The titles of the chosen Trakt list. */
+    val traktList: StateFlow<TraktListState> = traktDiscovery.list
 
     private val kidsTitle = KidsTitleSession(gate)
 
@@ -162,9 +183,17 @@ class DiscoveryViewModel(
         store.registry.drop(1).onEach { board.onRegistryChanged() }.launchIn(viewModelScope)
         // A play Gambit had to stop (stuck on both engines): say so on the stream list.
         addonPlayer.failures.onEach { _playNote.value = PlayNote.FAILED }.launchIn(viewModelScope)
+        // Trakt: forgotten on a profile switch, on sign-out, and whenever access stops being adult.
+        var shownProfile: Any? = null
+        settings.activeProfileId.onEach { id ->
+            if (shownProfile != null && id != shownProfile) traktDiscovery.forget()
+            shownProfile = id
+        }.launchIn(viewModelScope)
+        gambitTrakt.signOuts.drop(1).onEach { traktDiscovery.signedOut() }.launchIn(viewModelScope)
         // A closed profile (or one not read yet) never keeps a title page open; a kids profile keeps one only
         // while its catalogue is still approved.
         addonAccess.onEach { a ->
+            traktDiscovery.accessChanged()
             when (a) {
                 AddonAccess.Adult -> gate.reset()
                 is AddonAccess.Kids -> {
@@ -203,6 +232,8 @@ class DiscoveryViewModel(
             titles.close()
         }
         if (addonAccess.value.isOpen) board.open(request?.type, request?.catalogKey)
+        // Home's row opens an addon catalogue; otherwise a Trakt list on screen is checked again.
+        if (request != null) traktDiscovery.leave() else traktDiscovery.refresh()
     }
 
     /**
@@ -223,13 +254,33 @@ class DiscoveryViewModel(
     /** After a failed first page: forget results and ask again. */
     fun retry() = open()
 
-    fun selectType(type: DiscoveryType) = board.selectType(type)
+    /** "Trakt" goes to Trakt (refused unless allowed); any other type leaves it for the addons' catalogues. */
+    fun selectType(type: DiscoveryType) {
+        if (type == DiscoveryType.TRAKT) {
+            traktDiscovery.enter()
+            return
+        }
+        traktDiscovery.leave()
+        board.selectType(type)
+    }
+
+    fun selectTraktList(source: TraktListSource) = traktDiscovery.select(source)
+    fun retryTrakt() = traktDiscovery.retry()
+    fun retryTraktList() = traktDiscovery.retryList()
     fun selectCatalog(key: String) = board.selectCatalog(key)
     fun selectGenre(genre: String?) = board.selectGenre(genre)
     fun loadMore() = board.loadMore()
 
     /** OK on a poster: its details, asked first from the addon whose catalogue is showing. */
     fun openTitle(preview: MetaPreview) {
+        // A Trakt title: adult profiles only; details come from whichever addon serves its id.
+        if (trakt.value.active) {
+            if (addonAccess.value != AddonAccess.Adult) return
+            kidsTitle.close()
+            streamBoard.close()
+            titles.open(preview, null)
+            return
+        }
         val catalogKey = state.value.selected?.key
         if (catalogKey == null && addonAccess.value is AddonAccess.Kids) return
         if (!mayOpen(catalogKey.orEmpty(), preview.id)) return

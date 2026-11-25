@@ -205,6 +205,16 @@
     <string name="gambit_discovery_err_not_found" translatable="false">%1$s has nothing in this catalogue.</string>
     <string name="gambit_discovery_err_no_addon" translatable="false">No addon offers this catalogue any more. Check More → Addons.</string>
     <string name="gambit_discovery_err_other" translatable="false">Something went wrong loading this catalogue. Try again.</string>
+    <!-- Discovery's Trakt choice (adult profiles only): the type, its list drop-down and its messages. -->
+    <string name="gambit_discovery_trakt" translatable="false">Trakt</string>
+    <string name="gambit_discovery_trakt_list" translatable="false">List</string>
+    <string name="gambit_discovery_trakt_watchlist" translatable="false">Watchlist</string>
+    <string name="gambit_discovery_trakt_unnamed" translatable="false">Untitled list</string>
+    <string name="gambit_discovery_trakt_signed_out_title" translatable="false">Not signed in to Trakt</string>
+    <string name="gambit_discovery_trakt_signed_out" translatable="false">Sign in at More → Trakt</string>
+    <string name="gambit_discovery_trakt_failed_title" translatable="false">Couldn\'t load from Trakt</string>
+    <string name="gambit_discovery_trakt_lists_failed" translatable="false">Your own lists couldn\'t be loaded. The watchlist is still here.</string>
+    <string name="gambit_discovery_trakt_empty" translatable="false">This list has nothing Gambit can show.</string>
 
     <!-- Discovery title page (Stage 3) -->
     <string name="gambit_title_loading" translatable="false">Loading details…</string>

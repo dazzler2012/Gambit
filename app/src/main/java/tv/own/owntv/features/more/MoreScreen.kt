@@ -156,7 +156,7 @@ fun MoreScreen(
     // Gambit: More → Trakt, not on kids profiles and not in a build without a Trakt Client ID.
     val gambitTrakt: tv.own.owntv.gambit.ui.trakt.TraktSignInViewModel = koinViewModel()
     val gambitTraktState by gambitTrakt.state.collectAsStateWithLifecycle()
-    val gambitTraktShown = !gambitKids && tv.own.owntv.gambit.trakt.GambitTraktBuild.isConfigured
+    val gambitTraktShown by gambitAddons.traktEntry.collectAsStateWithLifecycle() // Gambit: traktEntryShown, hidden until the profile is read as not kids
     LaunchedEffect(gambitTraktShown) { if (!gambitTraktShown && selected == MoreItem.TRAKT) chosen = MoreItem.SETTINGS }
     val history by vm.history.collectAsStateWithLifecycle()
     val sync by vm.sync.collectAsStateWithLifecycle()

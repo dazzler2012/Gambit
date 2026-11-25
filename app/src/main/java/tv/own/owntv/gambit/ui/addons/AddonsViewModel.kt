@@ -20,6 +20,8 @@ import tv.own.owntv.gambit.addons.data.AddonStore
 import tv.own.owntv.gambit.addons.data.InstalledAddon
 import tv.own.owntv.gambit.addons.data.KidsAccessRelease
 import tv.own.owntv.gambit.addons.net.AddonUrl
+import tv.own.owntv.gambit.trakt.GambitTraktBuild
+import tv.own.owntv.gambit.ui.trakt.traktEntryShown
 
 /** More → Addons: the device's addon list and adding one by typing its address. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -41,6 +43,15 @@ class AddonsViewModel(
         .flatMapLatest { id -> if (id < 0) flowOf(null) else profileDao.observeById(id) }
         .map { it?.isKids == true }
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    /**
+     * Whether More shows Trakt (see [traktEntryShown]). Hidden until the profile is read, and hidden when
+     * there is no active profile or it can't be found: unlike [kids], an unknown profile is not an adult one.
+     */
+    val traktEntry: StateFlow<Boolean> = settings.activeProfileId
+        .flatMapLatest { id -> if (id < 0) flowOf(null) else profileDao.observeById(id) }
+        .map { traktEntryShown(it?.isKids, GambitTraktBuild.isConfigured) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** Every profile, for the adult PIN prompt in front of Kids access. */
     val profiles: StateFlow<List<ProfileEntity>> = profileDao.observeAll()

@@ -9,7 +9,7 @@ import tv.own.owntv.gambit.trakt.GambitTrakt
  * More → Trakt: the sign-in. A thin wrapper over [TraktSignInModel], which holds the logic. Polling
  * runs in [viewModelScope], so it also stops when the screen is gone; the screen calls [cancel] on Back.
  */
-class TraktSignInViewModel(trakt: GambitTrakt) : ViewModel() {
+class TraktSignInViewModel(private val trakt: GambitTrakt) : ViewModel() {
     private val model = TraktSignInModel(trakt.client, viewModelScope)
 
     val state: StateFlow<TraktSignInState> = model.state
@@ -21,7 +21,11 @@ class TraktSignInViewModel(trakt: GambitTrakt) : ViewModel() {
 
     fun clearFailure() = model.clearFailure()
 
-    fun signOut() = model.signOut()
+    /** Also tells other screens (Discovery's Trakt lists) to drop what they hold. */
+    fun signOut() {
+        trakt.noteSignOut()
+        model.signOut()
+    }
 
     /** The screen opened: read the saved sign-in again. */
     fun recheck() = model.recheck()

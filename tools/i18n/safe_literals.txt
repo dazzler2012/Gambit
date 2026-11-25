@@ -1119,6 +1119,7 @@
 1	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	stream/${encode(type)}/${encode(videoId)}
 2	url	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	stremio://
 1	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	subtitles/${encode(type)}/${encode(id)}
+1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	gambit:trakt
 2	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	genre
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	movie
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	series
