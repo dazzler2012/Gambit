@@ -216,6 +216,21 @@
     <string name="gambit_discovery_trakt_lists_failed" translatable="false">Your own lists couldn\'t be loaded. The watchlist is still here.</string>
     <string name="gambit_discovery_trakt_empty" translatable="false">This list has nothing Gambit can show.</string>
 
+    <!-- Discovery's search across the addons (adult profiles only). -->
+    <string name="gambit_search_title" translatable="false">Search</string>
+    <string name="gambit_search_hint" translatable="false">Film or show name</string>
+    <string name="gambit_search_voice" translatable="false">Voice search</string>
+    <string name="gambit_search_voice_prompt" translatable="false">Say the name of a film or show</string>
+    <string name="gambit_search_start" translatable="false">Enter at least two letters of a film or show name.</string>
+    <string name="gambit_search_no_addons_title" translatable="false">No addon can be searched</string>
+    <string name="gambit_search_no_addons" translatable="false">Add or turn on an addon with search in More → Addons.</string>
+    <string name="gambit_search_nothing" translatable="false">Nothing found</string>
+    <!-- %1$s is one addon name or several, "Cinemeta, AIOStreams": names only. -->
+    <string name="gambit_search_failed_some" translatable="false">Couldn\'t search: %1$s</string>
+    <string name="gambit_search_failed_title" translatable="false">Couldn\'t search your addons</string>
+    <!-- A row of results: "Movies · Popular · Cinemeta" -->
+    <string name="gambit_search_row" translatable="false">%1$s · %2$s · %3$s</string>
+
     <!-- Discovery title page (Stage 3) -->
     <string name="gambit_title_loading" translatable="false">Loading details…</string>
     <string name="gambit_title_failed_title" translatable="false">Couldn\'t load the details</string>

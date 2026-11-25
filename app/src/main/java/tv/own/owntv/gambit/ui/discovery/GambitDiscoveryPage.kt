@@ -149,6 +149,10 @@ private fun DiscoveryContent(
     val traktList by vm.traktList.collectAsStateWithLifecycle()
     val traktShown by vm.traktShown.collectAsStateWithLifecycle()
     val onTrakt = trakt.active
+    val access by vm.addonAccess.collectAsStateWithLifecycle()
+    val searchOpen by vm.searchOpen.collectAsStateWithLifecycle()
+    val search by vm.search.collectAsStateWithLifecycle()
+    val searchShown = searchAllowed(access)
 
     val typeFocus = remember { FocusRequester() }
     val catalogFocus = remember { FocusRequester() }
@@ -166,6 +170,11 @@ private fun DiscoveryContent(
     val episodeRows = remember { HashMap<Int, LazyListState>() }
     val episodeFocusFor: (String) -> FocusRequester = remember { { id -> episodeFocus.getOrPut(id) { FocusRequester() } } }
     val episodeRowFor: (Int) -> LazyListState = remember { { season -> episodeRows.getOrPut(season) { LazyListState() } } }
+    val searchButtonFocus = remember { FocusRequester() }
+    val searchFieldFocus = remember { FocusRequester() }
+    // Kept here, so the results come back where they were after a title page; new text starts at the top.
+    val searchList = remember(search.query.trim()) { LazyListState() }
+    val searchRows = remember(search.query.trim()) { HashMap<String, LazyListState>() }
     // Where focus goes back to when the stream list closes: an episode id, or null for "Find streams".
     var streamsFrom by remember { mutableStateOf<String?>(null) }
     var titleFocusOnOpen by remember { mutableStateOf(true) }
@@ -199,10 +208,19 @@ private fun DiscoveryContent(
         refocus = streamsFrom?.let { episodeFocus[it] } ?: titleFocus
         refocusTick++
     }
-    // Back from the title page: Discovery again, focus on the poster that opened it.
+    // Back from the title page: Discovery again, focus on the poster that opened it. Over search, the
+    // search page comes back and focuses its own result.
     val closeTitle: () -> Unit = {
         vm.closeTitle()
-        refocus = lastPoster?.let { posterFocus[it] } ?: gridFocus
+        if (!vm.searchOpen.value) {
+            refocus = lastPoster?.let { posterFocus[it] } ?: gridFocus
+            refocusTick++
+        }
+    }
+    // Back from search: the grid again, focus on the Search button.
+    val closeSearch: () -> Unit = {
+        vm.closeSearch()
+        refocus = searchButtonFocus
         refocusTick++
     }
 
@@ -212,6 +230,7 @@ private fun DiscoveryContent(
         val tryFocus: (FocusRequester) -> Boolean = { f -> runCatching { f.requestFocus() }.getOrDefault(false) }
         if (vm.streams.value != null) tryFocus(streamFocus) || tryFocus(titleFocus)
         else if (vm.title.value != null) tryFocus(titleFocus)
+        else if (vm.searchOpen.value) tryFocus(searchFieldFocus)
         else if (vm.trakt.value.active) when {
             vm.traktList.value.feed is TraktListFeed.Loaded -> tryFocus(gridFocus) || tryFocus(typeFocus)
             else -> tryFocus(retryFocus) || tryFocus(typeFocus)
@@ -263,6 +282,37 @@ private fun DiscoveryContent(
         return
     }
 
+    // In place of the TV default, which pins the focused poster a third down on every move.
+    val scrollSpec = rememberDiscoveryScrollSpec()
+
+    if (searchOpen && searchShown) {
+        BackHandler(onBack = closeSearch)
+        CompositionLocalProvider(LocalBringIntoViewSpec provides scrollSpec) {
+            GambitSearchPage(
+                search = search,
+                fieldFocus = searchFieldFocus,
+                listState = searchList,
+                rowStates = searchRows,
+                initialResult = vm.lastSearchResult,
+                onType = vm::typeSearch,
+                onSubmit = vm::submitSearch,
+                onVoice = vm::voiceSearch,
+                onRetry = vm::retrySearch,
+                onOpen = { rowKey, id ->
+                    if (vm.openSearchResult(rowKey, id)) {
+                        episodeFocus.clear()
+                        episodeRows.clear()
+                        titleFocusOnOpen = true
+                    }
+                },
+                onChildFocused = onChildFocused,
+                contentStart = contentStart,
+                modifier = modifier,
+            )
+        }
+        return
+    }
+
     Column(
         modifier
             .padding(start = contentStart, top = 48.mpx, end = 64.mpx)
@@ -305,19 +355,16 @@ private fun DiscoveryContent(
                     )
                 }
             }
-        }
-        // Both grids: in place of the TV default, which pins the focused poster a third down on every move.
-        val density = LocalDensity.current
-        val gridScrollSpec = remember(density) {
-            val margin = with(density) { SCROLL_MARGIN_MPX.mpx.toPx() }
-            val slack = with(density) { SCROLL_SLACK_MPX.mpx.toPx() }
-            object : BringIntoViewSpec {
-                override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
-                    discoveryScrollDistance(offset, size, containerSize, margin, slack)
+            if (searchShown) {
+                StageTool(
+                    text = stringResource(R.string.gambit_search_title), icon = OwnTVIcon.SEARCH, boxed = true,
+                    onClick = { menu = null; vm.openSearch() },
+                    modifier = Modifier.focusRequester(searchButtonFocus),
+                )
             }
         }
         Column(Modifier.padding(top = 22.mpx).fillMaxSize()) {
-            CompositionLocalProvider(LocalBringIntoViewSpec provides gridScrollSpec) {
+            CompositionLocalProvider(LocalBringIntoViewSpec provides scrollSpec) {
                 if (onTrakt) TraktBody(trakt, traktList, vm, gridState, gridFocus, retryFocus, posterFocus, openTitle)
                 else DiscoveryBody(state, vm, gridState, gridFocus, retryFocus, posterFocus, openTitle)
             }
@@ -351,6 +398,20 @@ private fun DiscoveryContent(
             }
         }
         null -> Unit
+    }
+}
+
+/** Scrolls only as far as the focused poster needs (see [discoveryScrollDistance]). */
+@Composable
+private fun rememberDiscoveryScrollSpec(): BringIntoViewSpec {
+    val density = LocalDensity.current
+    return remember(density) {
+        val margin = with(density) { SCROLL_MARGIN_MPX.mpx.toPx() }
+        val slack = with(density) { SCROLL_SLACK_MPX.mpx.toPx() }
+        object : BringIntoViewSpec {
+            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
+                discoveryScrollDistance(offset, size, containerSize, margin, slack)
+        }
     }
 }
 
@@ -530,7 +591,7 @@ private fun TraktListChoice.label(): String = when (source) {
 }
 
 @Composable
-private fun Message(title: String, body: String? = null) {
+internal fun Message(title: String, body: String? = null) {
     Column(Modifier.widthIn(max = 1000.mpx).padding(top = 30.mpx)) {
         Text(title, style = stageText(24, 600), color = GambitColors.Text)
         if (body != null) Text(body, style = stageText(19, 500), color = GambitColors.Muted, modifier = Modifier.padding(top = 8.mpx))
@@ -538,7 +599,7 @@ private fun Message(title: String, body: String? = null) {
 }
 
 @Composable
-private fun DiscoveryType.label(): String = when (this) {
+internal fun DiscoveryType.label(): String = when (this) {
     DiscoveryType.MOVIE -> stringResource(R.string.gambit_discovery_movies)
     DiscoveryType.SERIES -> stringResource(R.string.gambit_discovery_series)
     DiscoveryType.TRAKT -> stringResource(R.string.gambit_discovery_trakt)

@@ -336,16 +336,24 @@ class SearchBoardTest {
     }
 
     @Test
-    fun `no text form holds the typed text or an address key`() = runBlocking {
-        registry = AddonRegistry(listOf(addon(a, "a", cat("movie", "find"))))
+    fun `no text form holds the typed text or an address key, failed rows included`() = runBlocking {
+        twoAddons()
         server.onJson(url(a, "movie", "find", "zebra"), metas("zebra1"))
+        // An exception message quoting the whole address, as real ones can.
+        server.on(url(b, "movie", "find", "zebra"), Reply.Fail(IOException("failed: " + url(b, "movie", "find", "zebra"))))
         val board = board()
         board.lookFor("zebra")
         val done = board.awaitDone()
-        val pick = board.pick(done.rows.single().key, "zebra1")
-        val shown = listOf(board.state.value, board.state.value.feed, done, done.rows.single(), done.rows.single().feed, pick).joinToString()
+        val failed = done.rows[1].feed as SearchRowFeed.Failed
+        assertEquals(listOf("Addon b"), done.failedAddons)
+        val pick = board.pick(done.rows[0].key, "zebra1")
+        val shown = listOf(
+            board.state.value, board.state.value.feed, done, done.rows[0], done.rows[0].feed, pick,
+            done.rows[1], failed, failed.error, done.failedAddons,
+        ).joinToString()
         assertFalse(shown.contains("zebra"))
         assertFalse(shown.contains("KEY-A"))
+        assertFalse(shown.contains("KEY-B"))
     }
 
     private companion object {
