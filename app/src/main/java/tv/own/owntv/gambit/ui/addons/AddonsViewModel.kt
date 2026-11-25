@@ -38,10 +38,13 @@ class AddonsViewModel(
     /** True when a saved list exists but couldn't be read, so the addons need adding again. */
     val unreadable: StateFlow<Boolean> = store.unreadable
 
-    /** True on a kids profile: Addons is hidden there, and the page shows nothing. */
+    /**
+     * True on a kids profile: Addons is hidden there, and the page shows nothing. Fails closed: no active
+     * profile, a missing one, or one not read yet also count as kids (see [countsAsKids]).
+     */
     val kids: StateFlow<Boolean> = settings.activeProfileId
         .flatMapLatest { id -> if (id < 0) flowOf(null) else profileDao.observeById(id) }
-        .map { it?.isKids == true }
+        .map { countsAsKids(it?.isKids) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     /**
@@ -76,6 +79,9 @@ class AddonsViewModel(
     fun setEnabled(url: AddonUrl, on: Boolean) = store.setEnabled(url, on)
     fun move(url: AddonUrl, delta: Int) = store.move(url, delta)
 }
+
+/** Only a profile read as not kids ([isKids] false) is treated as an adult one; null (unknown) counts as kids. */
+internal fun countsAsKids(isKids: Boolean?): Boolean = isKids != false
 
 /** The Kids access entry is hidden on kids profiles and while [KidsAccessRelease] has not allowed it. */
 internal fun kidsAccessEntryVisible(kidsProfile: Boolean, allowKids: Boolean = KidsAccessRelease.ALLOWED): Boolean =
