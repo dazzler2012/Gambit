@@ -20,6 +20,8 @@ import tv.own.owntv.gambit.addons.data.AddonStore
 import tv.own.owntv.gambit.addons.data.InstalledAddon
 import tv.own.owntv.gambit.addons.data.KidsAccessRelease
 import tv.own.owntv.gambit.addons.net.AddonUrl
+import tv.own.owntv.gambit.trakt.GambitTraktBuild
+import tv.own.owntv.gambit.ui.trakt.traktEntryShown
 
 /** More → Addons: the device's addon list and adding one by typing its address. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -36,11 +38,23 @@ class AddonsViewModel(
     /** True when a saved list exists but couldn't be read, so the addons need adding again. */
     val unreadable: StateFlow<Boolean> = store.unreadable
 
-    /** True on a kids profile: Addons is hidden there, and the page shows nothing. */
+    /**
+     * True on a kids profile: Addons is hidden there, and the page shows nothing. Fails closed: no active
+     * profile, a missing one, or one not read yet also count as kids (see [countsAsKids]).
+     */
     val kids: StateFlow<Boolean> = settings.activeProfileId
         .flatMapLatest { id -> if (id < 0) flowOf(null) else profileDao.observeById(id) }
-        .map { it?.isKids == true }
+        .map { countsAsKids(it?.isKids) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    /**
+     * Whether More shows Trakt (see [traktEntryShown]). Hidden until the profile is read, and hidden when
+     * there is no active profile or it can't be found: unlike [kids], an unknown profile is not an adult one.
+     */
+    val traktEntry: StateFlow<Boolean> = settings.activeProfileId
+        .flatMapLatest { id -> if (id < 0) flowOf(null) else profileDao.observeById(id) }
+        .map { traktEntryShown(it?.isKids, GambitTraktBuild.isConfigured) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** Every profile, for the adult PIN prompt in front of Kids access. */
     val profiles: StateFlow<List<ProfileEntity>> = profileDao.observeAll()
@@ -65,6 +79,9 @@ class AddonsViewModel(
     fun setEnabled(url: AddonUrl, on: Boolean) = store.setEnabled(url, on)
     fun move(url: AddonUrl, delta: Int) = store.move(url, delta)
 }
+
+/** Only a profile read as not kids ([isKids] false) is treated as an adult one; null (unknown) counts as kids. */
+internal fun countsAsKids(isKids: Boolean?): Boolean = isKids != false
 
 /** The Kids access entry is hidden on kids profiles and while [KidsAccessRelease] has not allowed it. */
 internal fun kidsAccessEntryVisible(kidsProfile: Boolean, allowKids: Boolean = KidsAccessRelease.ALLOWED): Boolean =

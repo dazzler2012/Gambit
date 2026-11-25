@@ -19,6 +19,10 @@ data class DiscoveryType(val id: String) {
     companion object {
         val MOVIE = DiscoveryType("movie")
         val SERIES = DiscoveryType("series")
+
+        /** Reserved for Gambit's own Trakt choice; an addon type with this id is never offered. */
+        const val TRAKT_ID = "gambit:trakt"
+        val TRAKT = DiscoveryType(TRAKT_ID)
     }
 }
 

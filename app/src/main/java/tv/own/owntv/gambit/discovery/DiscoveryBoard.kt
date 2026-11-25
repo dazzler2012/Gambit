@@ -74,7 +74,7 @@ class DiscoveryBoard(
     }
 
     fun selectType(type: DiscoveryType) {
-        if (type == _state.value.type) return
+        if (type == _state.value.type || type == DiscoveryType.TRAKT) return // Gambit: Trakt is not an addon type
         _state.update { it.copy(type = type, selected = null, genre = null) }
         syncCatalogs(forceReload = true)
     }
@@ -149,7 +149,7 @@ class DiscoveryBoard(
     /** Rebuilds the catalogue list for the chosen type; keeps the choice when it still exists. */
     private fun syncCatalogs(forceReload: Boolean) {
         val reg = registry()
-        val types = reg.discoverTypes().map(::DiscoveryType) // Gambit
+        val types = reg.discoverTypes().filter { it != DiscoveryType.TRAKT_ID }.map(::DiscoveryType) // Gambit: Trakt's id is reserved
         // A type no addon offers any more (addon turned off) falls back to Movies.
         val type = _state.value.type.takeIf { it in types } ?: DiscoveryType.MOVIE
         val typeChanged = type != _state.value.type

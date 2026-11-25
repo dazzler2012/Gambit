@@ -22,7 +22,8 @@ class TraktErrorsTest {
             429 to TraktError.RateLimited(null),
             500 to TraktError.Server(500),
             502 to TraktError.Server(502),
-            420 to TraktError.Http(420),
+            420 to TraktError.AccountLimit,
+            418 to TraktError.Http(418),
         )
         for ((status, error) in cases) {
             val h = Harness()

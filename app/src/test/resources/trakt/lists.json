@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Fake Favourites",
+    "description": null,
+    "privacy": "private",
+    "type": "personal",
+    "sort_by": "added",
+    "sort_how": "desc",
+    "created_at": "2026-01-01T10:00:00.000Z",
+    "updated_at": "2026-10-01T10:00:00.000Z",
+    "item_count": 250,
+    "ids": { "trakt": 42, "slug": "fake-favourites" }
+  },
+  {
+    "name": null,
+    "privacy": "public",
+    "type": "personal",
+    "item_count": 0,
+    "ids": { "trakt": 43 }
+  }
+]

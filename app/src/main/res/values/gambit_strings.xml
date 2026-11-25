@@ -167,6 +167,7 @@
     <string name="gambit_trakt_err_refused" translatable="false">Trakt did not accept this app. The family build may need a new Trakt app set up.</string>
     <string name="gambit_trakt_err_storage" translatable="false">Could not save the sign-in on this TV. Try again.</string>
     <string name="gambit_trakt_err_expired_signin" translatable="false">Your Trakt sign-in ran out. Sign in again.</string>
+    <string name="gambit_trakt_err_account_limit" translatable="false">Trakt says this account has reached one of its limits.</string>
     <string name="gambit_trakt_err_other" translatable="false">Something went wrong talking to Trakt. Try again.</string>
 
     <!-- Home's addon row, in the Live sports slot. Title: "Discovery · Popular", the catalogue's own name. -->
@@ -204,6 +205,16 @@
     <string name="gambit_discovery_err_not_found" translatable="false">%1$s has nothing in this catalogue.</string>
     <string name="gambit_discovery_err_no_addon" translatable="false">No addon offers this catalogue any more. Check More → Addons.</string>
     <string name="gambit_discovery_err_other" translatable="false">Something went wrong loading this catalogue. Try again.</string>
+    <!-- Discovery's Trakt choice (adult profiles only): the type, its list drop-down and its messages. -->
+    <string name="gambit_discovery_trakt" translatable="false">My Trakt</string>
+    <string name="gambit_discovery_trakt_list" translatable="false">List</string>
+    <string name="gambit_discovery_trakt_watchlist" translatable="false">Watchlist</string>
+    <string name="gambit_discovery_trakt_unnamed" translatable="false">Untitled list</string>
+    <string name="gambit_discovery_trakt_signed_out_title" translatable="false">Not signed in to Trakt</string>
+    <string name="gambit_discovery_trakt_signed_out" translatable="false">Sign in at More → Trakt</string>
+    <string name="gambit_discovery_trakt_failed_title" translatable="false">Couldn\'t load from Trakt</string>
+    <string name="gambit_discovery_trakt_lists_failed" translatable="false">Your own lists couldn\'t be loaded. The watchlist is still here.</string>
+    <string name="gambit_discovery_trakt_empty" translatable="false">This list has nothing Gambit can show.</string>
 
     <!-- Discovery title page (Stage 3) -->
     <string name="gambit_title_loading" translatable="false">Loading details…</string>
@@ -259,6 +270,7 @@
     <string name="gambit_kids_access_title" translatable="false">Kids access</string>
     <string name="gambit_kids_access_description" translatable="false">Choose which addon catalogues each kids profile can see. Everything else from addons stays hidden on that profile.</string>
     <string name="gambit_kids_access_settings_note" translatable="false">Changed an addon\'s settings on its website? Add its address again under Addons, then approve its catalogues here again.</string>
+    <string name="gambit_kids_access_account_note" translatable="false">Catalogues such as history, watchlists or personal lists show your own account\'s viewing. Think before approving them for a kids profile.</string>
     <string name="gambit_kids_access_set_pin_title" translatable="false">Set a profile PIN first</string>
     <string name="gambit_kids_access_set_pin_body" translatable="false">Kids access is protected by an adult profile\'s PIN. Add a PIN to an adult profile, then open Kids access again.</string>
     <string name="gambit_kids_access_no_kids" translatable="false">No kids profiles yet. Turn on Kids in a profile\'s settings first.</string>

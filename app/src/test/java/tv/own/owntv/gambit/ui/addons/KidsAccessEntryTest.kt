@@ -29,6 +29,14 @@ class KidsAccessEntryTest {
     }
 
     @Test
+    fun `an unknown profile counts as kids, so Addons, Backup and Local sync stay hidden`() {
+        assertTrue("no active, missing or unread profile", countsAsKids(isKids = null))
+        assertTrue(countsAsKids(isKids = true))
+        assertFalse(countsAsKids(isKids = false))
+        assertFalse("and the Kids access entry stays hidden for it", kidsAccessEntryVisible(countsAsKids(null), allowKids = true))
+    }
+
+    @Test
     fun `catalogues are grouped by addon in addon order and carry only a key, name and type`() {
         val registry = AddonRegistry(listOf(meta, lists, streamsA))
         val groups = catalogGroups(registry)

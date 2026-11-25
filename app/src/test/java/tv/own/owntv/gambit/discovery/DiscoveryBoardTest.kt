@@ -76,6 +76,19 @@ class DiscoveryBoardTest {
     }
 
     @Test
+    fun `an addon type with Trakt's reserved id is never offered, and Trakt is not an addon type`() = runBlocking {
+        registry = AddonRegistry(listOf(addon(a, "a", cat("movie", "top"), cat(DiscoveryType.TRAKT_ID, "fake"), cat("anime", "x"))))
+        server.onJson("$a/catalog/movie/top.json", metas("t1"))
+        board.open()
+        awaitLoaded()
+        assertEquals(listOf("movie", "series", "anime"), board.state.value.types.map { it.id })
+        board.selectType(DiscoveryType.TRAKT)
+        assertEquals(DiscoveryType.MOVIE, board.state.value.type)
+        delay(100)
+        assertEquals(1, server.requested.size)
+    }
+
+    @Test
     fun `disabled addons and catalogues that need a search or other extra are left out`() = runBlocking {
         registry = AddonRegistry(listOf(
             addon(

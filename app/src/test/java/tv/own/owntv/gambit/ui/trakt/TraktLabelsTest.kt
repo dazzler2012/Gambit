@@ -12,7 +12,7 @@ class TraktLabelsTest {
     private val all: List<TraktError> = listOf(
         TraktError.Timeout, TraktError.Network("X"), TraktError.Unauthorized, TraktError.Forbidden, TraktError.NotFound,
         TraktError.Conflict(null, null), TraktError.Unprocessable, TraktError.RateLimited(null), TraktError.Server(500),
-        TraktError.Http(418), TraktError.Malformed("x"), TraktError.NotSignedIn, TraktError.SignInExpired, TraktError.Storage("X"),
+        TraktError.Http(418), TraktError.Malformed("x"), TraktError.NotSignedIn, TraktError.SignInExpired, TraktError.Storage("X"), TraktError.AccountLimit,
         TraktError.CodeExpired, TraktError.CodeDenied, TraktError.CodeAlreadyUsed, TraktError.InvalidCode,
     )
 

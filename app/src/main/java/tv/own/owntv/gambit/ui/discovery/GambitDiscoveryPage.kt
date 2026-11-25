@@ -45,7 +45,14 @@ import tv.own.owntv.gambit.discovery.DiscoveryCatalog
 import tv.own.owntv.gambit.discovery.DiscoveryFeed
 import tv.own.owntv.gambit.discovery.DiscoveryState
 import tv.own.owntv.gambit.discovery.DiscoveryType
+import tv.own.owntv.gambit.discovery.TraktAccount
+import tv.own.owntv.gambit.discovery.TraktDiscoveryState
+import tv.own.owntv.gambit.discovery.TraktListChoice
+import tv.own.owntv.gambit.discovery.TraktListFeed
+import tv.own.owntv.gambit.discovery.TraktListSource
+import tv.own.owntv.gambit.discovery.TraktListState
 import tv.own.owntv.gambit.ui.addons.displayLabel
+import tv.own.owntv.gambit.ui.trakt.messageRes
 import tv.own.owntv.gambit.ui.theme.GambitColors
 import tv.own.owntv.ui.components.OwnTVIcon
 import tv.own.owntv.ui.stage.StagePopup
@@ -55,8 +62,8 @@ import tv.own.owntv.ui.stage.StageTool
 import tv.own.owntv.ui.theme.mpx
 import tv.own.owntv.ui.theme.stageText
 
-/** Which drop-down is open over the page. */
-private enum class DiscoveryMenu { TYPE, CATALOG, GENRE }
+/** Which drop-down is open over the page. [TRAKT_LIST] is the second drop-down while on Trakt. */
+private enum class DiscoveryMenu { TYPE, CATALOG, GENRE, TRAKT_LIST }
 
 /** Ask for the next page once focus is this close to the end of what is loaded. */
 private const val LOAD_MORE_AHEAD = 12
@@ -107,6 +114,10 @@ private fun DiscoveryContent(
     val title by vm.title.collectAsStateWithLifecycle()
     val streams by vm.streams.collectAsStateWithLifecycle()
     val playNote by vm.playNote.collectAsStateWithLifecycle()
+    val trakt by vm.trakt.collectAsStateWithLifecycle()
+    val traktList by vm.traktList.collectAsStateWithLifecycle()
+    val traktShown by vm.traktShown.collectAsStateWithLifecycle()
+    val onTrakt = trakt.active
 
     val typeFocus = remember { FocusRequester() }
     val catalogFocus = remember { FocusRequester() }
@@ -128,7 +139,7 @@ private fun DiscoveryContent(
     var streamsFrom by remember { mutableStateOf<String?>(null) }
     var titleFocusOnOpen by remember { mutableStateOf(true) }
     // A new catalogue, genre or type starts at the top.
-    LaunchedEffect(state.type, state.selected?.key, state.genre) { gridState.scrollToItem(0) }
+    LaunchedEffect(state.type, state.selected?.key, state.genre, onTrakt, trakt.selected) { gridState.scrollToItem(0) }
     var menu by remember { mutableStateOf<DiscoveryMenu?>(null) }
     // After a drop-down closes, focus goes back to the tool that opened it.
     var refocus by remember { mutableStateOf<FocusRequester?>(null) }
@@ -169,7 +180,11 @@ private fun DiscoveryContent(
         val feed = vm.state.value.feed
         val tryFocus: (FocusRequester) -> Boolean = { f -> runCatching { f.requestFocus() }.getOrDefault(false) }
         if (vm.streams.value != null) tryFocus(streamFocus) || tryFocus(titleFocus)
-        else if (vm.title.value != null) tryFocus(titleFocus) else when (feed) {
+        else if (vm.title.value != null) tryFocus(titleFocus)
+        else if (vm.trakt.value.active) when {
+            vm.traktList.value.feed is TraktListFeed.Loaded -> tryFocus(gridFocus) || tryFocus(typeFocus)
+            else -> tryFocus(retryFocus) || tryFocus(typeFocus)
+        } else when (feed) {
             is DiscoveryFeed.Loaded -> tryFocus(gridFocus) || tryFocus(typeFocus)
             is DiscoveryFeed.Failed -> tryFocus(retryFocus) || tryFocus(typeFocus)
             else -> tryFocus(typeFocus)
@@ -226,12 +241,23 @@ private fun DiscoveryContent(
         Text(stringResource(R.string.gambit_discovery_title), style = stageText(46, 800), color = GambitColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Row(Modifier.padding(top = 18.mpx), horizontalArrangement = Arrangement.spacedBy(14.mpx)) {
             StageTool(
-                text = stringResource(R.string.gambit_discovery_type), value = state.type.label(),
+                text = stringResource(R.string.gambit_discovery_type), value = (if (onTrakt) DiscoveryType.TRAKT else state.type).label(),
                 trailingIcon = OwnTVIcon.CHEVRON_DOWN, boxed = true, valueAccent = true,
                 onClick = { menu = DiscoveryMenu.TYPE }, modifier = Modifier.focusRequester(typeFocus),
             )
             val selected = state.selected
-            if (state.catalogs.isNotEmpty() && selected != null) {
+            val traktChoice = trakt.choices.firstOrNull { it.source == trakt.selected }
+            if (onTrakt) {
+                // Trakt: the list drop-down only, never a genre.
+                if (trakt.account == TraktAccount.SignedIn && traktChoice != null) {
+                    StageTool(
+                        text = stringResource(R.string.gambit_discovery_trakt_list), value = traktChoice.label(),
+                        trailingIcon = OwnTVIcon.CHEVRON_DOWN, boxed = true, valueAccent = true,
+                        onClick = { menu = DiscoveryMenu.TRAKT_LIST },
+                        modifier = Modifier.focusRequester(catalogFocus).widthIn(max = 640.mpx),
+                    )
+                }
+            } else if (state.catalogs.isNotEmpty() && selected != null) {
                 StageTool(
                     text = stringResource(R.string.gambit_discovery_catalog), value = selected.label(),
                     trailingIcon = OwnTVIcon.CHEVRON_DOWN, boxed = true, valueAccent = true,
@@ -250,14 +276,22 @@ private fun DiscoveryContent(
             }
         }
         Column(Modifier.padding(top = 22.mpx).fillMaxSize()) {
-            DiscoveryBody(state, vm, gridState, gridFocus, retryFocus, posterFocus, openTitle)
+            if (onTrakt) TraktBody(trakt, traktList, vm, gridState, gridFocus, retryFocus, posterFocus, openTitle)
+            else DiscoveryBody(state, vm, gridState, gridFocus, retryFocus, posterFocus, openTitle)
         }
     }
 
     when (menu) {
         DiscoveryMenu.TYPE -> StagePopup(onDismiss = { closeMenu(typeFocus) }, title = stringResource(R.string.gambit_discovery_type), width = 560.mpx) {
-            state.types.forEach { t ->
-                StagePopupOption(title = t.label(), chosen = t == state.type, onClick = { vm.selectType(t); closeMenu(typeFocus) })
+            val types = if (traktShown) state.types + DiscoveryType.TRAKT else state.types // Gambit: Trakt last, adults only
+            types.forEach { t ->
+                val chosen = if (onTrakt) t == DiscoveryType.TRAKT else t == state.type
+                StagePopupOption(title = t.label(), chosen = chosen, onClick = { vm.selectType(t); closeMenu(typeFocus) })
+            }
+        }
+        DiscoveryMenu.TRAKT_LIST -> StagePopup(onDismiss = { closeMenu(catalogFocus) }, title = stringResource(R.string.gambit_discovery_trakt_list), width = 760.mpx) {
+            trakt.choices.forEach { c ->
+                StagePopupOption(title = c.label(), chosen = c.source == trakt.selected, onClick = { vm.selectTraktList(c.source); closeMenu(catalogFocus) })
             }
         }
         DiscoveryMenu.CATALOG -> StagePopup(onDismiss = { closeMenu(catalogFocus) }, title = stringResource(R.string.gambit_discovery_catalog), width = 760.mpx) {
@@ -354,6 +388,104 @@ private fun DiscoveryBody(
     }
 }
 
+/** Trakt in Discovery: the sign-in note, or the chosen list as a poster grid (read in full, no paging on focus). */
+@Composable
+private fun TraktBody(
+    trakt: TraktDiscoveryState,
+    list: TraktListState,
+    vm: DiscoveryViewModel,
+    gridState: LazyGridState,
+    gridFocus: FocusRequester,
+    retryFocus: FocusRequester,
+    posterFocus: MutableMap<String, FocusRequester>,
+    onOpen: (tv.own.owntv.gambit.addons.model.MetaPreview) -> Unit,
+) {
+    when (val account = trakt.account) {
+        TraktAccount.Checking -> Message(stringResource(R.string.gambit_discovery_loading))
+        TraktAccount.SignedOut -> Message(stringResource(R.string.gambit_discovery_trakt_signed_out_title), stringResource(R.string.gambit_discovery_trakt_signed_out))
+        is TraktAccount.Failed -> {
+            Message(stringResource(R.string.gambit_discovery_trakt_failed_title), stringResource(account.error.messageRes()))
+            Row(Modifier.padding(top = 20.mpx)) {
+                StageTool(stringResource(R.string.gambit_discovery_retry), onClick = vm::retryTrakt, boxed = true, modifier = Modifier.focusRequester(retryFocus))
+            }
+        }
+        TraktAccount.SignedIn -> Column {
+            if (trakt.listsError != null) {
+                Text(stringResource(R.string.gambit_discovery_trakt_lists_failed), style = stageText(18, 500), color = GambitColors.Muted, modifier = Modifier.padding(bottom = 6.mpx))
+            }
+            TraktFeed(list.feed, vm, gridState, gridFocus, retryFocus, posterFocus, onOpen)
+        }
+    }
+}
+
+@Composable
+private fun TraktFeed(
+    feed: TraktListFeed,
+    vm: DiscoveryViewModel,
+    gridState: LazyGridState,
+    gridFocus: FocusRequester,
+    retryFocus: FocusRequester,
+    posterFocus: MutableMap<String, FocusRequester>,
+    onOpen: (tv.own.owntv.gambit.addons.model.MetaPreview) -> Unit,
+) {
+    when (feed) {
+        TraktListFeed.Idle, TraktListFeed.Loading -> Message(stringResource(R.string.gambit_discovery_loading))
+        TraktListFeed.Empty -> Message(stringResource(R.string.gambit_discovery_trakt_empty))
+        is TraktListFeed.Failed -> {
+            Message(stringResource(R.string.gambit_discovery_trakt_failed_title), stringResource(feed.error.messageRes()))
+            Row(Modifier.padding(top = 20.mpx)) {
+                StageTool(stringResource(R.string.gambit_discovery_retry), onClick = vm::retryTraktList, boxed = true, modifier = Modifier.focusRequester(retryFocus))
+            }
+        }
+        is TraktListFeed.Loaded -> LazyVerticalGrid(
+            state = gridState,
+            columns = GridCells.FixedSize(196.mpx),
+            horizontalArrangement = Arrangement.spacedBy(26.mpx),
+            verticalArrangement = Arrangement.spacedBy(30.mpx),
+            contentPadding = PaddingValues(top = 14.mpx, bottom = 24.mpx),
+            modifier = Modifier.fillMaxSize().focusRequester(gridFocus).focusRestorer().focusGroup(),
+        ) {
+            itemsIndexed(feed.items, key = { _, m -> m.id }) { _, meta ->
+                val posterRequester = remember(meta.id) { posterFocus.getOrPut(meta.id) { FocusRequester() } }
+                StagePoster(
+                    title = meta.name.orEmpty(),
+                    onClick = { onOpen(meta) },
+                    width = 196.mpx,
+                    height = 294.mpx,
+                    modifier = Modifier.focusRequester(posterRequester),
+                ) {
+                    if (!meta.poster.isNullOrBlank()) {
+                        AsyncImage(model = meta.poster, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    }
+                }
+            }
+            if (!feed.complete) {
+                item(key = MORE_ROW_KEY, span = { GridItemSpan(maxLineSpan) }) {
+                    Column(Modifier.fillMaxWidth().padding(top = 6.mpx)) {
+                        val error = feed.error
+                        if (error == null) {
+                            Text(stringResource(R.string.gambit_discovery_loading_more), style = stageText(20, 500), color = GambitColors.Dim)
+                        } else {
+                            Text(stringResource(R.string.gambit_discovery_more_failed), style = stageText(20, 600), color = GambitColors.Text)
+                            Text(stringResource(error.messageRes()), style = stageText(18, 500), color = GambitColors.Muted, modifier = Modifier.padding(top = 4.mpx))
+                            Row(Modifier.padding(top = 14.mpx)) {
+                                StageTool(stringResource(R.string.gambit_discovery_retry), onClick = vm::retryTraktList, boxed = true)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** A personal list by its own name; the watchlist by Gambit's word for it. */
+@Composable
+private fun TraktListChoice.label(): String = when (source) {
+    TraktListSource.Watchlist -> stringResource(R.string.gambit_discovery_trakt_watchlist)
+    is TraktListSource.Personal -> name?.takeIf { it.isNotBlank() } ?: stringResource(R.string.gambit_discovery_trakt_unnamed)
+}
+
 @Composable
 private fun Message(title: String, body: String? = null) {
     Column(Modifier.widthIn(max = 1000.mpx).padding(top = 30.mpx)) {
@@ -366,6 +498,7 @@ private fun Message(title: String, body: String? = null) {
 private fun DiscoveryType.label(): String = when (this) {
     DiscoveryType.MOVIE -> stringResource(R.string.gambit_discovery_movies)
     DiscoveryType.SERIES -> stringResource(R.string.gambit_discovery_series)
+    DiscoveryType.TRAKT -> stringResource(R.string.gambit_discovery_trakt)
     else -> readableName
 }
 

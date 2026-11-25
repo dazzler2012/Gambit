@@ -18,6 +18,7 @@ internal fun TraktError.messageRes(): Int = when (this) {
     is TraktError.RateLimited, is TraktError.Server -> R.string.gambit_trakt_err_busy
     TraktError.Unauthorized, TraktError.Forbidden -> R.string.gambit_trakt_err_refused
     is TraktError.Storage -> R.string.gambit_trakt_err_storage
+    TraktError.AccountLimit -> R.string.gambit_trakt_err_account_limit
     TraktError.SignInExpired, TraktError.NotSignedIn -> R.string.gambit_trakt_err_expired_signin
     TraktError.NotFound, is TraktError.Conflict, TraktError.Unprocessable, is TraktError.Http, is TraktError.Malformed ->
         R.string.gambit_trakt_err_other
