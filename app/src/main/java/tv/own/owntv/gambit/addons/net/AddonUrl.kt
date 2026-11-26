@@ -101,6 +101,9 @@ data class CatalogExtraArgs(
     val genre: String? = null,
     val skip: Int? = null,
 ) {
+    /** [search] is what the user typed, so only whether it is set is shown. */
+    override fun toString(): String = "CatalogExtraArgs(search=${search != null}, genre=$genre, skip=$skip)"
+
     internal fun toPathSegment(): String? {
         val parts = buildList {
             search?.takeIf { it.isNotBlank() }?.let { add("search=" + AddonUrl.encode(it)) }

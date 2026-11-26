@@ -34,6 +34,8 @@ import tv.own.owntv.gambit.discovery.DiscoveryBoard
 import tv.own.owntv.gambit.discovery.DiscoveryCatalog
 import tv.own.owntv.gambit.discovery.DiscoveryState
 import tv.own.owntv.gambit.discovery.DiscoveryType
+import tv.own.owntv.gambit.discovery.SearchBoard
+import tv.own.owntv.gambit.discovery.SearchState
 import tv.own.owntv.gambit.discovery.StreamBoard
 import tv.own.owntv.gambit.discovery.StreamListState
 import tv.own.owntv.gambit.discovery.StreamTarget
@@ -157,6 +159,20 @@ class DiscoveryViewModel(
     /** The stream list, while one is open over the title page; null shows the title page. */
     val streams: StateFlow<StreamListState?> = streamBoard.state
 
+    /** Addon search: adult profiles only (see [searchAllowed]). */
+    private val searchBoard = SearchBoard(repository, { registryNow() }, viewModelScope, { searchAllowed(addonAccess.value) })
+
+    val search: StateFlow<SearchState> = searchBoard.state
+
+    private val _searchOpen = MutableStateFlow(false)
+
+    /** Whether the search page is over the grid. The page also checks [searchAllowed] before showing. */
+    val searchOpen: StateFlow<Boolean> = _searchOpen.asStateFlow()
+
+    /** The result last opened (row key, title id); focus returns to it after Back from its title page. */
+    var lastSearchResult: Pair<String, String>? = null
+        private set
+
     private val _playNote = MutableStateFlow<PlayNote?>(null)
 
     /** A line on the stream list about the last OK: starting, or why it can't play. */
@@ -180,13 +196,19 @@ class DiscoveryViewModel(
 
     init {
         // The first value is the registry as it is now; open() reads it itself.
-        store.registry.drop(1).onEach { board.onRegistryChanged() }.launchIn(viewModelScope)
+        store.registry.drop(1).onEach {
+            board.onRegistryChanged()
+            searchBoard.onRegistryChanged()
+        }.launchIn(viewModelScope)
         // A play Gambit had to stop (stuck on both engines): say so on the stream list.
         addonPlayer.failures.onEach { _playNote.value = PlayNote.FAILED }.launchIn(viewModelScope)
         // Trakt: forgotten on a profile switch, on sign-out, and whenever access stops being adult.
         var shownProfile: Any? = null
         settings.activeProfileId.onEach { id ->
-            if (shownProfile != null && id != shownProfile) traktDiscovery.forget()
+            if (shownProfile != null && id != shownProfile) {
+                traktDiscovery.forget()
+                closeSearch() // another profile never sees what was typed or found
+            }
             shownProfile = id
         }.launchIn(viewModelScope)
         gambitTrakt.signOuts.drop(1).onEach { traktDiscovery.signedOut() }.launchIn(viewModelScope)
@@ -194,6 +216,8 @@ class DiscoveryViewModel(
         // while its catalogue is still approved.
         addonAccess.onEach { a ->
             traktDiscovery.accessChanged()
+            searchBoard.accessChanged()
+            if (!searchAllowed(a)) closeSearch()
             when (a) {
                 AddonAccess.Adult -> gate.reset()
                 is AddonAccess.Kids -> {
@@ -225,6 +249,7 @@ class DiscoveryViewModel(
         _playNote.value = null
         val request = fromHome
         fromHome = null
+        closeSearch() // a new visit starts on the grid; Back from the player returned above
         // A title picked on Home is already open (see openFromHome); everything else starts on the grid.
         if (request == null) {
             kidsTitle.close()
@@ -245,6 +270,7 @@ class DiscoveryViewModel(
         if (!mayOpen(catalog.key, preview?.id)) return
         playJob?.cancel()
         returningFromPlayer = false
+        closeSearch()
         streamBoard.close()
         titles.close()
         if (preview != null) titles.open(preview, catalog.ref.addon.url)
@@ -286,6 +312,38 @@ class DiscoveryViewModel(
         if (!mayOpen(catalogKey.orEmpty(), preview.id)) return
         streamBoard.close()
         titles.open(preview, state.value.selected?.ref?.addon?.url)
+    }
+
+    /** Discovery's Search button. Refused unless the profile is an adult one. */
+    fun openSearch() {
+        if (searchAllowed(addonAccess.value)) _searchOpen.value = true
+    }
+
+    /** Leaves the search page and forgets the text and results. */
+    fun closeSearch() {
+        searchBoard.clear()
+        lastSearchResult = null
+        _searchOpen.value = false
+    }
+
+    fun typeSearch(text: String) = searchBoard.type(text)
+    fun submitSearch() = searchBoard.submit()
+    fun retrySearch() = searchBoard.retryFailed()
+
+    /** What voice input heard: searched at once. */
+    fun voiceSearch(text: String) {
+        searchBoard.type(text)
+        searchBoard.submit()
+    }
+
+    /** OK on a search result: its details, asked first from the addon that found it. False when refused. */
+    fun openSearchResult(rowKey: String, id: String): Boolean {
+        val pick = searchBoard.pick(rowKey, id) ?: return false
+        lastSearchResult = rowKey to id
+        kidsTitle.close()
+        streamBoard.close()
+        titles.open(pick.preview, pick.source)
+        return true
     }
 
     fun closeTitle() {

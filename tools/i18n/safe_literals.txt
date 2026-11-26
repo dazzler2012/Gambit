@@ -1108,6 +1108,7 @@
 2	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	/manifest.json
 1	technical	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	0123456789ABCDEF
 1	log	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	AddonUrl($host)
+1	technical	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	CatalogExtraArgs(search=${search != null}, genre=$genre, skip=$skip)
 1	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	catalog/${encode(type)}/${encode(catalogId)}
 1	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	catalog/${encode(type)}/${encode(catalogId)}/$extraPath
 1	uri	app/src/main/java/tv/own/owntv/gambit/addons/net/AddonUrl.kt	genre=
@@ -1124,6 +1125,10 @@
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	movie
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	series
 1	protocol	app/src/main/java/tv/own/owntv/gambit/discovery/DiscoveryModels.kt	skip
+1	technical	app/src/main/java/tv/own/owntv/gambit/discovery/SearchBoard.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/gambit/discovery/SearchBoard.kt	Loaded(${items.size})
+1	technical	app/src/main/java/tv/own/owntv/gambit/discovery/SearchBoard.kt	SearchPick(${source.host})
+1	technical	app/src/main/java/tv/own/owntv/gambit/discovery/SearchBoard.kt	SearchState(${feed.javaClass.simpleName})
 1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)(?<![A-Za-z0-9])(?:(?:dv[ ._-]?)?(?:p|profile[ ._-]?)7|fel|(?:dv|dovi)[ ._-]?mel)(?![A-Za-z0-9])
 1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)(?<![A-Za-z0-9])(?:dv[ ._-]?)?(?:p|profile[ ._-]?)[58](?![A-Za-z0-9])
 1	regex	app/src/main/java/tv/own/owntv/gambit/discovery/StreamBoard.kt	(?i)(?<![A-Za-z0-9])(dv|dovi|dolby[ ._-]?vision)(?![A-Za-z0-9])
