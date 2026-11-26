@@ -232,6 +232,8 @@ private fun VoiceButton(onHeard: (String) -> Unit) {
     var available by remember(context) { mutableStateOf(VoiceSearch.isAvailable(context)) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+        // Temporary diagnostic: names and counts only, never what was said.
+        android.util.Log.i("GambitVoice", "resultCode=${result.resultCode} dataNull=${result.data == null} extraKeys=${result.data?.extras?.keySet()} matches=${matches?.size}")
         VoiceSearch.spokenQuery(result.resultCode, matches)?.let(onHeard)
     }
     if (!available) return
